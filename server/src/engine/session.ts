@@ -224,6 +224,8 @@ export class Session {
         momentPersonaName: this.round.moment?.persona.name,
         kpiDelta: result.kpiDelta,
         hiddenDelta: result.hiddenDelta,
+        kpisAfter: result.nextKpis,
+        hiddenAfter: result.nextHidden,
         roundScore: result.roundScore,
       });
     }
@@ -261,6 +263,22 @@ export class Session {
 
     const teams: TeamPublic[] = Array.from(this.teams.values()).map((t) => {
       const lastHistory = t.history[t.history.length - 1];
+      const startingKpisSnapshot = startingKpis();
+      const startingHiddenSnapshot = startingHidden();
+      const trend = {
+        sales: [startingKpisSnapshot.sales, ...t.history.map((h) => h.kpisAfter.sales)],
+        shrinkage: [startingKpisSnapshot.shrinkage, ...t.history.map((h) => h.kpisAfter.shrinkage)],
+        customer: [startingKpisSnapshot.customer, ...t.history.map((h) => h.kpisAfter.customer)],
+        engagement: [startingKpisSnapshot.engagement, ...t.history.map((h) => h.kpisAfter.engagement)],
+        operations: [startingKpisSnapshot.operations, ...t.history.map((h) => h.kpisAfter.operations)],
+        safety_risk: [startingHiddenSnapshot.safety_risk, ...t.history.map((h) => h.hiddenAfter.safety_risk)],
+        trust: [startingHiddenSnapshot.trust, ...t.history.map((h) => h.hiddenAfter.trust)],
+        capability: [startingHiddenSnapshot.capability, ...t.history.map((h) => h.hiddenAfter.capability)],
+        leadership_consistency: [
+          startingHiddenSnapshot.leadership_consistency,
+          ...t.history.map((h) => h.hiddenAfter.leadership_consistency),
+        ],
+      };
       return {
         id: t.id,
         name: t.name,
@@ -271,6 +289,7 @@ export class Session {
         lastKpiDelta: revealPhase ? lastHistory?.kpiDelta : undefined,
         lastHiddenDelta: revealPhase ? lastHistory?.hiddenDelta : undefined,
         revealedHidden: revealPhase ? t.hidden : undefined,
+        trend,
         submitted: t.submitted,
         strength: t.strength,
         risk: t.risk,

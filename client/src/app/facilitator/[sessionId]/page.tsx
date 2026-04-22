@@ -37,7 +37,7 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT } from "@sim/shared";
-import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle } from "@/components/ui";
+import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
 
@@ -81,7 +81,7 @@ export default function FacilitatorPage() {
 
   if (!connected || !state) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-ink-100">
+      <div className="flex h-full w-full items-center justify-center">
         <div className="flex items-center gap-2 text-ink-600">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Connecting…</span>
@@ -95,10 +95,10 @@ export default function FacilitatorPage() {
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
-      <div className="border-b border-ink-200 bg-white px-3 py-3">
+      <div className="border-b border-ink-200 bg-surface-raised px-3 py-2.5">
         <PhaseGuide
           tone={guidance.tone}
           headline={guidance.headline}
@@ -106,7 +106,7 @@ export default function FacilitatorPage() {
           action={
             primary ? (
               <Button
-                size="xl"
+                size="lg"
                 variant="secondary"
                 className="!border-white/40 !bg-white !text-brand-800 hover:!bg-white/90"
                 onClick={() => socket.emit(primary.event, { sessionId })}
@@ -145,10 +145,10 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   };
   const urgent = timeLeftMs < 60_000 && state.phase === "round";
   return (
-    <header className="flex items-center justify-between gap-4 border-b-2 border-brand-200 bg-gradient-to-r from-white via-brand-50/30 to-white px-5 py-3 shadow-sm">
+    <header className="flex shrink-0 items-center justify-between gap-4 border-b border-ink-200 bg-surface-raised px-5 py-2.5 shadow-card">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-btn">
-          <Activity className="h-7 w-7" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink-900 text-white shadow-btn-ink">
+          <Activity className="h-6 w-6" />
         </div>
         <div>
           <div className="text-lg font-bold tracking-tight text-ink-900">Facilitator dashboard</div>
@@ -160,18 +160,18 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="rounded-xl border-2 border-brand-300 bg-gradient-to-b from-brand-50 to-white px-4 py-2 shadow-sm">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-1.5">
           <div className="text-[11px] font-bold uppercase tracking-wider text-brand-700">Session code</div>
           <div className="font-mono text-2xl font-bold tracking-[0.3em] text-brand-900">{state.code}</div>
         </div>
         <div
           className={cn(
-            "flex items-center gap-2.5 rounded-xl border-2 px-4 py-2 shadow-sm",
-            urgent ? "border-rose-400 bg-rose-50" : "border-ink-300 bg-white",
+            "flex items-center gap-2.5 rounded-xl border px-4 py-1.5",
+            urgent ? "border-rose-400 bg-rose-50" : "border-ink-200 bg-surface-raised",
           )}
         >
-          <Clock className={cn("h-6 w-6", urgent ? "text-risk" : "text-ink-500")} />
-          <span className={cn("font-mono text-3xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
+          <Clock className={cn("h-5 w-5", urgent ? "text-risk" : "text-ink-500")} />
+          <span className={cn("font-mono text-2xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
             {formatClock(timeLeftMs)}
           </span>
         </div>
@@ -369,7 +369,7 @@ function CoachingCard({
 
       <div className="grid grid-cols-5 gap-1.5">
         {kpis.map((k) => (
-          <div key={k} className="flex flex-col gap-1 rounded-md border border-ink-200 bg-ink-50 px-2 py-1.5">
+          <div key={k} className="flex flex-col gap-1 rounded-md border border-ink-200 bg-surface-muted px-2 py-1.5">
             <span className="truncate text-[10px] font-bold uppercase tracking-wider text-ink-600">
               {KPI_SHORT[k]}
             </span>
@@ -377,7 +377,7 @@ function CoachingCard({
               <span className="text-sm font-bold tabular-nums text-ink-900">{team.kpis[k]}</span>
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
             </div>
-            <Bar value={team.kpis[k]} inverted={KPI_INVERTED[k]} />
+            <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={18} />
           </div>
         ))}
       </div>

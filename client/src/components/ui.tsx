@@ -17,11 +17,10 @@ export function Card({
   tone?: "default" | "accent" | "raised" | "glow";
 }) {
   const tones = {
-    default: "border border-ink-200 bg-white shadow-card",
-    accent: "border-2 border-brand-300 bg-white shadow-panel",
-    raised: "border border-ink-200 bg-white shadow-panel",
-    glow:
-      "border-2 border-brand-400 bg-gradient-to-br from-white to-brand-50 shadow-panel",
+    default: "border border-ink-200 bg-surface-raised shadow-card",
+    accent: "border border-brand-200 bg-surface-tint shadow-card",
+    raised: "border border-ink-200 bg-surface-raised shadow-panel",
+    glow: "border border-brand-300 bg-surface-raised shadow-panel ring-1 ring-brand-100",
   };
   return <div className={cn("rounded-xl", tones[tone], className)}>{children}</div>;
 }
@@ -69,7 +68,7 @@ export function Button({
   className?: string;
 }) {
   const base =
-    "btn-pop inline-flex items-center justify-center gap-2 rounded-lg font-semibold tracking-tight transition-all duration-150 focus:outline-none focus:ring-4 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none";
+    "btn-pop inline-flex items-center justify-center gap-2 rounded-lg font-semibold tracking-tight focus:outline-none focus:ring-4 focus:ring-brand-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none";
   const sizes = {
     sm: "px-3 py-1.5 text-xs",
     md: "px-4 py-2 text-sm",
@@ -78,14 +77,14 @@ export function Button({
   };
   const variants = {
     primary:
-      "bg-gradient-to-b from-brand-500 to-brand-700 text-white border border-brand-800/30 shadow-btn hover:from-brand-400 hover:to-brand-600",
+      "bg-brand-600 text-white border border-brand-700 shadow-btn hover:bg-brand-700",
     accent:
-      "bg-gradient-to-b from-accent-400 to-accent-600 text-white border border-accent-700/40 shadow-btn-accent hover:from-accent-300 hover:to-accent-500",
+      "bg-ink-900 text-white border border-ink-950 shadow-btn-ink hover:bg-ink-800",
     secondary:
-      "bg-white text-ink-800 border-2 border-ink-300 shadow-sm hover:border-ink-400 hover:bg-ink-50",
+      "bg-surface-raised text-ink-800 border border-ink-300 shadow-sm hover:border-ink-400 hover:bg-ink-50",
     ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
     danger:
-      "bg-gradient-to-b from-rose-500 to-rose-700 text-white border border-rose-800/40 shadow-btn-risk hover:from-rose-400 hover:to-rose-600",
+      "bg-risk text-white border border-rose-800 shadow-btn-ink hover:brightness-110",
   };
   return (
     <button
@@ -111,18 +110,18 @@ export function Pill({
   const soft = {
     neutral: "bg-ink-100 text-ink-700 border-ink-200",
     ok: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    warn: "bg-amber-50 text-amber-900 border-amber-300",
+    warn: "bg-brand-50 text-brand-800 border-brand-200",
     risk: "bg-rose-50 text-rose-800 border-rose-200",
     info: "bg-brand-50 text-brand-800 border-brand-200",
-    accent: "bg-accent-50 text-accent-800 border-accent-300",
+    accent: "bg-ink-50 text-ink-800 border-ink-300",
   };
   const bold = {
     neutral: "bg-ink-800 text-white border-ink-900",
     ok: "bg-emerald-600 text-white border-emerald-700",
-    warn: "bg-amber-500 text-white border-amber-600",
-    risk: "bg-rose-600 text-white border-rose-700",
+    warn: "bg-brand-500 text-white border-brand-600",
+    risk: "bg-risk text-white border-rose-800",
     info: "bg-brand-600 text-white border-brand-700",
-    accent: "bg-accent-500 text-white border-accent-600",
+    accent: "bg-ink-900 text-white border-ink-950",
   };
   const palette = strong ? bold : soft;
   return (
@@ -140,12 +139,12 @@ export function Pill({
 export function Bar({ value, inverted = false }: { value: number; inverted?: boolean }) {
   const normal = Math.max(0, Math.min(100, value));
   const score = inverted ? 100 - normal : normal;
-  let tone = "bg-emerald-500";
-  if (score < 40) tone = "bg-rose-500";
-  else if (score < 65) tone = "bg-amber-500";
+  let tone = "bg-ok";
+  if (score < 40) tone = "bg-risk";
+  else if (score < 65) tone = "bg-brand-500";
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-ink-200/80 ring-1 ring-inset ring-ink-300/40">
-      <div className={cn("h-full transition-all", tone)} style={{ width: `${normal}%` }} />
+    <div className="h-2 w-full overflow-hidden rounded-full bg-ink-200">
+      <div className={cn("h-full transition-all duration-500", tone)} style={{ width: `${normal}%` }} />
     </div>
   );
 }
@@ -184,15 +183,15 @@ export function PhaseGuide({
   action?: ReactNode;
 }) {
   const tones = {
-    info: "from-brand-500 via-brand-600 to-brand-700 text-white border-brand-800 ring-brand-300",
-    ok: "from-emerald-500 to-emerald-700 text-white border-emerald-800 ring-emerald-300",
-    warn: "from-amber-400 via-amber-500 to-amber-600 text-white border-amber-700 ring-amber-300",
-    risk: "from-rose-500 via-rose-600 to-rose-700 text-white border-rose-800 ring-rose-300",
+    info: "bg-brand-600 text-white border-brand-700",
+    ok: "bg-emerald-600 text-white border-emerald-700",
+    warn: "bg-brand-500 text-white border-brand-600",
+    risk: "bg-risk text-white border-rose-800",
   };
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border-2 bg-gradient-to-r px-5 py-3.5 shadow-panel ring-1",
+        "relative flex items-center justify-between gap-3 overflow-hidden rounded-xl border px-5 py-3 shadow-panel",
         tones[tone],
       )}
     >
@@ -222,7 +221,7 @@ export function Stat({
     <div
       className={cn(
         "rounded-lg border p-2.5",
-        tone === "accent" ? "border-brand-200 bg-brand-50/40" : "border-ink-200 bg-ink-50",
+        tone === "accent" ? "border-brand-200 bg-brand-50/40" : "border-ink-200 bg-surface-muted",
       )}
     >
       <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-ink-500">{label}</div>
@@ -231,5 +230,49 @@ export function Stat({
         {delta !== undefined ? <Delta value={delta} invertedMeaning={invertedMeaning} /> : null}
       </div>
     </div>
+  );
+}
+
+export function Sparkline({
+  values,
+  inverted = false,
+  width = 80,
+  height = 26,
+}: {
+  values: number[];
+  inverted?: boolean;
+  width?: number;
+  height?: number;
+}) {
+  if (values.length < 2) {
+    return (
+      <svg width={width} height={height} className="text-ink-300">
+        <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke="currentColor" strokeDasharray="3 3" />
+      </svg>
+    );
+  }
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 100);
+  const span = Math.max(1, max - min);
+  const stepX = width / Math.max(1, values.length - 1);
+  const points = values
+    .map((v, i) => {
+      const x = i * stepX;
+      const y = height - ((v - min) / span) * height;
+      return `${x},${y}`;
+    })
+    .join(" ");
+  const last = values[values.length - 1];
+  const first = values[0];
+  const goingUp = last > first;
+  const good = inverted ? !goingUp : goingUp;
+  const stroke = last === first ? "#6b7692" : good ? "#0f9d58" : "#d1335a";
+  const lastX = (values.length - 1) * stepX;
+  const lastY = height - ((last - min) / span) * height;
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline fill="none" stroke={stroke} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" points={points} />
+      <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} />
+    </svg>
   );
 }

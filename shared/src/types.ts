@@ -99,6 +99,18 @@ export type SessionPhase =
 
 export type RoundPhase = "active" | "disrupted" | "locked" | "reveal";
 
+export interface TrendSeries {
+  sales: number[];
+  shrinkage: number[];
+  customer: number[];
+  engagement: number[];
+  operations: number[];
+  safety_risk: number[];
+  trust: number[];
+  capability: number[];
+  leadership_consistency: number[];
+}
+
 export interface TeamPublic {
   id: string;
   name: string;
@@ -109,12 +121,22 @@ export interface TeamPublic {
   lastKpiDelta?: Partial<Kpis>;
   lastHiddenDelta?: Partial<HiddenDrivers>;
   revealedHidden?: HiddenDrivers;
+  trend: TrendSeries;
   submitted: boolean;
   strength?: string;
   risk?: string;
 }
 
-export interface TeamFull extends TeamPublic {
+export interface TeamFull {
+  id: string;
+  name: string;
+  score: number;
+  lastMovement: number;
+  kpis: Kpis;
+  lastDecision?: Decision;
+  submitted: boolean;
+  strength?: string;
+  risk?: string;
   hidden: HiddenDrivers;
   history: RoundHistoryEntry[];
 }
@@ -126,6 +148,8 @@ export interface RoundHistoryEntry {
   momentPersonaName?: string;
   kpiDelta: Partial<Kpis>;
   hiddenDelta: Partial<HiddenDrivers>;
+  kpisAfter: Kpis;
+  hiddenAfter: HiddenDrivers;
   roundScore: number;
 }
 
