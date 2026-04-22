@@ -539,7 +539,7 @@ function RadioGroup<T extends string>({
       <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => {
           const active = value === opt;
-          const Icon = icons?.[opt];
+          const Icon: React.ComponentType<{ className?: string }> | undefined = icons?.[opt];
           return (
             <button
               key={opt}
