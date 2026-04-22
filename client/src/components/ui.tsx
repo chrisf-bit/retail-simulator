@@ -24,7 +24,7 @@ export function Card({
     // Heavy dark
     dark: "bg-ink-900 text-white shadow-panel ring-1 ring-white/5",
   };
-  return <div className={cn("rounded-2xl", tones[tone])}>{children}</div>;
+  return <div className={cn("rounded-2xl", tones[tone], className)}>{children}</div>;
 }
 
 export function SectionTitle({
