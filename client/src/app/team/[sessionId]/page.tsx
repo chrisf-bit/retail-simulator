@@ -343,7 +343,7 @@ function KpiStrip({
       <SectionTitle
         icon={<Gauge className="h-5 w-5" />}
         title="Store performance"
-        subtitle={view === "values" ? "Current standings" : "Trend across completed rounds"}
+        subtitle={view === "values" ? "Current standings" : "Past 4 months plus rounds played"}
         right={
           <div className="flex rounded-lg border border-ink-200 bg-surface-muted p-0.5">
             <button

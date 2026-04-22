@@ -14,6 +14,7 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS, ROUND_COUNT, ROUND_DURATION_MS } from "@sim/shared";
+import type { TrendSeries } from "@sim/shared";
 import { ALERT_BANK, DISRUPTION_BANK, ISSUE_BANK } from "./scenarios.js";
 import { MOMENT_BANK } from "./moments.js";
 import { applyDecision, summariseRisk, summariseStrength } from "./scoring.js";
@@ -65,6 +66,34 @@ function buildMoment(usedIds: Set<string>) {
   return pickN(pool, 1)[0];
 }
 
+const BASELINE_WEEKS = 16;
+
+function plausibleSeries(from: number, to: number, weeks: number, noise: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < weeks; i++) {
+    const t = i / Math.max(1, weeks - 1);
+    const base = from + (to - from) * t;
+    const jitter = (Math.random() - 0.5) * 2 * noise;
+    out.push(Math.max(0, Math.min(100, Math.round(base + jitter))));
+  }
+  out[out.length - 1] = to;
+  return out;
+}
+
+function buildBaselineTrend(): TrendSeries {
+  return {
+    sales: plausibleSeries(74, 60, BASELINE_WEEKS, 3),
+    shrinkage: plausibleSeries(24, 35, BASELINE_WEEKS, 2),
+    customer: plausibleSeries(66, 62, BASELINE_WEEKS, 4),
+    engagement: plausibleSeries(56, 65, BASELINE_WEEKS, 3),
+    operations: plausibleSeries(63, 60, BASELINE_WEEKS, 2),
+    safety_risk: plausibleSeries(18, 30, BASELINE_WEEKS, 2),
+    trust: plausibleSeries(52, 60, BASELINE_WEEKS, 3),
+    capability: plausibleSeries(44, 55, BASELINE_WEEKS, 3),
+    leadership_consistency: plausibleSeries(60, 50, BASELINE_WEEKS, 2),
+  };
+}
+
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -80,6 +109,7 @@ export class Session {
   teams = new Map<string, TeamFull>();
   prompts: FacilitatorPrompt[] = [];
   usedMomentIds = new Set<string>();
+  baselineTrend: TrendSeries = buildBaselineTrend();
   round?: RoundState;
   roundTimer?: NodeJS.Timeout;
   disruptionTimer?: NodeJS.Timeout;
@@ -263,19 +293,18 @@ export class Session {
 
     const teams: TeamPublic[] = Array.from(this.teams.values()).map((t) => {
       const lastHistory = t.history[t.history.length - 1];
-      const startingKpisSnapshot = startingKpis();
-      const startingHiddenSnapshot = startingHidden();
-      const trend = {
-        sales: [startingKpisSnapshot.sales, ...t.history.map((h) => h.kpisAfter.sales)],
-        shrinkage: [startingKpisSnapshot.shrinkage, ...t.history.map((h) => h.kpisAfter.shrinkage)],
-        customer: [startingKpisSnapshot.customer, ...t.history.map((h) => h.kpisAfter.customer)],
-        engagement: [startingKpisSnapshot.engagement, ...t.history.map((h) => h.kpisAfter.engagement)],
-        operations: [startingKpisSnapshot.operations, ...t.history.map((h) => h.kpisAfter.operations)],
-        safety_risk: [startingHiddenSnapshot.safety_risk, ...t.history.map((h) => h.hiddenAfter.safety_risk)],
-        trust: [startingHiddenSnapshot.trust, ...t.history.map((h) => h.hiddenAfter.trust)],
-        capability: [startingHiddenSnapshot.capability, ...t.history.map((h) => h.hiddenAfter.capability)],
+      const base = this.baselineTrend;
+      const trend: TrendSeries = {
+        sales: [...base.sales, ...t.history.map((h) => h.kpisAfter.sales)],
+        shrinkage: [...base.shrinkage, ...t.history.map((h) => h.kpisAfter.shrinkage)],
+        customer: [...base.customer, ...t.history.map((h) => h.kpisAfter.customer)],
+        engagement: [...base.engagement, ...t.history.map((h) => h.kpisAfter.engagement)],
+        operations: [...base.operations, ...t.history.map((h) => h.kpisAfter.operations)],
+        safety_risk: [...base.safety_risk, ...t.history.map((h) => h.hiddenAfter.safety_risk)],
+        trust: [...base.trust, ...t.history.map((h) => h.hiddenAfter.trust)],
+        capability: [...base.capability, ...t.history.map((h) => h.hiddenAfter.capability)],
         leadership_consistency: [
-          startingHiddenSnapshot.leadership_consistency,
+          ...base.leadership_consistency,
           ...t.history.map((h) => h.hiddenAfter.leadership_consistency),
         ],
       };
