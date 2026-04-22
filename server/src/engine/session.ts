@@ -181,7 +181,7 @@ export class Session {
     this.roundTimer = setTimeout(() => this.endRound(), ROUND_DURATION_MS);
 
     if (this.disruptionTimer) clearTimeout(this.disruptionTimer);
-    const disruptionDelay = Math.floor(ROUND_DURATION_MS * 0.55);
+    const disruptionDelay = 60_000;
     this.disruptionTimer = setTimeout(() => this.triggerDisruption(), disruptionDelay);
 
     this.onUpdate();

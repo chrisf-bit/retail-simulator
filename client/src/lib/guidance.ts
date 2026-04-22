@@ -26,7 +26,7 @@ export function facilitatorGuidance(state: SessionStatePublic): Guidance {
       return {
         tone: "info",
         headline: "Briefing in progress",
-        body: "Run the scenario briefing with the room. Click Start Round 1 when you are ready.",
+        body: "Run the scenario briefing with the room. Click Start Shift 1 when you are ready.",
       };
     case "round": {
       const subs = state.teams.filter((t) => t.submitted).length;
@@ -35,20 +35,20 @@ export function facilitatorGuidance(state: SessionStatePublic): Guidance {
       if (disrupted) {
         return {
           tone: "risk",
-          headline: `Round ${state.round?.number} - disruption active`,
+          headline: `Shift ${state.round?.number} - disruption active`,
           body: `${subs} of ${total} teams have submitted. Observe how teams respond.`,
         };
       }
       return {
         tone: "warn",
-        headline: `Round ${state.round?.number} live`,
-        body: `${subs} of ${total} submitted. Trigger a disruption mid-round, or end early if ready.`,
+        headline: `Shift ${state.round?.number} live`,
+        body: `${subs} of ${total} submitted. Disruption will auto-trigger at the 1-minute mark.`,
       };
     }
     case "round_results":
       return {
         tone: "ok",
-        headline: `Round ${state.round?.number} complete`,
+        headline: `Shift ${state.round?.number} complete`,
         body: "Review the leaderboard and prompts, then advance when the room is ready.",
       };
     case "debrief":
@@ -78,7 +78,7 @@ export function teamGuidance(state: SessionStatePublic, submitted: boolean): Gui
       return {
         tone: "info",
         headline: "Listen to the briefing",
-        body: "Round 1 is about to start. Be ready to respond to live store pressures.",
+        body: "Shift 1 is about to start. Be ready to respond to live store pressures.",
       };
     case "round": {
       const disrupted = state.round?.phase === "disrupted";
@@ -86,7 +86,7 @@ export function teamGuidance(state: SessionStatePublic, submitted: boolean): Gui
         return {
           tone: "ok",
           headline: "Decision locked in",
-          body: "You can still watch the clock, but your submission is final for this round.",
+          body: "You can still watch the clock, but your submission is final for this shift.",
         };
       }
       if (disrupted) {
@@ -98,15 +98,15 @@ export function teamGuidance(state: SessionStatePublic, submitted: boolean): Gui
       }
       return {
         tone: "warn",
-        headline: `Round ${state.round?.number} live`,
+        headline: `Shift ${state.round?.number} live`,
         body: "Pick a focus, choose how you will act, lead your team, and deploy resource. Submit before the timer ends.",
       };
     }
     case "round_results":
       return {
         tone: "ok",
-        headline: `Round ${state.round?.number} results`,
-        body: "Review your movement. Your facilitator will advance to the next round shortly.",
+        headline: `Shift ${state.round?.number} results`,
+        body: "Review your movement. Your facilitator will advance to the next shift shortly.",
       };
     case "debrief":
       return {

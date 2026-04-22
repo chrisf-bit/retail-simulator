@@ -54,11 +54,11 @@ function getPrimaryAction(state: SessionStatePublic): PrimaryAction | null {
         ? null
         : { label: "Start briefing", icon: PlayCircle, event: "facilitator:start_briefing" };
     case "briefing":
-      return { label: "Start Round 1", icon: Play, event: "facilitator:start_round" };
+      return { label: "Start Shift 1", icon: Play, event: "facilitator:start_round" };
     case "round_results": {
       const nextNumber = (state.round?.number ?? 0) + 1;
       if (nextNumber > 3) return { label: "Begin debrief", icon: Flag, event: "facilitator:next_phase" };
-      return { label: `Start Round ${nextNumber}`, icon: Play, event: "facilitator:start_round" };
+      return { label: `Start Shift ${nextNumber}`, icon: Play, event: "facilitator:start_round" };
     }
     case "debrief":
       return { label: "Close session", icon: Flag, event: "facilitator:next_phase" };
@@ -95,10 +95,10 @@ export default function FacilitatorPage() {
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-surface-base">
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
-      <div className="border-b border-ink-200 bg-surface-raised px-3 py-2.5">
+      <div className="shrink-0 px-5 pt-5">
         <PhaseGuide
           tone={guidance.tone}
           headline={guidance.headline}
@@ -107,8 +107,8 @@ export default function FacilitatorPage() {
             primary ? (
               <Button
                 size="lg"
-                variant="secondary"
-                className="!border-white/40 !bg-white !text-brand-800 hover:!bg-white/90"
+                variant="quiet"
+                className="!bg-white/20 !text-white hover:!bg-white/30"
                 onClick={() => socket.emit(primary.event, { sessionId })}
               >
                 <primary.icon className="h-4 w-4" /> {primary.label}
@@ -118,18 +118,18 @@ export default function FacilitatorPage() {
         />
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-12 gap-3 p-3">
-        <div className="col-span-12 flex min-h-0 flex-col gap-3 lg:col-span-7">
+      <main className="grid min-h-0 flex-1 grid-cols-12 gap-5 p-5">
+        <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-7">
           <Leaderboard state={state} />
           <CoachingGrid state={state} reveal={revealPhase} />
         </div>
 
-        <div className="col-span-12 flex min-h-0 flex-col gap-3 lg:col-span-5">
+        <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-5">
           <ScriptPanel state={state} />
           <PatternsPanel state={state} />
           <ControlPanel sessionId={sessionId} state={state} socket={socket} />
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -138,21 +138,21 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   const phaseText: Record<string, string> = {
     lobby: "Lobby",
     briefing: "Briefing",
-    round: `Round ${state.round?.number ?? 0} / 3`,
-    round_results: `Round ${state.round?.number ?? 0} results`,
+    round: `Shift ${state.round?.number ?? 0} / 3`,
+    round_results: `Shift ${state.round?.number ?? 0} results`,
     debrief: "Debrief",
     finished: "Session complete",
   };
   const urgent = timeLeftMs < 60_000 && state.phase === "round";
   return (
-    <header className="flex shrink-0 items-center justify-between gap-4 border-b-2 border-ink-900 bg-ink-900 px-5 py-2.5 text-white">
+    <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white">
-          <Activity className="h-6 w-6" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-900 text-white">
+          <Activity className="h-5 w-5" />
         </div>
         <div>
-          <div className="text-xl font-black tracking-tighter">Facilitator</div>
-          <div className="text-xs font-bold uppercase tracking-wider text-ink-300">
+          <div className="text-xl font-semibold tracking-tighter text-ink-900">Facilitator</div>
+          <div className="mt-0.5 text-xs text-ink-500">
             {phaseText[state.phase]}
             {" · "}
             {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
@@ -160,18 +160,20 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="rounded-xl border-2 border-brand-500 bg-brand-500 px-4 py-1.5">
-          <div className="text-[10px] font-black uppercase tracking-wider text-brand-100">Session code</div>
-          <div className="display-num text-3xl tracking-[0.3em] text-white">{state.code}</div>
+        <div className="rounded-full bg-surface-raised px-4 py-1.5 ring-1 ring-ink-200/80">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">Session code</div>
+          <div className="num text-2xl font-semibold tracking-[0.3em] text-ink-900">{state.code}</div>
         </div>
         <div
           className={cn(
-            "flex items-center gap-2.5 rounded-xl border-2 px-4 py-1.5",
-            urgent ? "border-risk bg-risk" : "border-white/20 bg-ink-800",
+            "flex items-center gap-2.5 rounded-full px-4 py-1.5",
+            urgent ? "bg-risk text-white" : "bg-surface-raised ring-1 ring-ink-200/80",
           )}
         >
-          <Clock className={cn("h-5 w-5", urgent ? "text-white" : "text-brand-400")} />
-          <span className="display-num text-3xl text-white">{formatClock(timeLeftMs)}</span>
+          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-ink-500")} />
+          <span className={cn("num text-2xl font-semibold", urgent ? "text-white" : "text-ink-900")}>
+            {formatClock(timeLeftMs)}
+          </span>
         </div>
       </div>
     </header>
@@ -184,34 +186,34 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
   }
 
   return (
-    <Card className="p-3">
-      <SectionTitle icon={<Trophy className="h-5 w-5" />} title="Leaderboard" />
-      <div className="grid grid-cols-12 gap-2 px-2 pb-1 text-[10px] font-black uppercase tracking-wider text-ink-500">
+    <Card className="p-5">
+      <SectionTitle icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
+      <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[10px] font-medium uppercase tracking-wider text-ink-500">
         <div className="col-span-1">Rank</div>
         <div className="col-span-6">Team</div>
         <div className="col-span-3 text-right">Score</div>
         <div className="col-span-2 text-right">Movement</div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {state.leaderboard.map((row, idx) => {
           const isLead = idx === 0 && state.leaderboard.length > 1;
           return (
             <div
               key={row.teamId}
               className={cn(
-                "grid grid-cols-12 items-center gap-2 rounded-lg border-2 px-2.5 py-2 transition-colors",
-                isLead ? "border-ink-900 bg-brand-500 text-white" : "border-ink-300 bg-surface-raised",
+                "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
+                isLead ? "bg-ink-900 text-white" : "bg-surface-muted",
               )}
             >
-              <div className={cn("col-span-1 display-num text-lg", isLead ? "text-white" : "text-ink-800")}>
+              <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-ink-700")}>
                 #{row.rank}
               </div>
               <div className="col-span-6 flex items-center gap-2">
-                <Store className={cn("h-5 w-5", isLead ? "text-white" : "text-brand-600")} />
-                <span className={cn("truncate text-sm font-black", isLead ? "text-white" : "text-ink-900")}>{row.name}</span>
-                {isLead ? <Pill tone="accent" strong>Lead</Pill> : null}
+                <Store className={cn("h-4 w-4", isLead ? "text-brand-400" : "text-ink-400")} />
+                <span className={cn("truncate text-sm font-semibold", isLead ? "text-white" : "text-ink-900")}>{row.name}</span>
+                {isLead ? <Pill tone="warn" strong>Lead</Pill> : null}
               </div>
-              <div className={cn("col-span-3 text-right display-num text-lg", isLead ? "text-white" : "text-ink-900")}>
+              <div className={cn("col-span-3 text-right num text-base font-semibold", isLead ? "text-white" : "text-ink-900")}>
                 {row.score}
               </div>
               <div className="col-span-2 text-right">
@@ -495,9 +497,9 @@ function InsightList({
 function ScriptPanel({ state }: { state: SessionStatePublic }) {
   const script = state.insights.script;
   return (
-    <Card tone="glow" className="p-4">
+    <Card tone="accent" className="p-5">
       <SectionTitle
-        icon={<ScrollText className="h-5 w-5" />}
+        icon={<ScrollText className="h-4 w-4" />}
         title={script.headline}
         subtitle="Your talk track for this phase"
       />
@@ -608,34 +610,34 @@ function ControlPanel({
   const canDisrupt = state.phase === "round" && state.round?.phase !== "disrupted";
 
   return (
-    <Card className="p-3">
+    <Card className="p-5">
       <SectionTitle
-        icon={<HelpCircle className="h-5 w-5" />}
-        title="Mid-round tools"
-        subtitle="Advance phases using the button above"
+        icon={<HelpCircle className="h-4 w-4" />}
+        title="Shift controls"
+        subtitle="Disruption auto-triggers at 1 min. Override below if needed."
       />
       <div className="grid grid-cols-2 gap-2">
         <Button
-          variant="danger"
+          variant="quiet"
           size="sm"
           disabled={!canDisrupt}
           onClick={() => socket.emit("facilitator:trigger_disruption", { sessionId })}
         >
-          <Zap className="h-4 w-4" /> Disruption
+          <Zap className="h-4 w-4" /> Disrupt now
         </Button>
         <Button
-          variant="secondary"
+          variant="quiet"
           size="sm"
           disabled={!canEndRound}
           onClick={() => socket.emit("facilitator:end_round", { sessionId })}
         >
-          <Square className="h-4 w-4" /> End round
+          <Square className="h-4 w-4" /> End shift early
         </Button>
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-ink-200 bg-ink-50 p-2 text-[11px]">
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-surface-muted p-2 text-[11px]">
         <StatPill label="Phase" value={state.phase} />
-        <StatPill label="Round phase" value={state.round?.phase ?? "—"} />
+        <StatPill label="Shift phase" value={state.round?.phase ?? "—"} />
         <StatPill
           label="Submitted"
           value={`${state.teams.filter((t) => t.submitted).length}/${state.teams.length}`}
@@ -647,9 +649,9 @@ function ControlPanel({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-white px-2 py-1.5 text-center">
-      <div className="text-[9px] font-semibold uppercase tracking-wider text-ink-500">{label}</div>
-      <div className="mt-0.5 truncate text-xs font-bold text-ink-800">{value}</div>
+    <div className="rounded-lg bg-surface-raised px-2 py-1.5 text-center">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">{label}</div>
+      <div className="mt-0.5 truncate text-xs font-semibold text-ink-800">{value}</div>
     </div>
   );
 }

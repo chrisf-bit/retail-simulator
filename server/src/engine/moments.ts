@@ -16,7 +16,7 @@ export const MOMENT_BANK: TeamMoment[] = [
   },
   {
     id: "mom_alex_conflict",
-    persona: { name: "Alex Rivera", role: "Deputy Manager", tenure: "6 months as deputy" },
+    persona: { name: "Alex Rivera", role: "Assistant Manager", tenure: "6 months in role" },
     situation:
       "Alex pulls you aside looking uncomfortable. \"Two of the team leaders had a flare-up this morning over the rota. I don't know whether to step in or let them sort it. What would you do?\"",
     prompt: "Alex is asking for your view. They're new to leading leaders. How do you respond?",
