@@ -69,8 +69,8 @@ export default function LandingPage() {
         </p>
 
         {mode === "choose" ? (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <Card className="flex min-h-[22rem] flex-col justify-between gap-6 p-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Card className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Monitor className="h-5 w-5 text-ink-500" />
@@ -117,12 +117,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Button size="lg" onClick={createFacilitator} disabled={submitting} className="self-start">
+              <Button size="lg" onClick={createFacilitator} disabled={submitting} className="justify-self-start self-end">
                 Create session
               </Button>
             </Card>
 
-            <Card className="flex min-h-[22rem] flex-col justify-between gap-6 p-6">
+            <Card className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Users className="h-5 w-5 text-ink-500" />
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Button size="lg" variant="secondary" onClick={() => setMode("team")} className="self-start">
+              <Button size="lg" variant="secondary" onClick={() => setMode("team")} className="justify-self-start self-end">
                 Join a session
               </Button>
             </Card>
