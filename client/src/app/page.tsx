@@ -69,46 +69,42 @@ export default function LandingPage() {
         </p>
 
         {mode === "choose" ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Card className="flex flex-col p-6">
+          <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
+            <Card className="flex h-full flex-col p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Monitor className="h-5 w-5 text-ink-500" />
                 <h2 className="text-lg font-semibold tracking-tight text-ink-900">Facilitator</h2>
               </div>
-              <p className="mb-5 text-sm text-ink-600">
+              <p className="mb-6 text-sm text-ink-600">
                 Create a session, share the code with teams, and control shift flow and disruptions.
               </p>
 
-              <div className="mb-5">
+              <div className="mb-6">
                 <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
                   Number of teams
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-stretch gap-1 rounded-xl bg-ink-100 p-1">
                   <button
                     type="button"
                     onClick={() => adjustTeams(-1)}
                     disabled={expectedTeams <= MIN_TEAMS}
-                    className={cn(
-                      "press flex h-11 w-11 items-center justify-center rounded-xl bg-ink-100 text-ink-800 transition-colors hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40",
-                    )}
+                    className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white text-ink-800 shadow-card transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     aria-label="Decrease team count"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
 
-                  <div className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink-900 px-3 py-2.5 text-white">
-                    <Users className="h-4 w-4 text-brand-400" />
-                    <span className="num text-xl font-semibold">{expectedTeams}</span>
-                    <span className="text-xs text-white/60">teams</span>
+                  <div className="flex flex-1 items-center justify-center gap-2">
+                    <Users className="h-4 w-4 text-brand-500" />
+                    <span className="num text-xl font-semibold text-ink-900">{expectedTeams}</span>
+                    <span className="text-sm text-ink-600">teams</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => adjustTeams(+1)}
                     disabled={expectedTeams >= MAX_TEAMS}
-                    className={cn(
-                      "press flex h-11 w-11 items-center justify-center rounded-xl bg-ink-100 text-ink-800 transition-colors hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40",
-                    )}
+                    className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white text-ink-800 shadow-card transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     aria-label="Increase team count"
                   >
                     <Plus className="h-4 w-4" />
@@ -119,22 +115,29 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <Button size="lg" onClick={createFacilitator} disabled={submitting} className="mt-auto">
-                Create session
-              </Button>
+              <div className="mt-auto">
+                <Button size="lg" onClick={createFacilitator} disabled={submitting} className="w-full">
+                  Create session
+                </Button>
+              </div>
             </Card>
 
-            <Card className="flex flex-col p-6">
+            <Card className="flex h-full flex-col p-6">
               <div className="mb-3 flex items-center gap-2">
                 <Users className="h-5 w-5 text-ink-500" />
                 <h2 className="text-lg font-semibold tracking-tight text-ink-900">Team</h2>
               </div>
-              <p className="mb-5 text-sm text-ink-600">
+              <p className="mb-6 text-sm text-ink-600">
                 Join an active session using the code your facilitator shared.
               </p>
-              <Button size="lg" variant="quiet" onClick={() => setMode("team")} className="mt-auto">
-                Join a session
-              </Button>
+              <div className="mt-auto rounded-xl bg-ink-100 px-4 py-3 text-xs text-ink-600">
+                You'll need the 5-character session code your facilitator shared, plus a team name (e.g. "North Store").
+              </div>
+              <div className="mt-3">
+                <Button size="lg" variant="secondary" onClick={() => setMode("team")} className="w-full">
+                  Join a session
+                </Button>
+              </div>
             </Card>
           </div>
         ) : (
