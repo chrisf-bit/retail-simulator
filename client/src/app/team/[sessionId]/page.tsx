@@ -32,6 +32,7 @@ import type {
   ActionApproach,
   ConfidenceLevel,
   Decision,
+  Issue,
   KpiKey,
   LeadershipStyle,
   Priority,
@@ -93,7 +94,17 @@ const SEVERITY_TONES: Record<"low" | "medium" | "high", "neutral" | "warn" | "ri
   high: "risk",
 };
 
-type DecisionTab = "strategy" | "resource" | "confidence";
+type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+const STEP_TABS: Array<{ id: StepId; label: string; short: string }> = [
+  { id: 1, label: "Priority focus", short: "Priority" },
+  { id: 2, label: "Action approach", short: "Action" },
+  { id: 3, label: "Leadership style", short: "Leadership" },
+  { id: 4, label: "Resource allocation", short: "Resource" },
+  { id: 5, label: "Primary issue", short: "Issue" },
+  { id: 6, label: "People moment", short: "People" },
+  { id: 7, label: "Confidence", short: "Confidence" },
+];
 
 export default function TeamPlayerPage() {
   const params = useParams<{ sessionId: string }>();
@@ -114,7 +125,7 @@ export default function TeamPlayerPage() {
   const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
   const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
-  const [activeTab, setActiveTab] = useState<DecisionTab>("strategy");
+  const [activeStep, setActiveStep] = useState<StepId>(1);
   const [kpiView, setKpiView] = useState<"values" | "trends">("values");
 
   useEffect(() => {
@@ -141,7 +152,7 @@ export default function TeamPlayerPage() {
     setPrimaryIssueId(null);
     setMomentResponseId(null);
     setConfidence(null);
-    setActiveTab("strategy");
+    setActiveStep(1);
   }, [roundNumber]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
@@ -153,14 +164,21 @@ export default function TeamPlayerPage() {
   const roundLocked = !state.round || state.round.phase === "locked" || state.round.phase === "reveal";
   const allocationTotal =
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
-  const tabComplete = {
-    strategy: !!priority && !!action && !!leadership,
-    resource: allocationTotal === 100,
-    confidence: !!confidence,
+
+  const stepComplete: Record<StepId, boolean> = {
+    1: !!priority,
+    2: !!action,
+    3: !!leadership,
+    4: allocationTotal === 100,
+    5: !!primaryIssueId,
+    6: !!momentResponseId,
+    7: !!confidence,
   };
-  const allChosen = tabComplete.strategy && tabComplete.resource && tabComplete.confidence;
+  const requiredStepsComplete =
+    stepComplete[1] && stepComplete[2] && stepComplete[3] && stepComplete[4] && stepComplete[7];
+  const completedCount = (Object.values(stepComplete) as boolean[]).filter(Boolean).length;
   const inputsActive = !team.submitted && !roundLocked && state.phase === "round";
-  const canSubmit = inputsActive && allChosen;
+  const canSubmit = inputsActive && requiredStepsComplete;
   const guidance = teamGuidance(state, team.submitted);
 
   function submit() {
@@ -201,32 +219,26 @@ export default function TeamPlayerPage() {
         <ResultsPanel team={team} state={state} />
       ) : (
         <main className="flex min-h-0 flex-1 gap-5 p-5">
-          <section className="flex min-w-0 flex-1 flex-col gap-4">
+          <aside className="flex w-[360px] shrink-0 min-h-0 flex-col gap-4">
             <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
             {state.round?.moment ? (
-              <PeopleMomentPanel
+              <PeopleContextPanel
                 moment={state.round.moment}
                 responseId={momentResponseId}
-                onSelect={setMomentResponseId}
-                disabled={!inputsActive}
               />
             ) : null}
-            <div className="grid min-h-0 flex-1 grid-cols-5 gap-4">
-              <IssuesPanel
-                state={state}
-                primaryIssueId={primaryIssueId}
-                onSelect={setPrimaryIssueId}
-                disabled={!inputsActive}
-              />
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4">
+              <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
               <AlertsPanel state={state} />
             </div>
-          </section>
+          </aside>
 
-          <section className="flex w-[480px] shrink-0 min-h-0 flex-col">
+          <section className="flex min-w-0 flex-1 min-h-0 flex-col">
             <DecisionPanel
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              tabComplete={tabComplete}
+              activeStep={activeStep}
+              setActiveStep={setActiveStep}
+              stepComplete={stepComplete}
+              completedCount={completedCount}
               priority={priority}
               setPriority={setPriority}
               action={action}
@@ -238,7 +250,11 @@ export default function TeamPlayerPage() {
               confidence={confidence}
               setConfidence={setConfidence}
               primaryIssueId={primaryIssueId}
+              setPrimaryIssueId={setPrimaryIssueId}
               momentResponseId={momentResponseId}
+              setMomentResponseId={setMomentResponseId}
+              issues={state.round?.issues ?? []}
+              moment={state.round?.moment}
               inputsActive={inputsActive}
               canSubmit={canSubmit}
               submitted={team.submitted}
@@ -349,49 +365,53 @@ function KpiStrip({
   }));
 
   return (
-    <Card className="p-5">
+    <Card className="p-4">
       <SectionTitle
         icon={<Gauge className="h-4 w-4" />}
         title="Store performance"
-        subtitle={view === "values" ? "Current standings" : "Past 4 months plus rounds played"}
+        subtitle={view === "values" ? "Current" : "Past 4 months"}
         right={
-          <div className="flex rounded-full bg-ink-100 p-1">
+          <div className="flex rounded-full bg-ink-100 p-0.5">
             <button
               type="button"
               onClick={() => onViewChange("values")}
               className={cn(
-                "press flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "press rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
                 view === "values" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
               )}
+              aria-label="Values"
             >
-              <BarChart3 className="h-3.5 w-3.5" /> Values
+              <BarChart3 className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
               onClick={() => onViewChange("trends")}
               className={cn(
-                "press flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                "press rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
                 view === "trends" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
               )}
+              aria-label="Trends"
             >
-              <LineChart className="h-3.5 w-3.5" /> Trends
+              <LineChart className="h-3.5 w-3.5" />
             </button>
           </div>
         }
       />
-      <div className="grid grid-cols-5 gap-3">
+      <div className="space-y-2.5">
         {items.map((i) => (
-          <div key={i.key} className="min-w-0">
-            <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{i.label}</div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="num text-3xl font-semibold text-ink-900">{i.value}</span>
-              <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} />
+          <div key={i.key} className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{i.label}</div>
+              <div className="mt-0.5 flex items-baseline gap-2">
+                <span className="num text-xl font-semibold text-ink-900">{i.value}</span>
+                <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} />
+              </div>
             </div>
-            <div className="mt-2">
+            <div className="w-24 shrink-0">
               {view === "values" ? (
                 <Bar value={i.value} inverted={i.inverted} />
               ) : (
-                <Sparkline values={i.series} inverted={i.inverted} width={140} height={22} />
+                <Sparkline values={i.series} inverted={i.inverted} width={96} height={22} />
               )}
             </div>
           </div>
@@ -401,115 +421,67 @@ function KpiStrip({
   );
 }
 
-function PeopleMomentPanel({
-  moment,
-  responseId,
-  onSelect,
-  disabled,
-}: {
-  moment: TeamMoment;
-  responseId: string | null;
-  onSelect: (id: string) => void;
-  disabled: boolean;
-}) {
+function PeopleContextPanel({ moment, responseId }: { moment: TeamMoment; responseId: string | null }) {
+  const chosen = responseId ? moment.options.find((o) => o.id === responseId) : null;
   return (
-    <Card className="p-5">
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-700">
-          <UserCircle2 className="h-7 w-7" />
+    <Card className="p-4">
+      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-brand-600">
+        <HeartHandshake className="h-3.5 w-3.5" /> People moment
+      </div>
+      <div className="mt-2 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-700">
+          <UserCircle2 className="h-6 w-6" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-brand-600">
-            <HeartHandshake className="h-3.5 w-3.5" /> People moment
+          <div className="text-[15px] font-semibold tracking-tight text-ink-900">{moment.persona.name}</div>
+          <div className="text-xs text-ink-500">
+            {moment.persona.role} &middot; {moment.persona.tenure}
           </div>
-          <div className="mt-0.5 flex items-baseline gap-2">
-            <span className="text-lg font-semibold tracking-tight text-ink-900">{moment.persona.name}</span>
-            <span className="text-sm text-ink-500">
-              {moment.persona.role} &middot; {moment.persona.tenure}
-            </span>
-          </div>
-          <p className="mt-1.5 text-[13px] leading-snug text-ink-700">{moment.situation}</p>
-          <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-brand-600">
-            <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="italic">{moment.prompt}</span>
-          </p>
         </div>
       </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {moment.options.map((opt) => {
-          const active = responseId === opt.id;
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelect(opt.id)}
-              className={cn(
-                "press rounded-xl px-3 py-2.5 text-left text-[13px] leading-snug transition-colors",
-                active
-                  ? "bg-ink-900 text-white"
-                  : "bg-ink-100 text-ink-800 hover:bg-ink-200",
-                disabled && "cursor-not-allowed opacity-40",
-              )}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
+      <p className="mt-2 text-[13px] leading-snug text-ink-700">{moment.situation}</p>
+      <p className="mt-2 text-[13px] italic text-brand-700">{moment.prompt}</p>
+      {chosen ? (
+        <div className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-[12px] text-emerald-900">
+          <span className="font-medium">Your response:</span> {chosen.label}
+        </div>
+      ) : (
+        <div className="mt-3 rounded-xl bg-surface-muted px-3 py-2 text-[12px] text-ink-600">
+          Respond in <span className="font-semibold text-ink-900">Step 6</span>.
+        </div>
+      )}
     </Card>
   );
 }
 
-function IssuesPanel({
-  state,
-  primaryIssueId,
-  onSelect,
-  disabled,
-}: {
-  state: SessionStatePublic;
-  primaryIssueId: string | null;
-  onSelect: (id: string) => void;
-  disabled: boolean;
-}) {
-  const issues = state.round?.issues ?? [];
+function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
   return (
-    <Card className="col-span-3 flex min-h-0 flex-col p-5">
+    <Card className="flex min-h-0 flex-col p-4">
       <SectionTitle
         icon={<AlertTriangle className="h-4 w-4" />}
         title="Active issues"
-        subtitle="Tap one to target it"
-        right={primaryIssueId ? <Pill tone="info" strong><Target className="h-3 w-3" /> Targeting</Pill> : null}
+        subtitle="Live store pressures"
       />
       <div className="quiet-scroll flex-1 space-y-2 overflow-auto">
         {issues.map((i) => {
-          const selected = primaryIssueId === i.id;
+          const targeted = primaryIssueId === i.id;
           return (
-            <button
+            <div
               key={i.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelect(i.id)}
-              className={cn(
-                "press w-full rounded-xl p-3 text-left transition-colors",
-                selected
-                  ? "bg-brand-50 ring-1 ring-brand-300"
-                  : "bg-surface-muted hover:bg-ink-100",
-                disabled && "cursor-not-allowed opacity-40",
-              )}
+              className="rounded-xl bg-surface-muted p-3"
             >
               <div className="mb-1 flex items-start justify-between gap-2">
                 <h4 className="text-[13px] font-semibold text-ink-900">{i.title}</h4>
-                <Pill tone={SEVERITY_TONES[i.severity]}>{i.severity}</Pill>
+                {targeted ? (
+                  <Pill tone="info" strong>
+                    <Target className="h-3 w-3" /> Targeted
+                  </Pill>
+                ) : (
+                  <Pill tone={SEVERITY_TONES[i.severity]}>{i.severity}</Pill>
+                )}
               </div>
               <p className="text-xs text-ink-600">{i.description}</p>
-              {selected ? (
-                <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700">
-                  <Target className="h-3 w-3" /> Primary focus
-                </div>
-              ) : null}
-            </button>
+            </div>
           );
         })}
         {issues.length === 0 ? <p className="text-xs text-ink-500">No active issues.</p> : null}
@@ -522,7 +494,7 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
   const alerts = state.round?.alerts ?? [];
   const disruption = state.round?.disruption;
   return (
-    <Card className="col-span-2 flex min-h-0 flex-col p-5">
+    <Card className="flex min-h-0 flex-col p-4">
       <SectionTitle icon={<BellRing className="h-4 w-4" />} title="Alerts" subtitle="Head office & ops" />
       <div className="quiet-scroll flex-1 space-y-2 overflow-auto">
         {disruption ? (
@@ -543,15 +515,17 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
             <p className="mt-0.5 text-xs text-ink-600">{a.message}</p>
           </div>
         ))}
+        {!disruption && alerts.length === 0 ? <p className="text-xs text-ink-500">No alerts.</p> : null}
       </div>
     </Card>
   );
 }
 
 function DecisionPanel({
-  activeTab,
-  setActiveTab,
-  tabComplete,
+  activeStep,
+  setActiveStep,
+  stepComplete,
+  completedCount,
   priority,
   setPriority,
   action,
@@ -563,15 +537,20 @@ function DecisionPanel({
   confidence,
   setConfidence,
   primaryIssueId,
+  setPrimaryIssueId,
   momentResponseId,
+  setMomentResponseId,
+  issues,
+  moment,
   inputsActive,
   canSubmit,
   submitted,
   onSubmit,
 }: {
-  activeTab: DecisionTab;
-  setActiveTab: (t: DecisionTab) => void;
-  tabComplete: Record<DecisionTab, boolean>;
+  activeStep: StepId;
+  setActiveStep: (s: StepId) => void;
+  stepComplete: Record<StepId, boolean>;
+  completedCount: number;
   priority: Priority | null;
   setPriority: (p: Priority) => void;
   action: ActionApproach | null;
@@ -583,23 +562,23 @@ function DecisionPanel({
   confidence: ConfidenceLevel | null;
   setConfidence: (c: ConfidenceLevel) => void;
   primaryIssueId: string | null;
+  setPrimaryIssueId: (id: string | null) => void;
   momentResponseId: string | null;
+  setMomentResponseId: (id: string) => void;
+  issues: Issue[];
+  moment?: TeamMoment;
   inputsActive: boolean;
   canSubmit: boolean;
   submitted: boolean;
   onSubmit: () => void;
 }) {
-  const total =
-    allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
-  const completeCount = Object.values(tabComplete).filter(Boolean).length;
-
   return (
     <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
       <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
         <div>
           <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decision</div>
           <div className="text-lg font-semibold tracking-tight text-ink-900">
-            {submitted ? "Locked in" : `${completeCount} of 3 complete`}
+            {submitted ? "Locked in" : `${completedCount} of 7 complete`}
           </div>
         </div>
         {submitted ? (
@@ -608,50 +587,37 @@ function DecisionPanel({
           </Pill>
         ) : (
           <div className="flex items-center gap-1">
-            {(["strategy", "resource", "stake"] as DecisionTab[]).map((t) => (
+            {STEP_TABS.map((t) => (
               <span
-                key={t}
-                className={cn(
-                  "h-1.5 w-8 rounded-full",
-                  tabComplete[t] ? "bg-ok" : "bg-ink-200",
-                )}
+                key={t.id}
+                className={cn("h-1.5 w-5 rounded-full", stepComplete[t.id] ? "bg-ok" : "bg-ink-200")}
               />
             ))}
           </div>
         )}
       </div>
 
-      <div className="flex shrink-0 items-stretch border-b border-ink-100 px-5">
-        <TabButton
-          label="Strategy"
-          range="Steps 1 – 3"
-          active={activeTab === "strategy"}
-          done={tabComplete.strategy}
-          onClick={() => setActiveTab("strategy")}
-        />
-        <TabButton
-          label="Resource"
-          range="Step 4"
-          active={activeTab === "resource"}
-          done={tabComplete.resource}
-          onClick={() => setActiveTab("resource")}
-        />
-        <TabButton
-          label="Confidence"
-          range="Step 7"
-          active={activeTab === "confidence"}
-          done={tabComplete.confidence}
-          onClick={() => setActiveTab("confidence")}
-        />
+      <div className="flex shrink-0 items-stretch border-b border-ink-100 px-2">
+        {STEP_TABS.map((t) => (
+          <StepTab
+            key={t.id}
+            step={t.id}
+            label={t.short}
+            active={activeStep === t.id}
+            done={stepComplete[t.id]}
+            onClick={() => setActiveStep(t.id)}
+          />
+        ))}
       </div>
 
-      <div className="quiet-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-auto p-5">
-        {activeTab === "strategy" ? (
-          <>
-            <StepRadioGroup<Priority>
-              step={1}
-              label="Priority focus"
-              description="Select where you want to prioritise your focus this round."
+      <div className="quiet-scroll flex min-h-0 flex-1 flex-col overflow-auto p-6">
+        {activeStep === 1 ? (
+          <StepEditor
+            step={1}
+            title="Priority focus"
+            description="Select where you want to prioritise your focus this shift."
+          >
+            <RadioGrid<Priority>
               options={Object.keys(PRIORITY_LABELS) as Priority[]}
               labels={PRIORITY_LABELS}
               icons={PRIORITY_ICONS}
@@ -659,10 +625,16 @@ function DecisionPanel({
               onChange={setPriority}
               disabled={!inputsActive}
             />
-            <StepRadioGroup<ActionApproach>
-              step={2}
-              label="Action approach"
-              description="Choose how you'll turn that priority into action."
+          </StepEditor>
+        ) : null}
+
+        {activeStep === 2 ? (
+          <StepEditor
+            step={2}
+            title="Action approach"
+            description="Choose how you'll turn that priority into action."
+          >
+            <RadioGrid<ActionApproach>
               options={Object.keys(ACTION_LABELS) as ActionApproach[]}
               labels={ACTION_LABELS}
               icons={ACTION_ICONS}
@@ -670,82 +642,65 @@ function DecisionPanel({
               onChange={setAction}
               disabled={!inputsActive}
             />
-            <StepRadioGroup<LeadershipStyle>
-              step={3}
-              label="Leadership style"
-              description="Pick the stance you'll lead your team with."
+          </StepEditor>
+        ) : null}
+
+        {activeStep === 3 ? (
+          <StepEditor
+            step={3}
+            title="Leadership style"
+            description="Pick the stance you'll lead your team with."
+          >
+            <RadioGrid<LeadershipStyle>
               options={Object.keys(LEADERSHIP_LABELS) as LeadershipStyle[]}
               labels={LEADERSHIP_LABELS}
               value={leadership}
               onChange={setLeadership}
               disabled={!inputsActive}
             />
-          </>
+          </StepEditor>
         ) : null}
 
-        {activeTab === "resource" ? (
-          <div>
-            <StepHeader step={4} complete={tabComplete.resource} title="Resource allocation">
-              <span className="text-xs text-ink-500">Deploy your team's time. Must total 100%.</span>
-              <div className="mt-2 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
-                  <div
-                    className={cn("h-full transition-all", total === 100 ? "bg-ok" : "bg-brand-500")}
-                    style={{ width: `${Math.min(100, total)}%` }}
-                  />
-                </div>
-                <span className={cn("num text-sm font-semibold", total === 100 ? "text-ok" : "text-brand-600")}>
-                  {total}%
-                </span>
-              </div>
-            </StepHeader>
-            <div className="mt-4 space-y-3">
-              {ALLOCATION_LABELS.map((a) => {
-                const Icon = a.icon;
-                return (
-                  <div key={a.key} className="flex items-center gap-3">
-                    <span className="flex w-40 shrink-0 items-center gap-2 text-[13px] font-medium text-ink-800">
-                      <Icon className="h-4 w-4 text-ink-400" /> {a.label}
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={allocation[a.key]}
-                      disabled={!inputsActive}
-                      onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
-                      className="flex-1 accent-brand-500"
-                    />
-                    <span className="w-10 text-right num text-sm font-medium text-ink-800">
-                      {allocation[a.key]}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+        {activeStep === 4 ? (
+          <AllocationEditor
+            allocation={allocation}
+            setAllocation={setAllocation}
+            disabled={!inputsActive}
+          />
         ) : null}
 
-        {activeTab === "confidence" ? (
+        {activeStep === 5 ? (
+          <StepEditor
+            step={5}
+            title="Primary issue"
+            description="Target one live issue from the list on the left to sharpen its impact. You can leave it unset."
+            optional
+          >
+            <IssuePicker
+              issues={issues}
+              value={primaryIssueId}
+              onChange={setPrimaryIssueId}
+              disabled={!inputsActive}
+            />
+          </StepEditor>
+        ) : null}
+
+        {activeStep === 6 ? (
+          <MomentEditor
+            moment={moment}
+            value={momentResponseId}
+            onChange={setMomentResponseId}
+            disabled={!inputsActive}
+          />
+        ) : null}
+
+        {activeStep === 7 ? (
           <ConfidenceGroup value={confidence} onChange={setConfidence} disabled={!inputsActive} />
         ) : null}
       </div>
 
-      <div className="shrink-0 space-y-2 border-t border-ink-100 px-5 py-4">
-        <StatusRow
-          step={5}
-          filled={!!primaryIssueId}
-          filledText="Primary issue targeted"
-          emptyText="Primary issue (optional) — tap an issue on the left"
-        />
-        <StatusRow
-          step={6}
-          filled={!!momentResponseId}
-          filledText="People moment response recorded"
-          emptyText="People moment — respond above"
-        />
-        <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="mt-1 w-full">
+      <div className="shrink-0 border-t border-ink-100 px-5 py-4">
+        <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
           {submitted ? (
             <>
               <CheckCircle2 className="h-4 w-4" /> Decision locked in
@@ -756,20 +711,26 @@ function DecisionPanel({
             </>
           )}
         </Button>
+        {!submitted && !canSubmit && inputsActive ? (
+          <p className="mt-2 text-center text-xs text-ink-500">
+            Steps 1 – 4 and 7 are required. Step 5 (primary issue) is optional.
+            {moment ? " Step 6 (people moment) is required." : ""}
+          </p>
+        ) : null}
       </div>
     </Card>
   );
 }
 
-function TabButton({
+function StepTab({
+  step,
   label,
-  range,
   active,
   done,
   onClick,
 }: {
+  step: StepId;
   label: string;
-  range: string;
   active: boolean;
   done: boolean;
   onClick: () => void;
@@ -779,66 +740,255 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex flex-1 flex-col items-start gap-0.5 py-3 text-left transition-colors",
+        "relative flex flex-1 items-center justify-center gap-2 px-2 py-3 text-sm transition-colors",
         active ? "text-ink-900" : "text-ink-500 hover:text-ink-700",
       )}
     >
-      <span className="flex items-center gap-2">
-        {done ? (
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ok text-white">
-            <CheckCircle2 className="h-3 w-3" />
-          </span>
-        ) : (
-          <span className="h-4 w-4 rounded-full bg-ink-100" />
+      <span
+        className={cn(
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors",
+          done
+            ? "bg-ok text-white"
+            : active
+              ? "bg-ink-900 text-white"
+              : "bg-ink-100 text-ink-600",
         )}
-        <span className="text-sm font-semibold tracking-tight">{label}</span>
+      >
+        {done ? <CheckCircle2 className="h-3 w-3" /> : step}
       </span>
-      <span className="ml-6 text-[10px] uppercase tracking-wider text-ink-400">{range}</span>
+      <span className={cn("truncate font-medium", active && "font-semibold tracking-tight")}>{label}</span>
       {active ? <span className="absolute -bottom-px left-0 h-[2px] w-full bg-ink-900" /> : null}
     </button>
   );
 }
 
-function StepHeader({
+function StepEditor({
   step,
   title,
-  complete,
+  description,
+  optional,
   children,
 }: {
-  step: number;
+  step: StepId;
   title: string;
-  complete: boolean;
-  children?: ReactNode;
+  description: string;
+  optional?: boolean;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <StepBadge number={step} tone={complete ? "ok" : "neutral"} />
-      <div className="flex-1">
-        <div className="text-[15px] font-semibold tracking-tight text-ink-900">{title}</div>
-        {children ? <div className="mt-1">{children}</div> : null}
+    <div>
+      <div className="flex items-center gap-3">
+        <StepBadge number={step} size="md" />
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold tracking-tight text-ink-900">{title}</h2>
+            {optional ? <Pill tone="neutral">Optional</Pill> : null}
+          </div>
+          <p className="text-[13px] text-ink-500">{description}</p>
+        </div>
       </div>
+      <div className="mt-5">{children}</div>
     </div>
   );
 }
 
-function StatusRow({
-  step,
-  filled,
-  filledText,
-  emptyText,
+function RadioGrid<T extends string>({
+  options,
+  labels,
+  icons,
+  value,
+  onChange,
+  disabled,
 }: {
-  step: number;
-  filled: boolean;
-  filledText: string;
-  emptyText: string;
+  options: T[];
+  labels: Record<T, string>;
+  icons?: Record<T, React.ComponentType<{ className?: string }>>;
+  value: T | null;
+  onChange: (v: T) => void;
+  disabled: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2.5 text-xs">
-      <StepBadge number={step} tone={filled ? "ok" : "neutral"} size="sm" />
-      <span className={cn("flex-1 truncate", filled ? "text-ink-900 font-medium" : "text-ink-500")}>
-        {filled ? filledText : emptyText}
-      </span>
+    <div className="grid grid-cols-2 gap-3">
+      {options.map((opt) => {
+        const active = value === opt;
+        const Icon: React.ComponentType<{ className?: string }> | undefined = icons?.[opt];
+        return (
+          <button
+            key={opt}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt)}
+            className={cn(
+              "press flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors",
+              active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+              disabled && "cursor-not-allowed opacity-40",
+            )}
+          >
+            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-brand-400" : "text-ink-500")} /> : null}
+            <span className="truncate">{labels[opt]}</span>
+          </button>
+        );
+      })}
     </div>
+  );
+}
+
+function AllocationEditor({
+  allocation,
+  setAllocation,
+  disabled,
+}: {
+  allocation: ResourceAllocation;
+  setAllocation: (a: ResourceAllocation) => void;
+  disabled: boolean;
+}) {
+  const total =
+    allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
+
+  return (
+    <StepEditor
+      step={4}
+      title="Resource allocation"
+      description="Deploy your team's time across the store. Must total 100%."
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+          <div
+            className={cn("h-full transition-all", total === 100 ? "bg-ok" : "bg-brand-500")}
+            style={{ width: `${Math.min(100, total)}%` }}
+          />
+        </div>
+        <span className={cn("num text-sm font-semibold", total === 100 ? "text-ok" : "text-brand-600")}>
+          {total}%
+        </span>
+      </div>
+      <div className="space-y-3">
+        {ALLOCATION_LABELS.map((a) => {
+          const Icon = a.icon;
+          return (
+            <div key={a.key} className="flex items-center gap-3">
+              <span className="flex w-44 shrink-0 items-center gap-2 text-[13px] font-medium text-ink-800">
+                <Icon className="h-4 w-4 text-ink-400" /> {a.label}
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={allocation[a.key]}
+                disabled={disabled}
+                onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
+                className="flex-1 accent-brand-500"
+              />
+              <span className="w-12 text-right num text-sm font-medium text-ink-800">{allocation[a.key]}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </StepEditor>
+  );
+}
+
+function IssuePicker({
+  issues,
+  value,
+  onChange,
+  disabled,
+}: {
+  issues: Issue[];
+  value: string | null;
+  onChange: (id: string | null) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      {issues.map((i) => {
+        const active = value === i.id;
+        return (
+          <button
+            key={i.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(active ? null : i.id)}
+            className={cn(
+              "press w-full rounded-xl px-4 py-3 text-left transition-colors",
+              active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+              disabled && "cursor-not-allowed opacity-40",
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold">{i.title}</h4>
+                <p className={cn("mt-0.5 text-xs", active ? "text-white/80" : "text-ink-600")}>{i.description}</p>
+              </div>
+              <Pill tone={active ? "info" : SEVERITY_TONES[i.severity]} strong={active}>
+                {i.severity}
+              </Pill>
+            </div>
+            {active ? (
+              <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-400">
+                <Target className="h-3 w-3" /> Targeted
+              </div>
+            ) : null}
+          </button>
+        );
+      })}
+      {issues.length === 0 ? <p className="text-xs text-ink-500">No active issues this shift.</p> : null}
+    </div>
+  );
+}
+
+function MomentEditor({
+  moment,
+  value,
+  onChange,
+  disabled,
+}: {
+  moment?: TeamMoment;
+  value: string | null;
+  onChange: (id: string) => void;
+  disabled: boolean;
+}) {
+  if (!moment) {
+    return (
+      <StepEditor step={6} title="People moment" description="No people moment this shift.">
+        <p className="text-sm text-ink-500">You can move on.</p>
+      </StepEditor>
+    );
+  }
+  return (
+    <StepEditor
+      step={6}
+      title="People moment"
+      description={`Your response to ${moment.persona.name} (${moment.persona.role}).`}
+    >
+      <div className="mb-4 rounded-xl bg-surface-muted p-4">
+        <p className="text-[13px] leading-snug text-ink-700">{moment.situation}</p>
+        <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-brand-700">
+          <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
+        </p>
+      </div>
+      <div className="grid grid-cols-1 gap-2">
+        {moment.options.map((opt) => {
+          const active = value === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(opt.id)}
+              className={cn(
+                "press rounded-xl px-4 py-3 text-left text-[13px] leading-snug transition-colors",
+                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+                disabled && "cursor-not-allowed opacity-40",
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </StepEditor>
   );
 }
 
@@ -853,13 +1003,12 @@ function ConfidenceGroup({
 }) {
   const options: ConfidenceLevel[] = ["cautious", "measured", "confident"];
   return (
-    <div>
-      <StepHeader step={7} complete={!!value} title="Confidence">
-        <span className="text-xs text-ink-500">
-          How hard are you pressing this call? Confidence multiplies upside and downside.
-        </span>
-      </StepHeader>
-      <div className="mt-4 grid grid-cols-3 gap-2">
+    <StepEditor
+      step={7}
+      title="Confidence"
+      description="How hard are you pressing this call? Confidence multiplies upside and downside."
+    >
+      <div className="grid grid-cols-3 gap-3">
         {options.map((opt) => {
           const Icon = CONFIDENCE_ICONS[opt];
           const active = value === opt;
@@ -870,14 +1019,12 @@ function ConfidenceGroup({
               disabled={disabled}
               onClick={() => onChange(opt)}
               className={cn(
-                "press flex flex-col items-start gap-1.5 rounded-xl p-3 text-left transition-colors",
-                active
-                  ? "bg-ink-900 text-white"
-                  : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+                "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
+                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
                 disabled && "cursor-not-allowed opacity-40",
               )}
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Icon className={cn("h-4 w-4", active ? "text-brand-400" : "text-ink-500")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
@@ -887,11 +1034,7 @@ function ConfidenceGroup({
               <span
                 className={cn(
                   "num rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                  active
-                    ? "bg-brand-500 text-white"
-                    : opt === "confident"
-                      ? "bg-brand-50 text-brand-700"
-                      : "bg-ink-200 text-ink-700",
+                  active ? "bg-brand-500 text-white" : "bg-surface-raised text-ink-700",
                 )}
               >
                 ×{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
@@ -900,62 +1043,7 @@ function ConfidenceGroup({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-function StepRadioGroup<T extends string>({
-  step,
-  label,
-  description,
-  options,
-  labels,
-  icons,
-  value,
-  onChange,
-  disabled,
-}: {
-  step: number;
-  label: string;
-  description?: string;
-  options: T[];
-  labels: Record<T, string>;
-  icons?: Record<T, React.ComponentType<{ className?: string }>>;
-  value: T | null;
-  onChange: (v: T) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div>
-      <StepHeader step={step} complete={!!value} title={label}>
-        <div className="flex items-center gap-2">
-          {description ? <span className="text-xs text-ink-500">{description}</span> : null}
-          {value ? <Pill tone="info" strong>{labels[value]}</Pill> : null}
-        </div>
-      </StepHeader>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {options.map((opt) => {
-          const active = value === opt;
-          const Icon: React.ComponentType<{ className?: string }> | undefined = icons?.[opt];
-          return (
-            <button
-              key={opt}
-              type="button"
-              disabled={disabled}
-              onClick={() => onChange(opt)}
-              className={cn(
-                "press flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
-                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
-                disabled && "cursor-not-allowed opacity-40",
-              )}
-            >
-              {Icon ? <Icon className={cn("h-4 w-4 shrink-0", active ? "text-brand-400" : "text-ink-500")} /> : null}
-              <span className="truncate">{labels[opt]}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    </StepEditor>
   );
 }
 
@@ -992,7 +1080,7 @@ function BriefingPanel() {
     { number: 4, label: "Resource allocation", description: "Deploy your team's time across shop floor, backroom, customer service, and problem resolution. Must total 100%.", icon: Gauge },
     { number: 5, label: "Primary issue", description: "Pick one live issue to target. Optional, but high impact when it aligns with your priority.", icon: AlertTriangle },
     { number: 6, label: "People moment", description: "A named direct report brings you a real situation. Your response moves trust, capability, and consistency more than almost anything else.", icon: HeartHandshake },
-    { number: 7, label: "Confidence", description: "Cautious (×0.75), Measured (×1.00), or Confident (×1.35). Multiplies everything you did this round, good or bad.", icon: Flame },
+    { number: 7, label: "Confidence", description: "Cautious (×0.75), Measured (×1.00), or Confident (×1.35). Multiplies everything you did this shift, good or bad.", icon: Flame },
   ];
 
   return (
@@ -1006,7 +1094,7 @@ function BriefingPanel() {
             <div className="text-[11px] font-medium uppercase tracking-wider text-brand-400">Today you are</div>
             <div className="text-2xl font-semibold tracking-tighter">The store manager</div>
             <p className="mt-1 text-sm text-ink-300">
-              3 shifts. 4 minutes each. Every shift you make 7 decisions that shift live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
+              3 shifts. 4 minutes each. Every shift you make 7 decisions that move live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
             </p>
           </div>
         </div>
@@ -1027,7 +1115,7 @@ function BriefingPanel() {
             const Icon = s.icon;
             return (
               <div key={s.number} className="flex items-start gap-4 px-5 py-3">
-                <StepBadge number={s.number} size="md" tone="neutral" />
+                <StepBadge number={s.number} size="md" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-ink-400" />
@@ -1053,7 +1141,7 @@ function ResultsPanel({ team, state }: { team: TeamPublic; state: SessionStatePu
         <div className="mb-5 flex items-center justify-between">
           <div>
             <Pill tone="info">Shift {state.round?.number} complete</Pill>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tighter text-ink-900">How the round played out</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tighter text-ink-900">How the shift played out</h2>
             <p className="text-sm text-ink-500">Your facilitator will move on when the room is ready.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -1161,4 +1249,3 @@ function LoadingScreen({ label }: { label: string }) {
     </div>
   );
 }
-
