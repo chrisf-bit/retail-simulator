@@ -69,9 +69,9 @@ export default function LandingPage() {
         </p>
 
         {mode === "choose" ? (
-          <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2">
-            <Card className="flex h-full flex-col p-6">
-              <div className="flex-1">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <Card className="flex min-h-[22rem] flex-col justify-between gap-6 p-6">
+              <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Monitor className="h-5 w-5 text-ink-500" />
                   <h2 className="text-lg font-semibold tracking-tight text-ink-900">Facilitator</h2>
@@ -117,15 +117,13 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex">
-                <Button size="lg" onClick={createFacilitator} disabled={submitting}>
-                  Create session
-                </Button>
-              </div>
+              <Button size="lg" onClick={createFacilitator} disabled={submitting} className="self-start">
+                Create session
+              </Button>
             </Card>
 
-            <Card className="flex h-full flex-col p-6">
-              <div className="flex-1">
+            <Card className="flex min-h-[22rem] flex-col justify-between gap-6 p-6">
+              <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Users className="h-5 w-5 text-ink-500" />
                   <h2 className="text-lg font-semibold tracking-tight text-ink-900">Team</h2>
@@ -138,11 +136,9 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex">
-                <Button size="lg" variant="secondary" onClick={() => setMode("team")}>
-                  Join a session
-                </Button>
-              </div>
+              <Button size="lg" variant="secondary" onClick={() => setMode("team")} className="self-start">
+                Join a session
+              </Button>
             </Card>
           </div>
         ) : (
