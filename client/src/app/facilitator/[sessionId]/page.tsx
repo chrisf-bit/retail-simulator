@@ -237,14 +237,14 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
     <Card tone="accent" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-600">Lobby</div>
-          <div className="mt-0.5 text-xl font-black tracking-tight text-ink-900">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-brand-600">Lobby</div>
+          <div className="mt-0.5 text-lg font-semibold tracking-tight text-ink-900">
             {allIn ? "All teams joined" : `Waiting for teams (${joined} / ${expected})`}
           </div>
         </div>
-        <div className="rounded-lg border-2 border-ink-900 bg-brand-500 px-3 py-1.5 text-center text-white">
-          <div className="text-[10px] font-black uppercase tracking-wider">Share code</div>
-          <div className="display-num text-2xl tracking-[0.3em]">{state.code}</div>
+        <div className="rounded-2xl bg-ink-900 px-4 py-2 text-center text-white">
+          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Share code</div>
+          <div className="num text-2xl font-semibold tracking-[0.3em]">{state.code}</div>
         </div>
       </div>
 
@@ -253,26 +253,26 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
           <div
             key={i}
             className={cn(
-              "flex items-center gap-2 rounded-lg border-2 px-3 py-2 transition-all",
+              "flex items-center gap-2 rounded-xl px-3 py-2 transition-all",
               t
-                ? "border-ink-900 bg-emerald-50 shadow-btn-ink"
-                : "border-dashed border-ink-300 bg-surface-raised",
+                ? "bg-emerald-50 ring-1 ring-emerald-200"
+                : "border border-dashed border-ink-300 bg-surface-raised",
             )}
           >
             {t ? (
               <>
-                <CheckCircle2 className="h-6 w-6 shrink-0 text-ok" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-ok" />
                 <div className="min-w-0">
-                  <div className="truncate text-base font-black text-ink-900">{t.name}</div>
-                  <div className="text-[11px] font-black uppercase tracking-wider text-ok">Joined</div>
+                  <div className="truncate text-sm font-semibold text-ink-900">{t.name}</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wide text-ok">Joined</div>
                 </div>
               </>
             ) : (
               <>
-                <Loader2 className="h-6 w-6 shrink-0 animate-spin text-ink-400" />
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-ink-400" />
                 <div className="min-w-0">
-                  <div className="truncate text-base font-black text-ink-500">Team {i + 1}</div>
-                  <div className="text-[11px] font-black uppercase tracking-wider text-ink-400">Awaiting</div>
+                  <div className="truncate text-sm font-medium text-ink-500">Team {i + 1}</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wide text-ink-400">Awaiting</div>
                 </div>
               </>
             )}
@@ -347,19 +347,19 @@ function CoachingCard({
   const momentResponseId = team.lastDecision?.momentResponseId;
   const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
   return (
-    <div className="flex flex-col gap-2.5 rounded-xl border-2 border-ink-300 bg-white p-3.5 shadow-card">
+    <div className="flex flex-col gap-3 rounded-2xl bg-surface-raised p-4 ring-1 ring-ink-200/80">
       <div className="flex items-center justify-between">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Store className="h-5 w-5 shrink-0 text-brand-600" />
-          <span className="truncate text-base font-bold text-ink-900">{team.name}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <Store className="h-4 w-4 shrink-0 text-ink-500" />
+          <span className="truncate text-[15px] font-semibold tracking-tight text-ink-900">{team.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-ink-100 px-2 py-0.5 font-mono text-sm font-bold text-ink-800">
+          <span className="rounded-full bg-ink-100 px-2 py-0.5 num text-[13px] font-semibold text-ink-800">
             {team.score}
           </span>
           {team.submitted ? (
             <Pill tone="ok" strong>
-              <CheckCircle2 className="h-3.5 w-3.5" /> Submitted
+              <CheckCircle2 className="h-3 w-3" /> Submitted
             </Pill>
           ) : (
             <Pill tone="warn">Pending</Pill>
@@ -367,50 +367,52 @@ function CoachingCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-5 gap-2">
         {kpis.map((k) => (
-          <div key={k} className="flex flex-col gap-1 rounded-md border border-ink-200 bg-surface-muted px-2 py-1.5">
-            <span className="truncate text-[10px] font-bold uppercase tracking-wider text-ink-600">
+          <div key={k} className="min-w-0">
+            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-ink-500">
               {KPI_SHORT[k]}
-            </span>
-            <div className="flex items-baseline justify-between gap-1">
-              <span className="text-sm font-bold tabular-nums text-ink-900">{team.kpis[k]}</span>
+            </div>
+            <div className="mt-0.5 flex items-baseline justify-between gap-1">
+              <span className="num text-sm font-semibold text-ink-900">{team.kpis[k]}</span>
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
             </div>
-            <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={18} />
+            <div className="mt-1">
+              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} />
+            </div>
           </div>
         ))}
       </div>
 
       {moment ? (
-        <div className="rounded-lg border-2 border-brand-200 bg-brand-50/70 p-2.5">
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700">
-            <HeartHandshake className="h-4 w-4" /> People moment &middot; {moment.persona.name}
+        <div className="rounded-xl bg-surface-muted p-2.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-600">
+            <HeartHandshake className="h-3.5 w-3.5" /> People moment &middot; {moment.persona.name}
           </div>
           {momentResponse ? (
             <div className="flex items-start gap-2">
               <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
-              <p className="text-xs leading-snug text-ink-800">&ldquo;{momentResponse.label}&rdquo;</p>
+              <p className="text-[12px] leading-snug text-ink-700">&ldquo;{momentResponse.label}&rdquo;</p>
             </div>
           ) : team.submitted ? (
-            <p className="text-xs italic text-amber-800">No response chosen. Worth asking why.</p>
+            <p className="text-[12px] italic text-ink-600">No response chosen. Worth asking why.</p>
           ) : (
-            <p className="text-xs italic text-ink-500">Not yet responded.</p>
+            <p className="text-[12px] italic text-ink-500">Not yet responded.</p>
           )}
         </div>
       ) : null}
 
       {reveal && team.revealedHidden ? (
-        <div className="rounded-md border border-brand-200 bg-brand-50/60 p-1.5">
-          <div className="mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-brand-700">
-            <Eye className="h-3 w-3" /> Hidden drivers
+        <div className="rounded-xl bg-surface-muted p-2.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-ink-500">
+            <Eye className="h-3.5 w-3.5" /> Hidden drivers
           </div>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4 gap-2">
             {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
               <div key={h} className="min-w-0">
-                <div className="truncate text-[9px] text-ink-600">{HIDDEN_LABELS[h]}</div>
+                <div className="truncate text-[10px] text-ink-500">{HIDDEN_LABELS[h]}</div>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="text-xs font-bold tabular-nums text-ink-900">{team.revealedHidden![h]}</span>
+                  <span className="num text-xs font-semibold text-ink-900">{team.revealedHidden![h]}</span>
                   <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} />
                 </div>
               </div>
@@ -466,18 +468,18 @@ function InsightList({
   italic?: boolean;
 }) {
   const tones = {
-    neutral: "border-ink-200 bg-ink-50/60",
-    info: "border-brand-200 bg-brand-50/60",
-    warn: "border-amber-200 bg-amber-50/50",
+    neutral: "bg-surface-muted",
+    info: "bg-brand-50",
+    warn: "bg-brand-50",
   };
   const labelTones = {
-    neutral: "text-ink-600",
-    info: "text-brand-700",
-    warn: "text-amber-800",
+    neutral: "text-ink-500",
+    info: "text-brand-600",
+    warn: "text-brand-600",
   };
   return (
-    <div className={cn("rounded-md border px-2.5 py-2", tones[tone])}>
-      <div className={cn("mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider", labelTones[tone])}>
+    <div className={cn("rounded-xl px-3 py-2.5", tones[tone])}>
+      <div className={cn("mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide", labelTones[tone])}>
         {icon}
         {label}
       </div>
@@ -505,7 +507,7 @@ function ScriptPanel({ state }: { state: SessionStatePublic }) {
       />
       <div className="space-y-3">
         <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-brand-700">
             <ListChecks className="h-4 w-4" /> Say / do
           </div>
           <ul className="space-y-1.5">
@@ -520,7 +522,7 @@ function ScriptPanel({ state }: { state: SessionStatePublic }) {
 
         {script.watchFor.length > 0 ? (
           <div className="rounded-lg border border-ink-200 bg-ink-50 p-2.5">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-700">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-700">
               <Eye className="h-4 w-4" /> Watch for
             </div>
             <ul className="space-y-1">
@@ -588,7 +590,7 @@ function PatternCard({
   return (
     <div className={cn("rounded-lg border-l-4 border border-ink-200 p-3 shadow-sm", tones[tone])}>
       {teamName ? (
-        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-700">
+        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-700">
           <AlertTriangle className="h-4 w-4" /> {teamName}
         </div>
       ) : null}
