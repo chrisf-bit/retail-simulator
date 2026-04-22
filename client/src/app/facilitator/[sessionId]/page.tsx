@@ -95,7 +95,7 @@ export default function FacilitatorPage() {
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
 
   return (
-    <div className="flex h-full w-full flex-col bg-ink-100">
+    <div className="flex h-full w-full flex-col">
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
       <div className="border-b border-ink-200 bg-white px-3 py-3">
@@ -145,14 +145,14 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   };
   const urgent = timeLeftMs < 60_000 && state.phase === "round";
   return (
-    <header className="flex items-center justify-between gap-4 border-b-2 border-ink-200 bg-white px-4 py-3 shadow-sm">
+    <header className="flex items-center justify-between gap-4 border-b-2 border-brand-200 bg-gradient-to-r from-white via-brand-50/30 to-white px-5 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
-          <Activity className="h-5 w-5" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-btn">
+          <Activity className="h-7 w-7" />
         </div>
         <div>
-          <div className="text-sm font-bold text-ink-900">Facilitator dashboard</div>
-          <div className="text-xs text-ink-500">
+          <div className="text-lg font-bold tracking-tight text-ink-900">Facilitator dashboard</div>
+          <div className="text-sm text-ink-600">
             {phaseText[state.phase]}
             {" · "}
             {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
@@ -160,18 +160,18 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="rounded-lg border-2 border-brand-200 bg-brand-50 px-3 py-1.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-brand-700">Session code</div>
-          <div className="font-mono text-xl font-bold tracking-[0.3em] text-brand-900">{state.code}</div>
+        <div className="rounded-xl border-2 border-brand-300 bg-gradient-to-b from-brand-50 to-white px-4 py-2 shadow-sm">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-brand-700">Session code</div>
+          <div className="font-mono text-2xl font-bold tracking-[0.3em] text-brand-900">{state.code}</div>
         </div>
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg border-2 px-3 py-1.5 shadow-sm",
-            urgent ? "border-red-300 bg-red-50" : "border-ink-200 bg-ink-50",
+            "flex items-center gap-2.5 rounded-xl border-2 px-4 py-2 shadow-sm",
+            urgent ? "border-rose-400 bg-rose-50" : "border-ink-300 bg-white",
           )}
         >
-          <Clock className={cn("h-4 w-4", urgent ? "text-risk" : "text-ink-500")} />
-          <span className={cn("font-mono text-xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
+          <Clock className={cn("h-6 w-6", urgent ? "text-risk" : "text-ink-500")} />
+          <span className={cn("font-mono text-3xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
             {formatClock(timeLeftMs)}
           </span>
         </div>
@@ -261,18 +261,18 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
           >
             {t ? (
               <>
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-bold">{t.name}</div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Joined</div>
+                  <div className="truncate text-base font-bold">{t.name}</div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Joined</div>
                 </div>
               </>
             ) : (
               <>
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ink-400" />
+                <Loader2 className="h-6 w-6 shrink-0 animate-spin text-ink-400" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-ink-500">Team {i + 1}</div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Awaiting</div>
+                  <div className="truncate text-base font-semibold text-ink-500">Team {i + 1}</div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-ink-400">Awaiting</div>
                 </div>
               </>
             )}
@@ -347,17 +347,19 @@ function CoachingCard({
   const momentResponseId = team.lastDecision?.momentResponseId;
   const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
   return (
-    <div className="flex flex-col gap-2 rounded-xl border-2 border-ink-200 bg-white p-3 shadow-sm">
+    <div className="flex flex-col gap-2.5 rounded-xl border-2 border-ink-300 bg-white p-3.5 shadow-card">
       <div className="flex items-center justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <Store className="h-4 w-4 shrink-0 text-brand-600" />
-          <span className="truncate text-sm font-bold text-ink-900">{team.name}</span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Store className="h-5 w-5 shrink-0 text-brand-600" />
+          <span className="truncate text-base font-bold text-ink-900">{team.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs text-ink-600">{team.score}</span>
+          <span className="rounded-md bg-ink-100 px-2 py-0.5 font-mono text-sm font-bold text-ink-800">
+            {team.score}
+          </span>
           {team.submitted ? (
             <Pill tone="ok" strong>
-              <CheckCircle2 className="h-3 w-3" /> Submitted
+              <CheckCircle2 className="h-3.5 w-3.5" /> Submitted
             </Pill>
           ) : (
             <Pill tone="warn">Pending</Pill>
@@ -365,14 +367,14 @@ function CoachingCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-5 gap-1.5">
         {kpis.map((k) => (
-          <div key={k} className="flex flex-col gap-0.5 rounded-md border border-ink-100 bg-ink-50/60 px-1.5 py-1">
-            <span className="truncate text-[9px] font-semibold uppercase tracking-wider text-ink-500">
+          <div key={k} className="flex flex-col gap-1 rounded-md border border-ink-200 bg-ink-50 px-2 py-1.5">
+            <span className="truncate text-[10px] font-bold uppercase tracking-wider text-ink-600">
               {KPI_SHORT[k]}
             </span>
             <div className="flex items-baseline justify-between gap-1">
-              <span className="text-xs font-bold tabular-nums text-ink-900">{team.kpis[k]}</span>
+              <span className="text-sm font-bold tabular-nums text-ink-900">{team.kpis[k]}</span>
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
             </div>
             <Bar value={team.kpis[k]} inverted={KPI_INVERTED[k]} />
@@ -381,19 +383,19 @@ function CoachingCard({
       </div>
 
       {moment ? (
-        <div className="rounded-md border border-brand-200 bg-brand-50/60 p-2">
-          <div className="mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-brand-700">
-            <HeartHandshake className="h-3 w-3" /> People moment: {moment.persona.name}
+        <div className="rounded-lg border-2 border-brand-200 bg-brand-50/70 p-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700">
+            <HeartHandshake className="h-4 w-4" /> People moment &middot; {moment.persona.name}
           </div>
           {momentResponse ? (
             <div className="flex items-start gap-2">
               <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
-              <p className="text-[11px] leading-snug text-ink-800">&ldquo;{momentResponse.label}&rdquo;</p>
+              <p className="text-xs leading-snug text-ink-800">&ldquo;{momentResponse.label}&rdquo;</p>
             </div>
           ) : team.submitted ? (
-            <p className="text-[11px] italic text-amber-800">No response chosen. Worth asking why.</p>
+            <p className="text-xs italic text-amber-800">No response chosen. Worth asking why.</p>
           ) : (
-            <p className="text-[11px] italic text-ink-500">Not yet responded.</p>
+            <p className="text-xs italic text-ink-500">Not yet responded.</p>
           )}
         </div>
       ) : null}
@@ -474,14 +476,14 @@ function InsightList({
     warn: "text-amber-800",
   };
   return (
-    <div className={cn("rounded-md border px-2 py-1.5", tones[tone])}>
-      <div className={cn("mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider", labelTones[tone])}>
+    <div className={cn("rounded-md border px-2.5 py-2", tones[tone])}>
+      <div className={cn("mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider", labelTones[tone])}>
         {icon}
         {label}
       </div>
-      <ul className="space-y-0.5">
+      <ul className="space-y-1">
         {items.map((t, i) => (
-          <li key={i} className={cn("text-[11px] leading-snug text-ink-800", italic && "italic")}>
+          <li key={i} className={cn("text-[13px] leading-snug text-ink-800", italic && "italic")}>
             {italic ? "“" : null}
             {t}
             {italic ? "”" : null}
@@ -495,21 +497,21 @@ function InsightList({
 function ScriptPanel({ state }: { state: SessionStatePublic }) {
   const script = state.insights.script;
   return (
-    <Card tone="accent" className="p-3">
+    <Card tone="glow" className="p-4">
       <SectionTitle
-        icon={<ScrollText className="h-4 w-4" />}
+        icon={<ScrollText className="h-5 w-5" />}
         title={script.headline}
         subtitle="Your talk track for this phase"
       />
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div>
-          <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-brand-700">
-            <ListChecks className="h-3 w-3" /> Say / do
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700">
+            <ListChecks className="h-4 w-4" /> Say / do
           </div>
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {script.talkTrack.map((t, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs leading-snug text-ink-800">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+              <li key={i} className="flex items-start gap-2 text-sm leading-snug text-ink-800">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
                 <span>{t}</span>
               </li>
             ))}
@@ -517,13 +519,13 @@ function ScriptPanel({ state }: { state: SessionStatePublic }) {
         </div>
 
         {script.watchFor.length > 0 ? (
-          <div className="rounded-lg border border-ink-200 bg-ink-50 p-2">
-            <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-ink-600">
-              <Eye className="h-3 w-3" /> Watch for
+          <div className="rounded-lg border border-ink-200 bg-ink-50 p-2.5">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-700">
+              <Eye className="h-4 w-4" /> Watch for
             </div>
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {script.watchFor.map((w, i) => (
-                <li key={i} className="text-[11px] leading-snug text-ink-700">
+                <li key={i} className="text-xs leading-snug text-ink-700">
                   {w}
                 </li>
               ))}
@@ -541,7 +543,7 @@ function PatternsPanel({ state }: { state: SessionStatePublic }) {
   return (
     <Card className="flex min-h-0 flex-1 flex-col p-3">
       <SectionTitle
-        icon={<Sparkles className="h-4 w-4" />}
+        icon={<Sparkles className="h-5 w-5" />}
         title="Patterns across the room"
         subtitle="Things worth naming"
       />
@@ -584,13 +586,13 @@ function PatternCard({
     positive: "border-l-emerald-500 bg-emerald-50",
   };
   return (
-    <div className={cn("rounded-lg border border-ink-200 border-l-4 p-2.5 shadow-sm", tones[tone])}>
+    <div className={cn("rounded-lg border-l-4 border border-ink-200 p-3 shadow-sm", tones[tone])}>
       {teamName ? (
-        <div className="mb-0.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-ink-700">
-          <AlertTriangle className="h-3 w-3" /> {teamName}
+        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-700">
+          <AlertTriangle className="h-4 w-4" /> {teamName}
         </div>
       ) : null}
-      <p className="text-[12px] leading-snug text-ink-800">{text}</p>
+      <p className="text-sm leading-snug text-ink-800">{text}</p>
     </div>
   );
 }
@@ -610,7 +612,7 @@ function ControlPanel({
   return (
     <Card className="p-3">
       <SectionTitle
-        icon={<HelpCircle className="h-4 w-4" />}
+        icon={<HelpCircle className="h-5 w-5" />}
         title="Mid-round tools"
         subtitle="Advance phases using the button above"
       />

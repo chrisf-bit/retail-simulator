@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import type {
+  ConfidenceLevel,
   FacilitatorScript,
   LeadershipStyle,
   MomentArchetype,
@@ -10,7 +11,7 @@ import type {
   TeamFull,
   TeamInsight,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, LEADERSHIP_LABELS, PRIORITY_LABELS } from "@sim/shared";
+import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, PRIORITY_LABELS } from "@sim/shared";
 
 export function generateInsights(
   teams: TeamFull[],
@@ -122,6 +123,27 @@ function teamInsight(team: TeamFull): TeamInsight {
     const avgFloor = allocs.reduce((a, b) => a + b.shop_floor, 0) / allocs.length;
     if (avgFloor > 45) {
       considerations.push("They have leaned heavily on shop floor. Ask what might be going unnoticed in the backroom or with the team.");
+    }
+  }
+
+  const confidences = history.map((h) => h.decision.confidence).filter((c): c is ConfidenceLevel => !!c);
+  if (confidences.length >= 2) {
+    const counts = countBy(confidences);
+    const entries = entriesOf(counts).sort((a, b) => b[1] - a[1]);
+    const [top, topN] = entries[0] ?? ["measured", 0];
+    if (topN === confidences.length && top !== "measured") {
+      observations.push(`Played ${CONFIDENCE_LABELS[top as ConfidenceLevel]} in every round so far.`);
+      if (top === "confident") {
+        considerations.push(
+          "Consistent confidence amplifies everything. If the call is right the lead opens up; if it's wrong the hole gets deeper.",
+        );
+        questions.push("What's your tell that a call is worth pressing versus one worth hedging on?");
+      }
+      if (top === "cautious") {
+        considerations.push(
+          "Playing cautious round after round protects downside, but it caps the upside too. Worth surfacing whether that is habit or strategy.",
+        );
+      }
     }
   }
 

@@ -11,6 +11,7 @@ import type {
   MomentArchetype,
   TeamMoment,
 } from "@sim/shared";
+import { CONFIDENCE_MULTIPLIERS } from "@sim/shared";
 
 export function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value));
@@ -204,6 +205,16 @@ function mergeDelta<T extends object>(acc: Partial<T>, patch: Partial<T>): Parti
   return out;
 }
 
+function scaleDelta<T extends object>(delta: Partial<T>, factor: number): Partial<T> {
+  if (factor === 1) return delta;
+  const out: any = {};
+  for (const k of Object.keys(delta) as (keyof T)[]) {
+    const v = delta[k];
+    if (typeof v === "number") out[k] = Math.round(v * factor);
+  }
+  return out;
+}
+
 export function applyDecision(params: {
   kpis: Kpis;
   hidden: HiddenDrivers;
@@ -241,6 +252,10 @@ export function applyDecision(params: {
   const dis = disruptionEffects(disruption, decision);
   kpiDelta = mergeDelta(kpiDelta, dis.kpi);
   hiddenDelta = mergeDelta(hiddenDelta, dis.hidden);
+
+  const multiplier = CONFIDENCE_MULTIPLIERS[decision.confidence] ?? 1;
+  kpiDelta = scaleDelta(kpiDelta, multiplier);
+  hiddenDelta = scaleDelta(hiddenDelta, multiplier);
 
   const nextKpis: Kpis = {
     sales: clamp(kpis.sales + (kpiDelta.sales ?? 0)),

@@ -1,4 +1,12 @@
-import type { KpiKey, Priority, ActionApproach, LeadershipStyle, HiddenDriverKey, MomentArchetype } from "./types";
+import type {
+  KpiKey,
+  Priority,
+  ActionApproach,
+  LeadershipStyle,
+  HiddenDriverKey,
+  MomentArchetype,
+  ConfidenceLevel,
+} from "./types";
 
 export const ROUND_COUNT = 3;
 export const ROUND_DURATION_MS = 4 * 60 * 1000;
@@ -80,4 +88,22 @@ export const ARCHETYPE_LABELS: Record<MomentArchetype, string> = {
   coaching: "Coaching",
   delegate: "Delegate",
   collaborative: "Collaborative",
+};
+
+export const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
+  cautious: "Cautious",
+  measured: "Measured",
+  confident: "Confident",
+};
+
+export const CONFIDENCE_DESCRIPTIONS: Record<ConfidenceLevel, string> = {
+  cautious: "Play it safe - smaller swings, smaller upside",
+  measured: "Standard stake - the plan stands on its merits",
+  confident: "Press the call - bigger wins, bigger losses if wrong",
+};
+
+export const CONFIDENCE_MULTIPLIERS: Record<ConfidenceLevel, number> = {
+  cautious: 0.75,
+  measured: 1.0,
+  confident: 1.35,
 };

@@ -9,13 +9,16 @@ import {
   ClipboardList,
   Clock,
   Compass,
+  Flame,
   Gauge,
   HeartHandshake,
   Lightbulb,
   Loader2,
   MessageCircleQuestion,
+  Scale,
   Send,
   Shield,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Store,
@@ -26,6 +29,7 @@ import {
 } from "lucide-react";
 import type {
   ActionApproach,
+  ConfidenceLevel,
   Decision,
   KpiKey,
   LeadershipStyle,
@@ -37,8 +41,8 @@ import type {
 } from "@sim/shared";
 import {
   ACTION_LABELS,
-  ARCHETYPE_LABELS,
-  DEFAULT_ALLOCATION,
+  CONFIDENCE_DESCRIPTIONS,
+  CONFIDENCE_LABELS,
   HIDDEN_INVERTED,
   HIDDEN_LABELS,
   KPI_INVERTED,
@@ -65,6 +69,12 @@ const ACTION_ICONS: Record<ActionApproach, React.ComponentType<{ className?: str
   reallocate: Wrench,
 };
 
+const CONFIDENCE_ICONS: Record<ConfidenceLevel, React.ComponentType<{ className?: string }>> = {
+  cautious: ShieldCheck,
+  measured: Scale,
+  confident: Flame,
+};
+
 const ALLOCATION_LABELS: Array<{ key: keyof ResourceAllocation; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { key: "shop_floor", label: "Shop floor", icon: Store },
   { key: "backroom", label: "Backroom", icon: ClipboardList },
@@ -85,12 +95,18 @@ export default function TeamPlayerPage() {
   const { state, socket, connected, offsetMs } = useSessionState();
   const [teamId, setTeamId] = useState<string | null>(null);
 
-  const [priority, setPriority] = useState<Priority>("customer");
-  const [action, setAction] = useState<ActionApproach>("adapt_local");
-  const [leadership, setLeadership] = useState<LeadershipStyle>("collaborative");
-  const [allocation, setAllocation] = useState<ResourceAllocation>(DEFAULT_ALLOCATION);
+  const [priority, setPriority] = useState<Priority | null>(null);
+  const [action, setAction] = useState<ActionApproach | null>(null);
+  const [leadership, setLeadership] = useState<LeadershipStyle | null>(null);
+  const [allocation, setAllocation] = useState<ResourceAllocation>({
+    shop_floor: 0,
+    backroom: 0,
+    customer_service: 0,
+    problem_resolution: 0,
+  });
   const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
   const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
@@ -109,8 +125,13 @@ export default function TeamPlayerPage() {
 
   const roundNumber = state?.round?.number;
   useEffect(() => {
+    setPriority(null);
+    setAction(null);
+    setLeadership(null);
+    setAllocation({ shop_floor: 0, backroom: 0, customer_service: 0, problem_resolution: 0 });
     setPrimaryIssueId(null);
     setMomentResponseId(null);
+    setConfidence(null);
   }, [roundNumber]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
@@ -124,16 +145,22 @@ export default function TeamPlayerPage() {
   }
 
   const roundLocked = !state.round || state.round.phase === "locked" || state.round.phase === "reveal";
-  const canSubmit = !team.submitted && !roundLocked && state.phase === "round";
+  const allocationTotal =
+    allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
+  const allChosen =
+    !!priority && !!action && !!leadership && !!confidence && allocationTotal === 100;
+  const inputsActive = !team.submitted && !roundLocked && state.phase === "round";
+  const canSubmit = inputsActive && allChosen;
   const guidance = teamGuidance(state, team.submitted);
 
   function submit() {
-    if (!teamId) return;
+    if (!teamId || !priority || !action || !leadership || !confidence) return;
     const decision: Omit<Decision, "submittedAt"> = {
       priority,
       action,
       leadership,
       allocation,
+      confidence,
       primaryIssueId: primaryIssueId ?? undefined,
       momentResponseId: momentResponseId ?? undefined,
     };
@@ -141,7 +168,7 @@ export default function TeamPlayerPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-ink-100">
+    <div className="flex h-full w-full flex-col">
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -169,7 +196,7 @@ export default function TeamPlayerPage() {
                 moment={state.round.moment}
                 responseId={momentResponseId}
                 onSelect={setMomentResponseId}
-                disabled={!canSubmit}
+                disabled={!inputsActive}
               />
             ) : null}
             <div className="grid min-h-0 flex-1 grid-cols-5 gap-3">
@@ -177,7 +204,7 @@ export default function TeamPlayerPage() {
                 state={state}
                 primaryIssueId={primaryIssueId}
                 onSelect={(id) => setPrimaryIssueId(id)}
-                disabled={!canSubmit}
+                disabled={!inputsActive}
               />
               <AlertsPanel state={state} />
             </div>
@@ -193,8 +220,11 @@ export default function TeamPlayerPage() {
               setLeadership={setLeadership}
               allocation={allocation}
               setAllocation={setAllocation}
+              confidence={confidence}
+              setConfidence={setConfidence}
               primaryIssueId={primaryIssueId}
               momentResponseId={momentResponseId}
+              inputsActive={inputsActive}
               canSubmit={canSubmit}
               submitted={team.submitted}
               onSubmit={submit}
@@ -222,14 +252,14 @@ function TeamHeader({
   const clock = formatClock(timeLeftMs);
   const urgent = timeLeftMs < 60_000 && phase === "round";
   return (
-    <header className="flex items-center justify-between gap-4 border-b-2 border-ink-200 bg-white px-4 py-3 shadow-sm">
+    <header className="flex items-center justify-between gap-4 border-b-2 border-brand-200 bg-gradient-to-r from-white via-brand-50/30 to-white px-5 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
-          <Store className="h-5 w-5" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-btn">
+          <Store className="h-7 w-7" />
         </div>
         <div>
-          <div className="text-sm font-bold text-ink-900">{team.name}</div>
-          <div className="text-xs text-ink-500">
+          <div className="text-lg font-bold tracking-tight text-ink-900">{team.name}</div>
+          <div className="text-sm text-ink-600">
             {phase === "round" ? `Round ${round} of 3` : phaseLabel(phase)}
           </div>
         </div>
@@ -237,23 +267,23 @@ function TeamHeader({
       <div className="flex items-center gap-3">
         {roundPhase === "disrupted" ? (
           <Pill tone="risk" strong>
-            <AlertTriangle className="h-3 w-3" /> Disruption
+            <AlertTriangle className="h-4 w-4" /> Disruption
           </Pill>
         ) : null}
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg border-2 px-3 py-1.5 shadow-sm",
-            urgent ? "border-red-300 bg-red-50" : "border-ink-200 bg-ink-50",
+            "flex items-center gap-2.5 rounded-xl border-2 px-4 py-2 shadow-sm",
+            urgent ? "border-rose-400 bg-rose-50" : "border-ink-300 bg-white",
           )}
         >
-          <Clock className={cn("h-5 w-5", urgent ? "text-risk" : "text-ink-500")} />
-          <span className={cn("font-mono text-2xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
+          <Clock className={cn("h-6 w-6", urgent ? "text-risk" : "text-ink-500")} />
+          <span className={cn("font-mono text-3xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
             {clock}
           </span>
         </div>
-        <div className="rounded-lg border-2 border-brand-200 bg-brand-50 px-3 py-1.5 text-right">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-brand-700">Score</div>
-          <div className="font-mono text-2xl font-bold text-brand-900">{team.score}</div>
+        <div className="rounded-xl border-2 border-brand-300 bg-gradient-to-b from-brand-50 to-white px-4 py-2 text-right shadow-sm">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-brand-700">Score</div>
+          <div className="font-mono text-3xl font-bold text-brand-900">{team.score}</div>
         </div>
       </div>
     </header>
@@ -279,13 +309,13 @@ function KpiStrip({ team }: { team: TeamPublic }) {
 
   return (
     <Card className="p-3">
-      <SectionTitle icon={<Gauge className="h-4 w-4" />} title="Store performance" subtitle="Live KPI snapshot" />
+      <SectionTitle icon={<Gauge className="h-5 w-5" />} title="Store performance" subtitle="Live KPI snapshot" />
       <div className="grid grid-cols-5 gap-2">
         {items.map((i) => (
-          <div key={i.key} className="min-w-0 rounded-lg border-2 border-ink-200 bg-ink-50 p-2.5 shadow-sm">
-            <div className="truncate text-[10px] font-bold uppercase tracking-wider text-ink-500">{i.label}</div>
+          <div key={i.key} className="min-w-0 rounded-xl border-2 border-ink-200 bg-gradient-to-b from-white to-ink-50 p-3 shadow-sm">
+            <div className="truncate text-[11px] font-bold uppercase tracking-wider text-ink-600">{i.label}</div>
             <div className="mt-1 flex items-baseline justify-between">
-              <span className="text-xl font-bold tabular-nums text-ink-900">{i.value}</span>
+              <span className="text-2xl font-bold tabular-nums text-ink-900">{i.value}</span>
               <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} />
             </div>
             <div className="mt-2">
@@ -310,27 +340,29 @@ function PeopleMomentPanel({
   disabled: boolean;
 }) {
   return (
-    <Card tone="accent" className="p-3">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-brand-200 bg-brand-50 text-brand-700">
-          <UserCircle2 className="h-6 w-6" />
+    <Card tone="glow" className="p-4">
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-brand-300 bg-gradient-to-br from-brand-100 to-brand-200 text-brand-800 shadow-sm">
+          <UserCircle2 className="h-9 w-9" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">People moment</span>
+          <div className="flex flex-wrap items-center gap-2">
             <Pill tone="info" strong>
-              <HeartHandshake className="h-3 w-3" /> Leading people
+              <HeartHandshake className="h-3.5 w-3.5" /> People moment
             </Pill>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700">
+              Leading your direct reports
+            </span>
           </div>
-          <div className="mt-0.5 flex items-baseline gap-2">
-            <span className="text-sm font-bold text-ink-900">{moment.persona.name}</span>
-            <span className="text-xs text-ink-600">
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-base font-bold text-ink-900">{moment.persona.name}</span>
+            <span className="text-sm text-ink-600">
               {moment.persona.role} &middot; {moment.persona.tenure}
             </span>
           </div>
-          <p className="mt-1.5 text-[13px] leading-snug text-ink-800">{moment.situation}</p>
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold italic text-brand-800">
-            <MessageCircleQuestion className="h-3.5 w-3.5" /> {moment.prompt}
+          <p className="mt-1.5 text-sm leading-snug text-ink-800">{moment.situation}</p>
+          <p className="mt-2 flex items-start gap-1.5 text-sm font-bold italic text-brand-800">
+            <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
           </p>
         </div>
       </div>
@@ -345,10 +377,10 @@ function PeopleMomentPanel({
               disabled={disabled}
               onClick={() => onSelect(opt.id)}
               className={cn(
-                "rounded-lg border-2 px-3 py-2 text-left text-[12px] leading-snug transition-all",
+                "rounded-lg border-2 px-3 py-2.5 text-left text-sm leading-snug transition-all",
                 active
-                  ? "border-brand-500 bg-brand-50 text-brand-900 shadow-sm ring-2 ring-brand-200"
-                  : "border-ink-200 bg-white text-ink-700 hover:border-ink-400 hover:bg-ink-50",
+                  ? "border-brand-600 bg-gradient-to-b from-brand-500 to-brand-700 text-white shadow-btn"
+                  : "border-ink-300 bg-white text-ink-800 hover:border-brand-400 hover:bg-brand-50",
                 disabled && "cursor-not-allowed opacity-60",
               )}
             >
@@ -376,10 +408,10 @@ function IssuesPanel({
   return (
     <Card className="col-span-3 flex min-h-0 flex-col p-3">
       <SectionTitle
-        icon={<AlertTriangle className="h-4 w-4" />}
+        icon={<AlertTriangle className="h-5 w-5" />}
         title="Active issues"
         subtitle="Tap one to target it as your primary focus"
-        right={primaryIssueId ? <Pill tone="info" strong><Target className="h-3 w-3" /> Targeting</Pill> : null}
+        right={primaryIssueId ? <Pill tone="info" strong><Target className="h-3.5 w-3.5" /> Targeting</Pill> : null}
       />
       <div className="flex-1 space-y-2 overflow-auto">
         {issues.map((i) => {
@@ -424,24 +456,24 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
   const disruption = state.round?.disruption;
   return (
     <Card className="col-span-2 flex min-h-0 flex-col p-3">
-      <SectionTitle icon={<BellRing className="h-4 w-4" />} title="Alerts" subtitle="Head office & ops" />
+      <SectionTitle icon={<BellRing className="h-5 w-5" />} title="Alerts" subtitle="Head office & ops" />
       <div className="flex-1 space-y-2 overflow-auto">
         {disruption ? (
-          <div className="rounded-lg border-2 border-red-300 bg-red-50 p-3 shadow-sm">
-            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-red-700">
-              <AlertTriangle className="h-3 w-3" /> Disruption
+          <div className="rounded-lg border-2 border-rose-400 bg-gradient-to-br from-rose-50 to-white p-3 shadow-sm">
+            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-rose-700">
+              <AlertTriangle className="h-4 w-4" /> Disruption
             </div>
-            <h4 className="text-sm font-bold text-red-900">{disruption.title}</h4>
-            <p className="mt-1 text-xs text-red-800">{disruption.message}</p>
-            <p className="mt-1 text-[11px] italic text-red-700">{disruption.impact}</p>
+            <h4 className="text-sm font-bold text-rose-900">{disruption.title}</h4>
+            <p className="mt-1 text-xs text-rose-800">{disruption.message}</p>
+            <p className="mt-1 text-[11px] italic text-rose-700">{disruption.impact}</p>
           </div>
         ) : null}
         {alerts.map((a) => (
           <div key={a.id} className="rounded-lg border border-ink-200 bg-white p-3 shadow-sm">
-            <div className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-500">
+            <div className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-brand-700">
               {a.kind === "head_office" ? "Head office" : "Operational"}
             </div>
-            <h4 className="text-sm font-semibold text-ink-900">{a.title}</h4>
+            <h4 className="text-sm font-bold text-ink-900">{a.title}</h4>
             <p className="mt-1 text-xs text-ink-600">{a.message}</p>
           </div>
         ))}
@@ -459,22 +491,28 @@ function DecisionPanel({
   setLeadership,
   allocation,
   setAllocation,
+  confidence,
+  setConfidence,
   primaryIssueId,
   momentResponseId,
+  inputsActive,
   canSubmit,
   submitted,
   onSubmit,
 }: {
-  priority: Priority;
+  priority: Priority | null;
   setPriority: (p: Priority) => void;
-  action: ActionApproach;
+  action: ActionApproach | null;
   setAction: (a: ActionApproach) => void;
-  leadership: LeadershipStyle;
+  leadership: LeadershipStyle | null;
   setLeadership: (l: LeadershipStyle) => void;
   allocation: ResourceAllocation;
   setAllocation: (a: ResourceAllocation) => void;
+  confidence: ConfidenceLevel | null;
+  setConfidence: (c: ConfidenceLevel) => void;
   primaryIssueId: string | null;
   momentResponseId: string | null;
+  inputsActive: boolean;
   canSubmit: boolean;
   submitted: boolean;
   onSubmit: () => void;
@@ -483,76 +521,78 @@ function DecisionPanel({
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
 
   return (
-    <Card tone="accent" className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b-2 border-brand-100 bg-gradient-to-r from-brand-50 to-white px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-brand-600" />
-          <h3 className="text-sm font-bold text-ink-900">Your decision</h3>
+    <Card tone="glow" className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between border-b-2 border-brand-200 bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-3 text-white">
+        <div className="flex items-center gap-2.5">
+          <Sparkles className="h-5 w-5" />
+          <h3 className="text-base font-bold tracking-tight">Your decision</h3>
         </div>
         {submitted ? (
           <Pill tone="ok" strong>
-            <CheckCircle2 className="h-3 w-3" /> Submitted
+            <CheckCircle2 className="h-4 w-4" /> Submitted
           </Pill>
         ) : (
-          <Pill tone="warn" strong>Awaiting</Pill>
+          <Pill tone="accent" strong>Awaiting</Pill>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-auto p-3">
+      <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
         <RadioGroup<Priority>
           label="A. Priority focus"
-          description="Under pressure, where does your attention land first?"
+          description="Select where you want to prioritise your focus this round."
           options={Object.keys(PRIORITY_LABELS) as Priority[]}
           labels={PRIORITY_LABELS}
           icons={PRIORITY_ICONS}
           value={priority}
           onChange={setPriority}
-          disabled={submitted || !canSubmit}
+          disabled={!inputsActive}
         />
 
         <RadioGroup<ActionApproach>
           label="B. Action approach"
-          description="How do you translate that priority into action this round?"
+          description="Choose how you will turn that priority into action."
           options={Object.keys(ACTION_LABELS) as ActionApproach[]}
           labels={ACTION_LABELS}
           icons={ACTION_ICONS}
           value={action}
           onChange={setAction}
-          disabled={submitted || !canSubmit}
+          disabled={!inputsActive}
         />
 
         <RadioGroup<LeadershipStyle>
           label="C. Leadership style"
-          description="How will you lead your team through this one?"
+          description="Pick the leadership stance you will lead your team with."
           options={Object.keys(LEADERSHIP_LABELS) as LeadershipStyle[]}
           labels={LEADERSHIP_LABELS}
           value={leadership}
           onChange={setLeadership}
-          disabled={submitted || !canSubmit}
+          disabled={!inputsActive}
         />
 
         <div>
           <div className="mb-0.5 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-ink-500">D. Resource allocation</span>
+            <span className="text-sm font-bold uppercase tracking-wider text-ink-700">D. Resource allocation</span>
             <span
               className={cn(
-                "rounded-md px-2 py-0.5 text-xs font-bold",
-                total === 100 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800",
+                "rounded-md border px-2.5 py-1 text-xs font-bold",
+                total === 100
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-amber-300 bg-amber-50 text-amber-800",
               )}
             >
               Total: {total}%
             </span>
           </div>
-          <div className="mb-1.5 text-[11px] italic text-ink-500">
-            Where does your team's time and attention land this round? Must total 100%.
+          <div className="mb-2 text-xs italic text-ink-600">
+            Deploy your team's time across the store. Sliders start at zero. Totals must equal 100%.
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {ALLOCATION_LABELS.map((a) => {
               const Icon = a.icon;
               return (
                 <div key={a.key} className="flex items-center gap-3">
-                  <span className="flex w-36 shrink-0 items-center gap-1.5 text-xs font-medium text-ink-700">
-                    <Icon className="h-3.5 w-3.5 text-ink-400" /> {a.label}
+                  <span className="flex w-40 shrink-0 items-center gap-2 text-sm font-medium text-ink-800">
+                    <Icon className="h-4 w-4 text-brand-600" /> {a.label}
                   </span>
                   <input
                     type="range"
@@ -560,11 +600,11 @@ function DecisionPanel({
                     max={100}
                     step={5}
                     value={allocation[a.key]}
-                    disabled={submitted || !canSubmit}
+                    disabled={!inputsActive}
                     onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
                     className="flex-1 accent-brand-600"
                   />
-                  <span className="w-10 text-right font-mono text-xs font-semibold text-ink-800">
+                  <span className="w-12 rounded-md bg-ink-100 px-1.5 py-0.5 text-right font-mono text-xs font-bold text-ink-800">
                     {allocation[a.key]}%
                   </span>
                 </div>
@@ -573,49 +613,130 @@ function DecisionPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg border-2 border-dashed border-ink-200 bg-ink-50 px-3 py-2 text-xs">
-          <Target className={cn("h-4 w-4 shrink-0", primaryIssueId ? "text-brand-600" : "text-ink-400")} />
+        <ConfidenceGroup value={confidence} onChange={setConfidence} disabled={!inputsActive} />
+
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm",
+            primaryIssueId
+              ? "border-brand-400 bg-brand-50 text-brand-900"
+              : "border-dashed border-ink-300 bg-ink-50 text-ink-600",
+          )}
+        >
+          <Target className={cn("h-5 w-5 shrink-0", primaryIssueId ? "text-brand-600" : "text-ink-400")} />
           {primaryIssueId ? (
-            <span className="text-ink-700">
-              <span className="font-bold text-brand-700">E. Primary issue</span> selected. Alignment with your priority
-              will boost impact.
+            <span>
+              <span className="font-bold">E. Primary issue</span> locked in. Alignment with your priority will boost impact.
             </span>
           ) : (
-            <span className="text-ink-500">
-              <span className="font-bold text-ink-700">E. Primary issue:</span> tap an issue on the left to target it.
-              Optional but high-impact.
+            <span>
+              <span className="font-bold text-ink-800">E. Primary issue:</span> tap an issue on the left to target it. Optional but high-impact.
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg border-2 border-dashed border-ink-200 bg-ink-50 px-3 py-2 text-xs">
-          <HeartHandshake className={cn("h-4 w-4 shrink-0", momentResponseId ? "text-brand-600" : "text-ink-400")} />
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm",
+            momentResponseId
+              ? "border-brand-400 bg-brand-50 text-brand-900"
+              : "border-dashed border-rose-300 bg-rose-50 text-rose-800",
+          )}
+        >
+          <HeartHandshake
+            className={cn("h-5 w-5 shrink-0", momentResponseId ? "text-brand-600" : "text-rose-500")}
+          />
           {momentResponseId ? (
-            <span className="text-ink-700">
-              <span className="font-bold text-brand-700">F. People moment</span> response recorded. This moves trust and
-              capability.
+            <span>
+              <span className="font-bold">F. People moment</span> recorded. Trust and capability will move off this.
             </span>
           ) : (
-            <span className="text-ink-500">
-              <span className="font-bold text-ink-700">F. People moment:</span> pick a response to your direct report
-              above. Skipping costs trust.
+            <span>
+              <span className="font-bold text-rose-900">F. People moment:</span> respond to your direct report above. Skipping costs trust and leadership consistency.
             </span>
           )}
         </div>
 
-        <Button size="xl" onClick={onSubmit} disabled={!canSubmit || total !== 100}>
+        <Button size="xl" onClick={onSubmit} disabled={!canSubmit}>
           {submitted ? (
             <>
-              <CheckCircle2 className="h-4 w-4" /> Decision locked in
+              <CheckCircle2 className="h-5 w-5" /> Decision locked in
             </>
           ) : (
             <>
-              <Send className="h-4 w-4" /> Submit decision
+              <Send className="h-5 w-5" /> Submit decision
             </>
           )}
         </Button>
+        {!submitted && !canSubmit && inputsActive ? (
+          <p className="text-center text-xs text-ink-500">
+            Complete every section (A - G) and total allocation 100% to submit.
+          </p>
+        ) : null}
       </div>
     </Card>
+  );
+}
+
+function ConfidenceGroup({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: ConfidenceLevel | null;
+  onChange: (v: ConfidenceLevel) => void;
+  disabled: boolean;
+}) {
+  const options: ConfidenceLevel[] = ["cautious", "measured", "confident"];
+  return (
+    <div>
+      <div className="mb-0.5 flex items-center justify-between">
+        <span className="text-sm font-bold uppercase tracking-wider text-ink-700">G. Confidence</span>
+        {value ? <Pill tone="accent" strong>{CONFIDENCE_LABELS[value]}</Pill> : <Pill tone="warn">Required</Pill>}
+      </div>
+      <div className="mb-2 text-xs italic text-ink-600">
+        How strongly are you pressing this call? Confidence multiplies both the upside and the downside.
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((opt) => {
+          const Icon = CONFIDENCE_ICONS[opt];
+          const active = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(opt)}
+              className={cn(
+                "flex flex-col items-start gap-1.5 rounded-lg border-2 px-3 py-2.5 text-left transition-all",
+                active
+                  ? "border-brand-500 bg-gradient-to-b from-brand-50 to-white text-brand-900 shadow-btn ring-2 ring-brand-200"
+                  : "border-ink-300 bg-white text-ink-700 hover:border-brand-400 hover:bg-brand-50",
+                disabled && "cursor-not-allowed opacity-60",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className={cn("h-5 w-5", active ? "text-brand-600" : "text-ink-500")} />
+                <span className="text-sm font-bold">{CONFIDENCE_LABELS[opt]}</span>
+              </div>
+              <span className="text-[11px] leading-snug text-ink-600">{CONFIDENCE_DESCRIPTIONS[opt]}</span>
+              <span
+                className={cn(
+                  "rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold",
+                  opt === "confident"
+                    ? "bg-rose-100 text-rose-800"
+                    : opt === "cautious"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-ink-100 text-ink-700",
+                )}
+              >
+                x{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -634,14 +755,17 @@ function RadioGroup<T extends string>({
   options: T[];
   labels: Record<T, string>;
   icons?: Record<T, React.ComponentType<{ className?: string }>>;
-  value: T;
+  value: T | null;
   onChange: (v: T) => void;
   disabled: boolean;
 }) {
   return (
     <div>
-      <div className="mb-0.5 text-xs font-bold uppercase tracking-wider text-ink-500">{label}</div>
-      {description ? <div className="mb-1.5 text-[11px] italic text-ink-500">{description}</div> : null}
+      <div className="mb-0.5 flex items-center justify-between">
+        <span className="text-sm font-bold uppercase tracking-wider text-ink-700">{label}</span>
+        {value ? <Pill tone="info" strong>{labels[value]}</Pill> : <Pill tone="warn">Required</Pill>}
+      </div>
+      {description ? <div className="mb-2 text-xs italic text-ink-600">{description}</div> : null}
       <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => {
           const active = value === opt;
@@ -653,14 +777,14 @@ function RadioGroup<T extends string>({
               disabled={disabled}
               onClick={() => onChange(opt)}
               className={cn(
-                "flex items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left text-sm font-medium transition-all",
+                "flex items-center gap-2.5 rounded-lg border-2 px-3 py-2.5 text-left text-sm font-semibold transition-all",
                 active
-                  ? "border-brand-500 bg-brand-600 text-white shadow-sm"
-                  : "border-ink-200 bg-white text-ink-700 hover:border-ink-400 hover:bg-ink-50",
+                  ? "border-brand-600 bg-gradient-to-b from-brand-500 to-brand-700 text-white shadow-btn"
+                  : "border-ink-300 bg-white text-ink-800 hover:border-brand-400 hover:bg-brand-50",
                 disabled && "cursor-not-allowed opacity-60",
               )}
             >
-              {Icon ? <Icon className={cn("h-4 w-4 shrink-0", active ? "text-white" : "text-ink-400")} /> : null}
+              {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-brand-600")} /> : null}
               <span className="truncate">{labels[opt]}</span>
             </button>
           );

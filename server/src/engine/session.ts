@@ -193,6 +193,7 @@ export class Session {
         action: "standard",
         leadership: "directive",
         allocation: { shop_floor: 25, backroom: 25, customer_service: 25, problem_resolution: 25 },
+        confidence: "measured",
         submittedAt: Date.now(),
       };
 

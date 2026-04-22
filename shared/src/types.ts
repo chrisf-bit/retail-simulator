@@ -1,6 +1,7 @@
 export type Priority = "safety_loss" | "people_team" | "customer" | "commercial";
 export type ActionApproach = "standard" | "adapt_local" | "escalate" | "reallocate";
 export type LeadershipStyle = "directive" | "collaborative" | "coaching" | "delegated";
+export type ConfidenceLevel = "cautious" | "measured" | "confident";
 
 export type KpiKey =
   | "sales"
@@ -82,6 +83,7 @@ export interface Decision {
   action: ActionApproach;
   leadership: LeadershipStyle;
   allocation: ResourceAllocation;
+  confidence: ConfidenceLevel;
   primaryIssueId?: string;
   momentResponseId?: string;
   submittedAt: number;

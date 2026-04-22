@@ -13,8 +13,11 @@ body {
 
 body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
-  background: #f6f7f9;
-  color: #111827;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(99, 102, 241, 0.14), transparent 60%),
+    radial-gradient(900px 500px at 120% 10%, rgba(245, 158, 11, 0.10), transparent 55%),
+    #f1f5f9;
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -27,4 +30,12 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+/* Subtle emphasis: animate primary buttons on hover */
+.btn-pop:hover {
+  transform: translateY(-1px);
+}
+.btn-pop:active {
+  transform: translateY(0);
 }
