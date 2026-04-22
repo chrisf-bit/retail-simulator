@@ -36,7 +36,7 @@ import type {
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT } from "@sim/shared";
+import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
 import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
@@ -57,7 +57,7 @@ function getPrimaryAction(state: SessionStatePublic): PrimaryAction | null {
       return { label: "Start Shift 1", icon: Play, event: "facilitator:start_round" };
     case "round_results": {
       const nextNumber = (state.round?.number ?? 0) + 1;
-      if (nextNumber > 3) return { label: "Begin debrief", icon: Flag, event: "facilitator:next_phase" };
+      if (nextNumber > ROUND_COUNT) return { label: "Begin debrief", icon: Flag, event: "facilitator:next_phase" };
       return { label: `Start Shift ${nextNumber}`, icon: Play, event: "facilitator:start_round" };
     }
     case "debrief":
@@ -138,7 +138,7 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   const phaseText: Record<string, string> = {
     lobby: "Lobby",
     briefing: "Briefing",
-    round: `Shift ${state.round?.number ?? 0} / 3`,
+    round: `Shift ${state.round?.number ?? 0} / ${ROUND_COUNT}`,
     round_results: `Shift ${state.round?.number ?? 0} results`,
     debrief: "Debrief",
     finished: "Session complete",

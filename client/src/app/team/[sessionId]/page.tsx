@@ -52,8 +52,9 @@ import {
   KPI_SHORT,
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
+  ROUND_COUNT,
 } from "@sim/shared";
-import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle, Sparkline, StepBadge } from "@/components/ui";
+import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, Sparkline } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
 
@@ -94,13 +95,13 @@ const SEVERITY_TONES: Record<"low" | "medium" | "high", "neutral" | "warn" | "ri
   high: "risk",
 };
 
-type TabId = "focus" | "team" | "respond" | "confidence";
+type TabId = 1 | 2 | 3 | 4;
 
-const TAB_DEFS: Array<{ id: TabId; label: string; stepRange: string }> = [
-  { id: "focus", label: "Focus", stepRange: "Steps 1 – 2" },
-  { id: "team", label: "Team", stepRange: "Steps 3 – 4" },
-  { id: "respond", label: "Respond", stepRange: "Steps 5 – 6" },
-  { id: "confidence", label: "Confidence", stepRange: "Step 7" },
+const TAB_DEFS: Array<{ id: TabId; label: string }> = [
+  { id: 1, label: "Focus" },
+  { id: 2, label: "Team" },
+  { id: 3, label: "Respond" },
+  { id: 4, label: "Confidence" },
 ];
 
 export default function TeamPlayerPage() {
@@ -122,7 +123,7 @@ export default function TeamPlayerPage() {
   const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
   const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>("focus");
+  const [activeTab, setActiveTab] = useState<TabId>(1);
   const [kpiView, setKpiView] = useState<"values" | "trends">("values");
 
   useEffect(() => {
@@ -149,7 +150,7 @@ export default function TeamPlayerPage() {
     setPrimaryIssueId(null);
     setMomentResponseId(null);
     setConfidence(null);
-    setActiveTab("focus");
+    setActiveTab(1);
   }, [roundNumber]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
@@ -162,24 +163,15 @@ export default function TeamPlayerPage() {
   const allocationTotal =
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
 
-  const stepComplete: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, boolean> = {
-    1: !!priority,
-    2: !!action,
-    3: !!leadership,
-    4: allocationTotal === 100,
-    5: !!primaryIssueId,
-    6: !!momentResponseId,
-    7: !!confidence,
-  };
   const tabComplete: Record<TabId, boolean> = {
-    focus: stepComplete[1] && stepComplete[2],
-    team: stepComplete[3] && stepComplete[4],
-    respond: state.round?.moment ? stepComplete[6] : true, // issue (5) is optional
-    confidence: stepComplete[7],
+    1: !!priority && !!action,
+    2: !!leadership && allocationTotal === 100,
+    3: state.round?.moment ? !!momentResponseId : true,
+    4: !!confidence,
   };
   const requiredAll =
-    stepComplete[1] && stepComplete[2] && stepComplete[3] && stepComplete[4] && stepComplete[7] &&
-    (!state.round?.moment || stepComplete[6]);
+    !!priority && !!action && !!leadership && allocationTotal === 100 && !!confidence &&
+    (!state.round?.moment || !!momentResponseId);
   const inputsActive = !team.submitted && !roundLocked && state.phase === "round";
   const canSubmit = inputsActive && requiredAll;
   const guidance = teamGuidance(state, team.submitted);
@@ -203,6 +195,7 @@ export default function TeamPlayerPage() {
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
+        totalRounds={ROUND_COUNT}
         phase={state.phase}
         timeLeftMs={timeLeft}
         roundPhase={state.round?.phase}
@@ -219,48 +212,45 @@ export default function TeamPlayerPage() {
       ) : state.phase === "debrief" || state.phase === "finished" ? (
         <DebriefPanel team={team} rank={state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0} />
       ) : state.phase === "round_results" ? (
-        <ResultsPanel team={team} state={state} />
+        <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
         <main className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_2fr] gap-5 p-5">
           <aside className="flex min-h-0 flex-col gap-4">
-            <ContextLabel />
+            <ZoneLabel label="Context" tone="neutral" />
             <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
-            {state.round?.moment ? (
-              <PeopleContextPanel moment={state.round.moment} responseId={momentResponseId} />
-            ) : null}
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4">
-              <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
-              <AlertsPanel state={state} />
-            </div>
+            <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
+            <AlertsPanel state={state} />
           </aside>
 
           <section className="flex min-w-0 flex-col min-h-0">
-            <DecisionPanel
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              tabComplete={tabComplete}
-              stepComplete={stepComplete}
-              priority={priority}
-              setPriority={setPriority}
-              action={action}
-              setAction={setAction}
-              leadership={leadership}
-              setLeadership={setLeadership}
-              allocation={allocation}
-              setAllocation={setAllocation}
-              confidence={confidence}
-              setConfidence={setConfidence}
-              primaryIssueId={primaryIssueId}
-              setPrimaryIssueId={setPrimaryIssueId}
-              momentResponseId={momentResponseId}
-              setMomentResponseId={setMomentResponseId}
-              issues={state.round?.issues ?? []}
-              moment={state.round?.moment}
-              inputsActive={inputsActive}
-              canSubmit={canSubmit}
-              submitted={team.submitted}
-              onSubmit={submit}
-            />
+            <ZoneLabel label="Decide" tone="brand" />
+            <div className="mt-4 min-h-0 flex-1">
+              <DecisionPanel
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                tabComplete={tabComplete}
+                priority={priority}
+                setPriority={setPriority}
+                action={action}
+                setAction={setAction}
+                leadership={leadership}
+                setLeadership={setLeadership}
+                allocation={allocation}
+                setAllocation={setAllocation}
+                confidence={confidence}
+                setConfidence={setConfidence}
+                primaryIssueId={primaryIssueId}
+                setPrimaryIssueId={setPrimaryIssueId}
+                momentResponseId={momentResponseId}
+                setMomentResponseId={setMomentResponseId}
+                issues={state.round?.issues ?? []}
+                moment={state.round?.moment}
+                inputsActive={inputsActive}
+                canSubmit={canSubmit}
+                submitted={team.submitted}
+                onSubmit={submit}
+              />
+            </div>
           </section>
         </main>
       )}
@@ -268,11 +258,13 @@ export default function TeamPlayerPage() {
   );
 }
 
-function ContextLabel() {
+function ZoneLabel({ label, tone }: { label: string; tone: "neutral" | "brand" }) {
+  const color = tone === "brand" ? "text-brand-600 bg-brand-500" : "text-ink-500 bg-ink-400";
+  const dot = tone === "brand" ? "bg-brand-500" : "bg-ink-400";
   return (
     <div className="flex items-center gap-2 pl-1">
-      <span className="h-1 w-1 rounded-full bg-ink-400" />
-      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-500">Context</span>
+      <span className={cn("h-1 w-1 rounded-full", dot)} />
+      <span className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", color.split(" ")[0])}>{label}</span>
     </div>
   );
 }
@@ -280,12 +272,14 @@ function ContextLabel() {
 function TeamHeader({
   team,
   round,
+  totalRounds,
   phase,
   timeLeftMs,
   roundPhase,
 }: {
   team: TeamPublic;
   round: number;
+  totalRounds: number;
   phase: string;
   timeLeftMs: number;
   roundPhase?: string;
@@ -303,12 +297,12 @@ function TeamHeader({
           <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
             {phase === "round" ? (
               <>
-                <span>Shift {round} of 3</span>
+                <span>Shift {round} of {totalRounds}</span>
                 <span className="flex items-center gap-1">
-                  {[1, 2, 3].map((n) => (
+                  {Array.from({ length: totalRounds }).map((_, idx) => (
                     <span
-                      key={n}
-                      className={cn("h-1.5 w-1.5 rounded-full", n <= round ? "bg-brand-500" : "bg-ink-200")}
+                      key={idx}
+                      className={cn("h-1.5 w-1.5 rounded-full", idx + 1 <= round ? "bg-brand-500" : "bg-ink-200")}
                     />
                   ))}
                 </span>
@@ -328,13 +322,13 @@ function TeamHeader({
         <div
           className={cn(
             "flex items-center gap-2.5 rounded-full px-4 py-1.5",
-            urgent ? "bg-risk text-white" : "bg-surface-raised ring-1 ring-ink-200/80",
+            urgent ? "bg-risk text-white" : "bg-surface-raised shadow-card ring-1 ring-ink-200",
           )}
         >
           <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-ink-500")} />
           <span className={cn("num text-2xl font-semibold", urgent ? "text-white" : "text-ink-900")}>{clock}</span>
         </div>
-        <div className="rounded-full bg-surface-raised px-4 py-1.5 ring-1 ring-ink-200/80">
+        <div className="rounded-full bg-surface-raised px-4 py-1.5 shadow-card ring-1 ring-ink-200">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">Score</div>
           <div className="num text-2xl font-semibold text-ink-900">{team.score}</div>
         </div>
@@ -357,7 +351,7 @@ function phaseLabel(p: string): string {
 
 function DataCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-2xl bg-surface-muted p-4 ring-1 ring-ink-200/60", className)}>
+    <div className={cn("rounded-2xl bg-surface-raised p-4 shadow-card ring-1 ring-ink-200", className)}>
       {children}
     </div>
   );
@@ -389,13 +383,13 @@ function KpiStrip({
           <Gauge className="h-4 w-4 text-ink-500" />
           <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Store performance</h3>
         </div>
-        <div className="flex rounded-full bg-surface-raised p-0.5 ring-1 ring-ink-200/80">
+        <div className="flex rounded-full bg-ink-100 p-0.5">
           <button
             type="button"
             onClick={() => onViewChange("values")}
             className={cn(
-              "press rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-              view === "values" ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-800",
+              "press rounded-full px-2.5 py-1 transition-colors",
+              view === "values" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
             )}
             aria-label="Values"
           >
@@ -405,8 +399,8 @@ function KpiStrip({
             type="button"
             onClick={() => onViewChange("trends")}
             className={cn(
-              "press rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-              view === "trends" ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-800",
+              "press rounded-full px-2.5 py-1 transition-colors",
+              view === "trends" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
             )}
             aria-label="Trends"
           >
@@ -438,39 +432,6 @@ function KpiStrip({
   );
 }
 
-function PeopleContextPanel({ moment, responseId }: { moment: TeamMoment; responseId: string | null }) {
-  const chosen = responseId ? moment.options.find((o) => o.id === responseId) : null;
-  return (
-    <DataCard>
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-brand-600">
-        <HeartHandshake className="h-3.5 w-3.5" /> People moment
-      </div>
-      <div className="mt-2 flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-ink-600 ring-1 ring-ink-200/80">
-          <UserCircle2 className="h-6 w-6" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold tracking-tight text-ink-900">{moment.persona.name}</div>
-          <div className="text-xs text-ink-500">
-            {moment.persona.role} &middot; {moment.persona.tenure}
-          </div>
-        </div>
-      </div>
-      <p className="mt-2 text-[13px] leading-snug text-ink-700">{moment.situation}</p>
-      <p className="mt-2 text-[13px] italic text-brand-700">{moment.prompt}</p>
-      {chosen ? (
-        <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12px] text-emerald-900">
-          <span className="font-medium">Your response:</span> {chosen.label}
-        </div>
-      ) : (
-        <div className="mt-3 rounded-lg bg-surface-raised px-3 py-2 text-[12px] text-ink-600 ring-1 ring-ink-200/60">
-          Respond in <span className="font-semibold text-ink-900">Respond</span> tab.
-        </div>
-      )}
-    </DataCard>
-  );
-}
-
 function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
   return (
     <DataCard className="flex min-h-0 flex-col">
@@ -478,11 +439,11 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
         <AlertTriangle className="h-4 w-4 text-ink-500" />
         <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Active issues</h3>
       </div>
-      <div className="quiet-scroll flex-1 space-y-2 overflow-auto">
+      <div className="space-y-2">
         {issues.map((i) => {
           const targeted = primaryIssueId === i.id;
           return (
-            <div key={i.id} className="rounded-lg bg-surface-raised p-3 ring-1 ring-ink-200/60">
+            <div key={i.id} className="rounded-lg bg-surface-muted p-3">
               <div className="mb-1 flex items-start justify-between gap-2">
                 <h4 className="text-[13px] font-semibold text-ink-900">{i.title}</h4>
                 {targeted ? (
@@ -512,7 +473,7 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
         <BellRing className="h-4 w-4 text-ink-500" />
         <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Alerts</h3>
       </div>
-      <div className="quiet-scroll flex-1 space-y-2 overflow-auto">
+      <div className="space-y-2">
         {disruption ? (
           <div className="rounded-lg bg-risk p-3 text-white">
             <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
@@ -522,8 +483,8 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
             <p className="mt-0.5 text-xs opacity-90">{disruption.message}</p>
           </div>
         ) : null}
-        {alerts.map((a) => (
-          <div key={a.id} className="rounded-lg bg-surface-raised p-3 ring-1 ring-ink-200/60">
+        {alerts.slice(0, 2).map((a) => (
+          <div key={a.id} className="rounded-lg bg-surface-muted p-3">
             <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">
               {a.kind === "head_office" ? "Head office" : "Operational"}
             </div>
@@ -541,7 +502,6 @@ function DecisionPanel({
   activeTab,
   setActiveTab,
   tabComplete,
-  stepComplete,
   priority,
   setPriority,
   action,
@@ -566,7 +526,6 @@ function DecisionPanel({
   activeTab: TabId;
   setActiveTab: (t: TabId) => void;
   tabComplete: Record<TabId, boolean>;
-  stepComplete: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, boolean>;
   priority: Priority | null;
   setPriority: (p: Priority) => void;
   action: ActionApproach | null;
@@ -588,165 +547,104 @@ function DecisionPanel({
   submitted: boolean;
   onSubmit: () => void;
 }) {
-  const completedSteps = (Object.values(stepComplete) as boolean[]).filter(Boolean).length;
+  const completedTabs = (Object.values(tabComplete) as boolean[]).filter(Boolean).length;
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="mb-3 flex items-center gap-2 pl-1">
-        <span className="h-1 w-1 rounded-full bg-brand-500" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-brand-600">Decide</span>
+    <Card className="flex h-full min-h-0 flex-col overflow-hidden p-0">
+      <div className="flex items-center justify-between px-5 pt-4">
+        <div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decision</div>
+          <div className="text-lg font-semibold tracking-tight text-ink-900">
+            {submitted ? "Locked in" : `${completedTabs} of 4 complete`}
+          </div>
+        </div>
+        {submitted ? (
+          <Pill tone="ok" strong>
+            <CheckCircle2 className="h-3.5 w-3.5" /> Submitted
+          </Pill>
+        ) : null}
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <div>
-            <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decision</div>
-            <div className="text-lg font-semibold tracking-tight text-ink-900">
-              {submitted ? "Locked in" : `${completedSteps} of 7 complete`}
-            </div>
-          </div>
-          {submitted ? (
-            <Pill tone="ok" strong>
-              <CheckCircle2 className="h-3.5 w-3.5" /> Submitted
-            </Pill>
-          ) : (
-            <div className="flex items-center gap-1">
-              {TAB_DEFS.map((t) => (
-                <span
-                  key={t.id}
-                  className={cn("h-1.5 w-10 rounded-full", tabComplete[t.id] ? "bg-ok" : "bg-ink-200")}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex shrink-0 items-stretch border-b border-ink-100 px-2">
+      <div className="px-5 pt-3">
+        <div className="flex items-stretch gap-1 rounded-xl bg-ink-100 p-1">
           {TAB_DEFS.map((t) => (
             <TabButton
               key={t.id}
+              step={t.id}
               label={t.label}
-              stepRange={t.stepRange}
               active={activeTab === t.id}
               done={tabComplete[t.id]}
               onClick={() => setActiveTab(t.id)}
             />
           ))}
         </div>
+      </div>
 
-        <div className="quiet-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-auto p-6">
-          {activeTab === "focus" ? (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-5">
+        {activeTab === 1 ? (
+          <FocusStep
+            priority={priority}
+            setPriority={setPriority}
+            action={action}
+            setAction={setAction}
+            disabled={!inputsActive}
+          />
+        ) : null}
+        {activeTab === 2 ? (
+          <TeamStep
+            leadership={leadership}
+            setLeadership={setLeadership}
+            allocation={allocation}
+            setAllocation={setAllocation}
+            disabled={!inputsActive}
+          />
+        ) : null}
+        {activeTab === 3 ? (
+          <RespondStep
+            issues={issues}
+            primaryIssueId={primaryIssueId}
+            setPrimaryIssueId={setPrimaryIssueId}
+            moment={moment}
+            momentResponseId={momentResponseId}
+            setMomentResponseId={setMomentResponseId}
+            disabled={!inputsActive}
+          />
+        ) : null}
+        {activeTab === 4 ? (
+          <ConfidenceStep
+            confidence={confidence}
+            setConfidence={setConfidence}
+            disabled={!inputsActive}
+          />
+        ) : null}
+      </div>
+
+      <div className="shrink-0 border-t border-ink-100 px-5 py-4">
+        <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
+          {submitted ? (
             <>
-              <StepEditor step={1} title="Priority focus" description="Select where you want to prioritise your focus this shift." complete={stepComplete[1]}>
-                <RadioGrid<Priority>
-                  options={Object.keys(PRIORITY_LABELS) as Priority[]}
-                  labels={PRIORITY_LABELS}
-                  icons={PRIORITY_ICONS}
-                  value={priority}
-                  onChange={setPriority}
-                  disabled={!inputsActive}
-                />
-              </StepEditor>
-              <StepEditor step={2} title="Action approach" description="Choose how you'll turn that priority into action." complete={stepComplete[2]}>
-                <RadioGrid<ActionApproach>
-                  options={Object.keys(ACTION_LABELS) as ActionApproach[]}
-                  labels={ACTION_LABELS}
-                  icons={ACTION_ICONS}
-                  value={action}
-                  onChange={setAction}
-                  disabled={!inputsActive}
-                />
-              </StepEditor>
+              <CheckCircle2 className="h-4 w-4" /> Decision locked in
             </>
-          ) : null}
-
-          {activeTab === "team" ? (
+          ) : (
             <>
-              <StepEditor step={3} title="Leadership style" description="Pick the stance you'll lead your team with." complete={stepComplete[3]}>
-                <RadioGrid<LeadershipStyle>
-                  options={Object.keys(LEADERSHIP_LABELS) as LeadershipStyle[]}
-                  labels={LEADERSHIP_LABELS}
-                  value={leadership}
-                  onChange={setLeadership}
-                  disabled={!inputsActive}
-                />
-              </StepEditor>
-              <StepEditor
-                step={4}
-                title="Resource allocation"
-                description="Deploy your team's time across the store. Must total 100%."
-                complete={stepComplete[4]}
-              >
-                <AllocationEditor allocation={allocation} setAllocation={setAllocation} disabled={!inputsActive} />
-              </StepEditor>
+              <Send className="h-4 w-4" /> Submit decision
             </>
-          ) : null}
-
-          {activeTab === "respond" ? (
-            <>
-              <StepEditor
-                step={5}
-                title="Primary issue"
-                description="Target one live issue from the context on the left to sharpen its impact."
-                complete={stepComplete[5]}
-                optional
-              >
-                <IssuePicker
-                  issues={issues}
-                  value={primaryIssueId}
-                  onChange={setPrimaryIssueId}
-                  disabled={!inputsActive}
-                />
-              </StepEditor>
-              <StepEditor
-                step={6}
-                title="People moment"
-                description={moment ? `Your response to ${moment.persona.name} (${moment.persona.role}).` : "No people moment this shift."}
-                complete={stepComplete[6]}
-              >
-                <MomentEditor moment={moment} value={momentResponseId} onChange={setMomentResponseId} disabled={!inputsActive} />
-              </StepEditor>
-            </>
-          ) : null}
-
-          {activeTab === "confidence" ? (
-            <StepEditor
-              step={7}
-              title="Confidence"
-              description="How hard are you pressing this call? Confidence multiplies upside and downside."
-              complete={stepComplete[7]}
-            >
-              <ConfidenceGroup value={confidence} onChange={setConfidence} disabled={!inputsActive} />
-            </StepEditor>
-          ) : null}
-        </div>
-
-        <div className="shrink-0 border-t border-ink-100 px-5 py-4">
-          <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
-            {submitted ? (
-              <>
-                <CheckCircle2 className="h-4 w-4" /> Decision locked in
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" /> Submit decision
-              </>
-            )}
-          </Button>
-        </div>
-      </Card>
-    </div>
+          )}
+        </Button>
+      </div>
+    </Card>
   );
 }
 
 function TabButton({
+  step,
   label,
-  stepRange,
   active,
   done,
   onClick,
 }: {
+  step: TabId;
   label: string;
-  stepRange: string;
   active: boolean;
   done: boolean;
   onClick: () => void;
@@ -756,54 +654,308 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex flex-1 flex-col items-start gap-0.5 px-4 py-3 text-left transition-colors",
-        active ? "text-ink-900" : "text-ink-500 hover:text-ink-700",
+        "press flex flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 transition-all",
+        active
+          ? "bg-surface-raised text-ink-900 shadow-card"
+          : "text-ink-500 hover:bg-ink-50 hover:text-ink-700",
       )}
     >
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-1.5">
         {done ? (
           <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ok text-white">
             <CheckCircle2 className="h-3 w-3" />
           </span>
         ) : (
-          <span className="h-4 w-4 rounded-full bg-ink-100" />
+          <span
+            className={cn(
+              "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
+              active ? "bg-ink-900 text-white" : "bg-ink-200 text-ink-600",
+            )}
+          >
+            {step}
+          </span>
         )}
-        <span className={cn("text-sm", active ? "font-semibold tracking-tight" : "font-medium")}>{label}</span>
+        <span className={cn("text-[10px] font-semibold uppercase tracking-wider", active ? "text-ink-500" : "text-ink-400")}>
+          Step {step}
+        </span>
       </span>
-      <span className="ml-6 text-[10px] uppercase tracking-wider text-ink-400">{stepRange}</span>
-      {active ? <span className="absolute -bottom-px left-0 h-[2px] w-full bg-ink-900" /> : null}
+      <span className={cn("text-[13px]", active ? "font-semibold tracking-tight text-ink-900" : "font-medium")}>
+        {label}
+      </span>
     </button>
   );
 }
 
-function StepEditor({
-  step,
+function StepHeader({
   title,
-  description,
-  complete,
+  narrative,
+  instruction,
   optional,
-  children,
 }: {
-  step: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   title: string;
-  description: string;
-  complete: boolean;
+  narrative: string;
+  instruction: string;
   optional?: boolean;
-  children: ReactNode;
 }) {
   return (
     <div>
-      <div className="flex items-center gap-3">
-        <StepBadge number={step} tone={complete ? "ok" : "neutral"} />
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold tracking-tight text-ink-900">{title}</h2>
-            {optional ? <Pill tone="neutral">Optional</Pill> : null}
-          </div>
-          <p className="text-[13px] text-ink-500">{description}</p>
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-semibold tracking-tight text-ink-900">{title}</h2>
+        {optional ? <Pill tone="neutral">Optional</Pill> : null}
+      </div>
+      <p className="mt-0.5 text-[13px] text-ink-500">{narrative}</p>
+      <p className="mt-1 text-[12px] font-medium text-ink-700">{instruction}</p>
+    </div>
+  );
+}
+
+function FocusStep({
+  priority,
+  setPriority,
+  action,
+  setAction,
+  disabled,
+}: {
+  priority: Priority | null;
+  setPriority: (p: Priority) => void;
+  action: ActionApproach | null;
+  setAction: (a: ActionApproach) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <StepHeader
+          title="Priority focus"
+          narrative="Under pressure, where does your attention go first?"
+          instruction="Choose one of the options below."
+        />
+        <div className="mt-3">
+          <RadioGrid<Priority>
+            options={Object.keys(PRIORITY_LABELS) as Priority[]}
+            labels={PRIORITY_LABELS}
+            icons={PRIORITY_ICONS}
+            value={priority}
+            onChange={setPriority}
+            disabled={disabled}
+          />
         </div>
       </div>
-      <div className="mt-3">{children}</div>
+
+      <div className="border-t border-ink-100 pt-5">
+        <StepHeader
+          title="Action approach"
+          narrative="How will you turn that priority into action?"
+          instruction="Choose one of the options below."
+        />
+        <div className="mt-3">
+          <RadioGrid<ActionApproach>
+            options={Object.keys(ACTION_LABELS) as ActionApproach[]}
+            labels={ACTION_LABELS}
+            icons={ACTION_ICONS}
+            value={action}
+            onChange={setAction}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamStep({
+  leadership,
+  setLeadership,
+  allocation,
+  setAllocation,
+  disabled,
+}: {
+  leadership: LeadershipStyle | null;
+  setLeadership: (l: LeadershipStyle) => void;
+  allocation: ResourceAllocation;
+  setAllocation: (a: ResourceAllocation) => void;
+  disabled: boolean;
+}) {
+  const total =
+    allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
+  return (
+    <div className="space-y-6">
+      <div>
+        <StepHeader
+          title="Leadership style"
+          narrative="How will you lead your team through this shift?"
+          instruction="Choose one of the options below."
+        />
+        <div className="mt-3">
+          <RadioGrid<LeadershipStyle>
+            options={Object.keys(LEADERSHIP_LABELS) as LeadershipStyle[]}
+            labels={LEADERSHIP_LABELS}
+            value={leadership}
+            onChange={setLeadership}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-ink-100 pt-5">
+        <StepHeader
+          title="Resource allocation"
+          narrative="Where does your team's time go across the store?"
+          instruction="Distribute 100% across the four areas."
+        />
+        <div className="mt-3">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+              <div
+                className={cn("h-full transition-all", total === 100 ? "bg-ok" : "bg-brand-500")}
+                style={{ width: `${Math.min(100, total)}%` }}
+              />
+            </div>
+            <span className={cn("num text-sm font-semibold", total === 100 ? "text-ok" : "text-brand-600")}>
+              {total}%
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {ALLOCATION_LABELS.map((a) => {
+              const Icon = a.icon;
+              return (
+                <div key={a.key} className="flex items-center gap-3">
+                  <span className="flex w-44 shrink-0 items-center gap-2 text-[13px] font-medium text-ink-800">
+                    <Icon className="h-4 w-4 text-ink-400" /> {a.label}
+                  </span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={allocation[a.key]}
+                    disabled={disabled}
+                    onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
+                    className="flex-1 accent-brand-500"
+                  />
+                  <span className="w-12 text-right num text-sm font-medium text-ink-800">{allocation[a.key]}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RespondStep({
+  issues,
+  primaryIssueId,
+  setPrimaryIssueId,
+  moment,
+  momentResponseId,
+  setMomentResponseId,
+  disabled,
+}: {
+  issues: Issue[];
+  primaryIssueId: string | null;
+  setPrimaryIssueId: (id: string | null) => void;
+  moment?: TeamMoment;
+  momentResponseId: string | null;
+  setMomentResponseId: (id: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <StepHeader
+          title="Primary issue"
+          narrative="Targeting a specific issue sharpens its impact this shift."
+          instruction="Tap one to target it. Optional — leave unset to spread your effort."
+          optional
+        />
+        <div className="mt-3">
+          <IssuePicker
+            issues={issues}
+            value={primaryIssueId}
+            onChange={setPrimaryIssueId}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-ink-100 pt-5">
+        {moment ? (
+          <>
+            <StepHeader
+              title="People moment"
+              narrative={`${moment.persona.name} (${moment.persona.role}) needs you.`}
+              instruction="Read the situation below, then pick your response."
+            />
+            <div className="mt-3">
+              <MomentBlock moment={moment} value={momentResponseId} onChange={setMomentResponseId} disabled={disabled} />
+            </div>
+          </>
+        ) : (
+          <StepHeader
+            title="People moment"
+            narrative="No people moment this shift."
+            instruction="You can move on."
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ConfidenceStep({
+  confidence,
+  setConfidence,
+  disabled,
+}: {
+  confidence: ConfidenceLevel | null;
+  setConfidence: (c: ConfidenceLevel) => void;
+  disabled: boolean;
+}) {
+  const options: ConfidenceLevel[] = ["cautious", "measured", "confident"];
+  return (
+    <div>
+      <StepHeader
+        title="Confidence"
+        narrative="How confident are you in your plan for this shift? Confidence multiplies every outcome — good and bad — across all of the decisions you just made."
+        instruction="Choose one of the three levels below."
+      />
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        {options.map((opt) => {
+          const Icon = CONFIDENCE_ICONS[opt];
+          const active = confidence === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              disabled={disabled}
+              onClick={() => setConfidence(opt)}
+              className={cn(
+                "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
+                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+                disabled && "cursor-not-allowed opacity-40",
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className={cn("h-4 w-4", active ? "text-brand-400" : "text-ink-500")} />
+                <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
+              </div>
+              <span className={cn("text-[11px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
+                {CONFIDENCE_DESCRIPTIONS[opt]}
+              </span>
+              <span
+                className={cn(
+                  "num rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                  active ? "bg-brand-500 text-white" : "bg-surface-raised text-ink-700",
+                )}
+              >
+                ×{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -824,7 +976,7 @@ function RadioGrid<T extends string>({
   disabled: boolean;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-2.5">
       {options.map((opt) => {
         const active = value === opt;
         const Icon: React.ComponentType<{ className?: string }> | undefined = icons?.[opt];
@@ -845,57 +997,6 @@ function RadioGrid<T extends string>({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function AllocationEditor({
-  allocation,
-  setAllocation,
-  disabled,
-}: {
-  allocation: ResourceAllocation;
-  setAllocation: (a: ResourceAllocation) => void;
-  disabled: boolean;
-}) {
-  const total =
-    allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
-  return (
-    <div>
-      <div className="mb-3 flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
-          <div
-            className={cn("h-full transition-all", total === 100 ? "bg-ok" : "bg-brand-500")}
-            style={{ width: `${Math.min(100, total)}%` }}
-          />
-        </div>
-        <span className={cn("num text-sm font-semibold", total === 100 ? "text-ok" : "text-brand-600")}>
-          {total}%
-        </span>
-      </div>
-      <div className="space-y-2.5">
-        {ALLOCATION_LABELS.map((a) => {
-          const Icon = a.icon;
-          return (
-            <div key={a.key} className="flex items-center gap-3">
-              <span className="flex w-44 shrink-0 items-center gap-2 text-[13px] font-medium text-ink-800">
-                <Icon className="h-4 w-4 text-ink-400" /> {a.label}
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={allocation[a.key]}
-                disabled={disabled}
-                onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
-                className="flex-1 accent-brand-500"
-              />
-              <span className="w-12 text-right num text-sm font-medium text-ink-800">{allocation[a.key]}%</span>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -938,7 +1039,7 @@ function IssuePicker({
             </div>
             {active ? (
               <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-400">
-                <Target className="h-3 w-3" /> Targeted &middot; tap again to clear
+                <Target className="h-3 w-3" /> Targeted · tap again to clear
               </div>
             ) : null}
           </button>
@@ -949,27 +1050,35 @@ function IssuePicker({
   );
 }
 
-function MomentEditor({
+function MomentBlock({
   moment,
   value,
   onChange,
   disabled,
 }: {
-  moment?: TeamMoment;
+  moment: TeamMoment;
   value: string | null;
   onChange: (id: string) => void;
   disabled: boolean;
 }) {
-  if (!moment) {
-    return <p className="text-sm text-ink-500">You can move on.</p>;
-  }
   return (
     <div>
-      <div className="mb-3 rounded-xl bg-ink-50 p-4 ring-1 ring-ink-200/60">
-        <p className="text-[13px] leading-snug text-ink-700">{moment.situation}</p>
-        <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-brand-700">
-          <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
-        </p>
+      <div className="mb-3 flex items-start gap-3 rounded-xl bg-surface-muted p-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-ink-600 ring-1 ring-ink-200">
+          <UserCircle2 className="h-6 w-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold text-ink-900">
+            {moment.persona.name}
+            <span className="ml-2 text-xs font-normal text-ink-500">
+              {moment.persona.role} · {moment.persona.tenure}
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] leading-snug text-ink-700">{moment.situation}</p>
+          <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-brand-700">
+            <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
+          </p>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-2">
         {moment.options.map((opt) => {
@@ -991,55 +1100,6 @@ function MomentEditor({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-function ConfidenceGroup({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: ConfidenceLevel | null;
-  onChange: (v: ConfidenceLevel) => void;
-  disabled: boolean;
-}) {
-  const options: ConfidenceLevel[] = ["cautious", "measured", "confident"];
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {options.map((opt) => {
-        const Icon = CONFIDENCE_ICONS[opt];
-        const active = value === opt;
-        return (
-          <button
-            key={opt}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(opt)}
-            className={cn(
-              "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
-              active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
-              disabled && "cursor-not-allowed opacity-40",
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Icon className={cn("h-4 w-4", active ? "text-brand-400" : "text-ink-500")} />
-              <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
-            </div>
-            <span className={cn("text-[11px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
-              {CONFIDENCE_DESCRIPTIONS[opt]}
-            </span>
-            <span
-              className={cn(
-                "num rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                active ? "bg-brand-500 text-white" : "bg-surface-raised text-ink-700",
-              )}
-            >
-              ×{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
-            </span>
-          </button>
-        );
-      })}
     </div>
   );
 }
@@ -1066,7 +1126,7 @@ function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
 
 function BriefingPanel() {
   return (
-    <div className="quiet-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-5">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5">
       <Card tone="dark" className="p-5">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white">
@@ -1076,7 +1136,7 @@ function BriefingPanel() {
             <div className="text-[11px] font-medium uppercase tracking-wider text-brand-400">Today you are</div>
             <div className="text-2xl font-semibold tracking-tighter">The store manager</div>
             <p className="mt-1 text-sm text-ink-300">
-              3 shifts · 4 minutes each · 7 decisions per shift. Decisions move live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
+              {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
             </p>
           </div>
         </div>
@@ -1089,7 +1149,7 @@ function BriefingPanel() {
             <div className="text-lg font-semibold tracking-tight text-ink-900">Where every step lives</div>
           </div>
           <Pill tone="info" strong>
-            <Clock className="h-3 w-3" /> 4 min per shift
+            <Clock className="h-3 w-3" /> 5 min per shift
           </Pill>
         </div>
         <ScreenMap />
@@ -1101,8 +1161,7 @@ function BriefingPanel() {
 function ScreenMap() {
   return (
     <div className="rounded-2xl bg-surface-base p-3 ring-1 ring-ink-200/60">
-      {/* Fake header bar */}
-      <div className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 ring-1 ring-ink-200/60">
+      <div className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 ring-1 ring-ink-200">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 rounded bg-ink-900" />
           <div className="h-2 w-24 rounded bg-ink-200" />
@@ -1114,39 +1173,33 @@ function ScreenMap() {
       </div>
 
       <div className="mt-2 grid grid-cols-[minmax(180px,1fr)_2fr] gap-2">
-        {/* Left column: context */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-ink-400" />
             <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-ink-500">Context</span>
           </div>
           <MapZone label="Store KPIs" hint="Live numbers + trends" />
-          <MapZone label="People moment" hint="Name, situation, prompt" steps={[6]} stepLabel="Step 6 · context" />
-          <MapZone label="Active issues" hint="3 live pressures" steps={[5]} stepLabel="Step 5 · context" />
+          <MapZone label="Active issues" hint="3 live pressures" />
           <MapZone label="Alerts" hint="Head office + disruption" />
         </div>
 
-        {/* Right column: decisions */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-brand-500" />
             <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-brand-600">Decide</span>
           </div>
-          <div className="rounded-lg bg-surface-raised p-3 ring-1 ring-ink-200/60">
-            <div className="mb-2 flex items-center gap-1">
-              <TabPreview label="Focus" />
-              <TabPreview label="Team" />
-              <TabPreview label="Respond" />
-              <TabPreview label="Confidence" />
+          <div className="rounded-lg bg-surface-raised p-3 ring-1 ring-ink-200">
+            <div className="mb-2 flex items-center gap-1 rounded-lg bg-ink-100 p-1">
+              <TabPreview n={1} label="Focus" />
+              <TabPreview n={2} label="Team" />
+              <TabPreview n={3} label="Respond" />
+              <TabPreview n={4} label="Confidence" />
             </div>
-            <div className="space-y-1.5 text-[11px]">
-              <StepLine number={1} label="Priority focus" tab="Focus" />
-              <StepLine number={2} label="Action approach" tab="Focus" />
-              <StepLine number={3} label="Leadership style" tab="Team" />
-              <StepLine number={4} label="Resource allocation" tab="Team" />
-              <StepLine number={5} label="Primary issue" tab="Respond" note="context on left" optional />
-              <StepLine number={6} label="People moment" tab="Respond" note="context on left" />
-              <StepLine number={7} label="Confidence" tab="Confidence" />
+            <div className="space-y-1 text-[11px]">
+              <MiniStep tab="Step 1 · Focus" items={["Priority focus", "Action approach"]} />
+              <MiniStep tab="Step 2 · Team" items={["Leadership style", "Resource allocation"]} />
+              <MiniStep tab="Step 3 · Respond" items={["Primary issue (optional)", "People moment"]} />
+              <MiniStep tab="Step 4 · Confidence" items={["Confidence level"]} />
             </div>
             <div className="mt-2 h-7 rounded-md bg-ink-900 text-center text-[10px] font-semibold leading-7 text-white">
               Submit decision
@@ -1158,76 +1211,55 @@ function ScreenMap() {
   );
 }
 
-function MapZone({
-  label,
-  hint,
-  steps,
-  stepLabel,
-}: {
-  label: string;
-  hint: string;
-  steps?: number[];
-  stepLabel?: string;
-}) {
+function MapZone({ label, hint }: { label: string; hint: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-surface-raised p-2.5 ring-1 ring-ink-200/60">
-      {steps && steps[0] !== undefined ? (
-        <StepBadge number={steps[0]} size="sm" />
-      ) : (
-        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-300" />
-      )}
+    <div className="flex items-start gap-2 rounded-lg bg-surface-raised p-2.5 ring-1 ring-ink-200">
+      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-300" />
       <div className="min-w-0 flex-1">
         <div className="text-[12px] font-semibold text-ink-900">{label}</div>
         <div className="text-[11px] text-ink-500">{hint}</div>
-        {stepLabel ? (
-          <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-600">{stepLabel}</div>
-        ) : null}
       </div>
     </div>
   );
 }
 
-function TabPreview({ label }: { label: string }) {
+function TabPreview({ n, label }: { n: number; label: string }) {
   return (
-    <div className="rounded-full bg-ink-100 px-2.5 py-0.5 text-[10px] font-semibold text-ink-700">{label}</div>
-  );
-}
-
-function StepLine({
-  number,
-  label,
-  tab,
-  note,
-  optional,
-}: {
-  number: number;
-  label: string;
-  tab: string;
-  note?: string;
-  optional?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2 rounded-md bg-surface-muted px-2 py-1.5">
-      <StepBadge number={number} size="sm" />
-      <span className="flex-1 font-semibold text-ink-900">{label}</span>
-      {optional ? <span className="text-[10px] text-ink-500">optional</span> : null}
-      <span className="rounded bg-surface-raised px-1.5 py-0.5 text-[10px] font-semibold text-ink-700 ring-1 ring-ink-200">
-        {tab}
+    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-surface-raised px-2 py-1 text-[10px] font-semibold text-ink-800 shadow-card">
+      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ink-900 text-[8px] font-semibold text-white">
+        {n}
       </span>
-      {note ? <span className="text-[10px] italic text-ink-500">{note}</span> : null}
+      {label}
     </div>
   );
 }
 
-function ResultsPanel({ team, state }: { team: TeamPublic; state: SessionStatePublic }) {
+function MiniStep({ tab, items }: { tab: string; items: string[] }) {
+  return (
+    <div className="rounded-md bg-surface-muted px-2 py-1.5">
+      <div className="text-[9px] font-semibold uppercase tracking-wider text-brand-600">{tab}</div>
+      <div className="text-[11px] text-ink-700">{items.join(" · ")}</div>
+    </div>
+  );
+}
+
+function ResultsPanel({
+  team,
+  state,
+  totalRounds,
+}: {
+  team: TeamPublic;
+  state: SessionStatePublic;
+  totalRounds: number;
+}) {
   const rank = state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0;
   const kpis: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
   return (
-    <div className="quiet-scroll flex flex-1 items-center justify-center overflow-auto p-5">
+    <div className="flex flex-1 items-center justify-center overflow-hidden p-5">
       <Card className="w-full max-w-4xl p-6">
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <Pill tone="info">Shift {state.round?.number} complete</Pill>
+            <Pill tone="info">Shift {state.round?.number} of {totalRounds} complete</Pill>
             <h2 className="mt-2 text-2xl font-semibold tracking-tighter text-ink-900">How the shift played out</h2>
             <p className="text-sm text-ink-500">Your facilitator will move on when the room is ready.</p>
           </div>
