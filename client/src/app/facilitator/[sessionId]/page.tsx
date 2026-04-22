@@ -95,7 +95,7 @@ export default function FacilitatorPage() {
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-surface-base">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
       <div className="shrink-0 px-5 pt-5">
@@ -147,12 +147,12 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-900 text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white">
           <Activity className="h-5 w-5" />
         </div>
         <div>
-          <div className="text-xl font-semibold tracking-tighter text-ink-900">Facilitator</div>
-          <div className="mt-0.5 text-xs text-ink-500">
+          <div className="text-xl font-semibold tracking-tighter text-white">Facilitator</div>
+          <div className="mt-0.5 text-xs text-white/50">
             {phaseText[state.phase]}
             {" · "}
             {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
@@ -160,20 +160,18 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="rounded-full bg-surface-raised px-4 py-1.5 ring-1 ring-ink-200/80">
-          <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">Session code</div>
-          <div className="num text-2xl font-semibold tracking-[0.3em] text-ink-900">{state.code}</div>
+        <div className="rounded-full bg-surface-panel px-4 py-1.5 ring-1 ring-white/10">
+          <div className="text-[10px] font-medium uppercase tracking-wider text-white/50">Session code</div>
+          <div className="num text-2xl font-semibold tracking-[0.3em] text-white">{state.code}</div>
         </div>
         <div
           className={cn(
             "flex items-center gap-2.5 rounded-full px-4 py-1.5",
-            urgent ? "bg-risk text-white" : "bg-surface-raised ring-1 ring-ink-200/80",
+            urgent ? "bg-risk text-white" : "bg-surface-panel ring-1 ring-white/10",
           )}
         >
-          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-ink-500")} />
-          <span className={cn("num text-2xl font-semibold", urgent ? "text-white" : "text-ink-900")}>
-            {formatClock(timeLeftMs)}
-          </span>
+          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-white/60")} />
+          <span className={cn("num text-2xl font-semibold text-white")}>{formatClock(timeLeftMs)}</span>
         </div>
       </div>
     </header>
@@ -234,7 +232,7 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
   const slots = Array.from({ length: expected }, (_, i) => state.teams[i]);
 
   return (
-    <Card tone="accent" className="p-4">
+    <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <div className="text-[11px] font-medium uppercase tracking-wide text-brand-600">Lobby</div>
@@ -499,7 +497,7 @@ function InsightList({
 function ScriptPanel({ state }: { state: SessionStatePublic }) {
   const script = state.insights.script;
   return (
-    <Card tone="accent" className="p-5">
+    <Card className="p-5">
       <SectionTitle
         icon={<ScrollText className="h-4 w-4" />}
         title={script.headline}

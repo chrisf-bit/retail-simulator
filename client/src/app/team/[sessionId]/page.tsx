@@ -191,7 +191,7 @@ export default function TeamPlayerPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-surface-base">
+    <div className="flex h-full w-full flex-col overflow-hidden">
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -201,7 +201,7 @@ export default function TeamPlayerPage() {
         roundPhase={state.round?.phase}
       />
 
-      <div className="shrink-0 px-5 pt-5">
+      <div className="shrink-0 px-5 pt-4">
         <PhaseGuide tone={guidance.tone} headline={guidance.headline} body={guidance.body} />
       </div>
 
@@ -215,16 +215,16 @@ export default function TeamPlayerPage() {
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
         <main className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_2fr] gap-5 p-5">
-          <aside className="flex min-h-0 flex-col gap-4">
+          <aside className="flex min-h-0 flex-col gap-3">
             <ZoneLabel label="Context" tone="neutral" />
             <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
             <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
             <AlertsPanel state={state} />
           </aside>
 
-          <section className="flex min-w-0 flex-col min-h-0">
+          <section className="flex min-w-0 flex-col min-h-0 gap-3">
             <ZoneLabel label="Decide" tone="brand" />
-            <div className="mt-4 min-h-0 flex-1">
+            <div className="min-h-0 flex-1">
               <DecisionPanel
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -259,12 +259,12 @@ export default function TeamPlayerPage() {
 }
 
 function ZoneLabel({ label, tone }: { label: string; tone: "neutral" | "brand" }) {
-  const color = tone === "brand" ? "text-brand-600 bg-brand-500" : "text-ink-500 bg-ink-400";
-  const dot = tone === "brand" ? "bg-brand-500" : "bg-ink-400";
+  const color = tone === "brand" ? "text-brand-400" : "text-white/40";
+  const dot = tone === "brand" ? "bg-brand-500" : "bg-white/30";
   return (
     <div className="flex items-center gap-2 pl-1">
       <span className={cn("h-1 w-1 rounded-full", dot)} />
-      <span className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", color.split(" ")[0])}>{label}</span>
+      <span className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", color)}>{label}</span>
     </div>
   );
 }
@@ -289,12 +289,12 @@ function TeamHeader({
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-900 text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white">
           <Store className="h-5 w-5" />
         </div>
         <div>
-          <div className="text-xl font-semibold tracking-tighter text-ink-900">{team.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-500">
+          <div className="text-xl font-semibold tracking-tighter text-white">{team.name}</div>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-white/50">
             {phase === "round" ? (
               <>
                 <span>Shift {round} of {totalRounds}</span>
@@ -302,7 +302,7 @@ function TeamHeader({
                   {Array.from({ length: totalRounds }).map((_, idx) => (
                     <span
                       key={idx}
-                      className={cn("h-1.5 w-1.5 rounded-full", idx + 1 <= round ? "bg-brand-500" : "bg-ink-200")}
+                      className={cn("h-1.5 w-1.5 rounded-full", idx + 1 <= round ? "bg-brand-500" : "bg-white/15")}
                     />
                   ))}
                 </span>
@@ -322,15 +322,15 @@ function TeamHeader({
         <div
           className={cn(
             "flex items-center gap-2.5 rounded-full px-4 py-1.5",
-            urgent ? "bg-risk text-white" : "bg-surface-raised shadow-card ring-1 ring-ink-200",
+            urgent ? "bg-risk text-white" : "bg-surface-panel text-white ring-1 ring-white/10",
           )}
         >
-          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-ink-500")} />
-          <span className={cn("num text-2xl font-semibold", urgent ? "text-white" : "text-ink-900")}>{clock}</span>
+          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-white/60")} />
+          <span className={cn("num text-2xl font-semibold")}>{clock}</span>
         </div>
-        <div className="rounded-full bg-surface-raised px-4 py-1.5 shadow-card ring-1 ring-ink-200">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-500">Score</div>
-          <div className="num text-2xl font-semibold text-ink-900">{team.score}</div>
+        <div className="rounded-full bg-surface-panel px-4 py-1.5 ring-1 ring-white/10">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Score</div>
+          <div className="num text-2xl font-semibold text-white">{team.score}</div>
         </div>
       </div>
     </header>
@@ -347,14 +347,6 @@ function phaseLabel(p: string): string {
     case "finished": return "Session complete";
     default: return p;
   }
-}
-
-function DataCard({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn("rounded-2xl bg-surface-raised p-4 shadow-card ring-1 ring-ink-200", className)}>
-      {children}
-    </div>
-  );
 }
 
 function KpiStrip({
@@ -377,19 +369,19 @@ function KpiStrip({
   }));
 
   return (
-    <DataCard>
+    <Card tone="data" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Gauge className="h-4 w-4 text-ink-500" />
-          <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Store performance</h3>
+          <Gauge className="h-4 w-4 text-white/60" />
+          <h3 className="text-[15px] font-semibold tracking-tight text-white">Store performance</h3>
         </div>
-        <div className="flex rounded-full bg-ink-100 p-0.5">
+        <div className="flex rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
           <button
             type="button"
             onClick={() => onViewChange("values")}
             className={cn(
               "press rounded-full px-2.5 py-1 transition-colors",
-              view === "values" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
+              view === "values" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
             )}
             aria-label="Values"
           >
@@ -400,7 +392,7 @@ function KpiStrip({
             onClick={() => onViewChange("trends")}
             className={cn(
               "press rounded-full px-2.5 py-1 transition-colors",
-              view === "trends" ? "bg-surface-raised text-ink-900 shadow-card" : "text-ink-500 hover:text-ink-800",
+              view === "trends" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
             )}
             aria-label="Trends"
           >
@@ -408,59 +400,57 @@ function KpiStrip({
           </button>
         </div>
       </div>
-      <div className="space-y-2">
+      <div className="grid grid-cols-5 gap-2">
         {items.map((i) => (
-          <div key={i.key} className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{i.label}</div>
-              <div className="mt-0.5 flex items-baseline gap-2">
-                <span className="num text-lg font-semibold text-ink-900">{i.value}</span>
-                <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} />
-              </div>
+          <div key={i.key} className="rounded-xl bg-white/5 p-2.5">
+            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">{i.label}</div>
+            <div className="mt-0.5 flex items-baseline justify-between gap-1">
+              <span className="num text-lg font-semibold text-white">{i.value}</span>
+              <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} onDark />
             </div>
-            <div className="w-24 shrink-0">
+            <div className="mt-1.5">
               {view === "values" ? (
-                <Bar value={i.value} inverted={i.inverted} />
+                <Bar value={i.value} inverted={i.inverted} onDark />
               ) : (
-                <Sparkline values={i.series} inverted={i.inverted} width={96} height={20} />
+                <Sparkline values={i.series} inverted={i.inverted} width={90} height={18} onDark />
               )}
             </div>
           </div>
         ))}
       </div>
-    </DataCard>
+    </Card>
   );
 }
 
 function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
   return (
-    <DataCard className="flex min-h-0 flex-col">
+    <Card tone="data" className="flex min-h-0 flex-col p-4">
       <div className="mb-3 flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-ink-500" />
-        <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Active issues</h3>
+        <AlertTriangle className="h-4 w-4 text-white/60" />
+        <h3 className="text-[15px] font-semibold tracking-tight text-white">Active issues</h3>
       </div>
       <div className="space-y-2">
         {issues.map((i) => {
           const targeted = primaryIssueId === i.id;
           return (
-            <div key={i.id} className="rounded-lg bg-surface-muted p-3">
+            <div key={i.id} className="rounded-xl bg-white/5 p-3">
               <div className="mb-1 flex items-start justify-between gap-2">
-                <h4 className="text-[13px] font-semibold text-ink-900">{i.title}</h4>
+                <h4 className="text-[13px] font-semibold text-white">{i.title}</h4>
                 {targeted ? (
                   <Pill tone="info" strong>
                     <Target className="h-3 w-3" /> Targeted
                   </Pill>
                 ) : (
-                  <Pill tone={SEVERITY_TONES[i.severity]}>{i.severity}</Pill>
+                  <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
                 )}
               </div>
-              <p className="text-xs text-ink-600">{i.description}</p>
+              <p className="text-xs text-white/70">{i.description}</p>
             </div>
           );
         })}
-        {issues.length === 0 ? <p className="text-xs text-ink-500">No active issues.</p> : null}
+        {issues.length === 0 ? <p className="text-xs text-white/50">No active issues.</p> : null}
       </div>
-    </DataCard>
+    </Card>
   );
 }
 
@@ -468,14 +458,14 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
   const alerts = state.round?.alerts ?? [];
   const disruption = state.round?.disruption;
   return (
-    <DataCard className="flex min-h-0 flex-col">
+    <Card tone="data" className="flex min-h-0 flex-col p-4">
       <div className="mb-3 flex items-center gap-2">
-        <BellRing className="h-4 w-4 text-ink-500" />
-        <h3 className="text-[15px] font-semibold tracking-tight text-ink-900">Alerts</h3>
+        <BellRing className="h-4 w-4 text-white/60" />
+        <h3 className="text-[15px] font-semibold tracking-tight text-white">Alerts</h3>
       </div>
       <div className="space-y-2">
         {disruption ? (
-          <div className="rounded-lg bg-risk p-3 text-white">
+          <div className="rounded-xl bg-risk p-3 text-white">
             <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
@@ -484,17 +474,17 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
-          <div key={a.id} className="rounded-lg bg-surface-muted p-3">
-            <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">
+          <div key={a.id} className="rounded-xl bg-white/5 p-3">
+            <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-white/50">
               {a.kind === "head_office" ? "Head office" : "Operational"}
             </div>
-            <h4 className="text-[13px] font-semibold text-ink-900">{a.title}</h4>
-            <p className="mt-0.5 text-xs text-ink-600">{a.message}</p>
+            <h4 className="text-[13px] font-semibold text-white">{a.title}</h4>
+            <p className="mt-0.5 text-xs text-white/70">{a.message}</p>
           </div>
         ))}
-        {!disruption && alerts.length === 0 ? <p className="text-xs text-ink-500">No alerts.</p> : null}
+        {!disruption && alerts.length === 0 ? <p className="text-xs text-white/50">No alerts.</p> : null}
       </div>
-    </DataCard>
+    </Card>
   );
 }
 
@@ -656,8 +646,8 @@ function TabButton({
       className={cn(
         "press flex flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 transition-all",
         active
-          ? "bg-surface-raised text-ink-900 shadow-card"
-          : "text-ink-500 hover:bg-ink-50 hover:text-ink-700",
+          ? "bg-white text-ink-900 shadow-card"
+          : "text-ink-500 hover:bg-white/50 hover:text-ink-700",
       )}
     >
       <span className="flex items-center gap-1.5">
@@ -669,7 +659,7 @@ function TabButton({
           <span
             className={cn(
               "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
-              active ? "bg-ink-900 text-white" : "bg-ink-200 text-ink-600",
+              active ? "bg-brand-500 text-white" : "bg-ink-200 text-ink-600",
             )}
           >
             {step}
@@ -947,7 +937,7 @@ function ConfidenceStep({
               <span
                 className={cn(
                   "num rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                  active ? "bg-brand-500 text-white" : "bg-surface-raised text-ink-700",
+                  active ? "bg-brand-500 text-white" : "bg-white text-ink-700 ring-1 ring-ink-200",
                 )}
               >
                 ×{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
@@ -1063,8 +1053,8 @@ function MomentBlock({
 }) {
   return (
     <div>
-      <div className="mb-3 flex items-start gap-3 rounded-xl bg-surface-muted p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-ink-600 ring-1 ring-ink-200">
+      <div className="mb-3 flex items-start gap-3 rounded-xl bg-ink-50 p-4 ring-1 ring-ink-200">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink-700 ring-1 ring-ink-200">
           <UserCircle2 className="h-6 w-6" />
         </div>
         <div className="min-w-0 flex-1">
@@ -1127,15 +1117,15 @@ function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
 function BriefingPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5">
-      <Card tone="dark" className="p-5">
+      <Card className="p-5">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white">
             <Store className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-brand-400">Today you are</div>
-            <div className="text-2xl font-semibold tracking-tighter">The store manager</div>
-            <p className="mt-1 text-sm text-ink-300">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-brand-600">Today you are</div>
+            <div className="text-2xl font-semibold tracking-tighter text-ink-900">The store manager</div>
+            <p className="mt-1 text-sm text-ink-600">
               {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
             </p>
           </div>
@@ -1160,23 +1150,23 @@ function BriefingPanel() {
 
 function ScreenMap() {
   return (
-    <div className="rounded-2xl bg-surface-base p-3 ring-1 ring-ink-200/60">
-      <div className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2 ring-1 ring-ink-200">
+    <div className="rounded-2xl bg-surface-stage p-3 ring-1 ring-white/5">
+      <div className="flex items-center justify-between rounded-lg bg-surface-panel px-3 py-2 ring-1 ring-white/10">
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded bg-ink-900" />
-          <div className="h-2 w-24 rounded bg-ink-200" />
+          <div className="h-5 w-5 rounded bg-brand-500" />
+          <div className="h-2 w-24 rounded bg-white/15" />
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-5 w-14 rounded-full bg-ink-100" />
-          <div className="h-5 w-14 rounded-full bg-ink-100" />
+          <div className="h-5 w-14 rounded-full bg-white/10" />
+          <div className="h-5 w-14 rounded-full bg-white/10" />
         </div>
       </div>
 
       <div className="mt-2 grid grid-cols-[minmax(180px,1fr)_2fr] gap-2">
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
-            <span className="h-1 w-1 rounded-full bg-ink-400" />
-            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-ink-500">Context</span>
+            <span className="h-1 w-1 rounded-full bg-white/40" />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/50">Context</span>
           </div>
           <MapZone label="Store KPIs" hint="Live numbers + trends" />
           <MapZone label="Active issues" hint="3 live pressures" />
@@ -1186,9 +1176,9 @@ function ScreenMap() {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-brand-500" />
-            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-brand-600">Decide</span>
+            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-brand-400">Decide</span>
           </div>
-          <div className="rounded-lg bg-surface-raised p-3 ring-1 ring-ink-200">
+          <div className="rounded-lg bg-white p-3 ring-1 ring-ink-200">
             <div className="mb-2 flex items-center gap-1 rounded-lg bg-ink-100 p-1">
               <TabPreview n={1} label="Focus" />
               <TabPreview n={2} label="Team" />
@@ -1201,7 +1191,7 @@ function ScreenMap() {
               <MiniStep tab="Step 3 · Respond" items={["Primary issue (optional)", "People moment"]} />
               <MiniStep tab="Step 4 · Confidence" items={["Confidence level"]} />
             </div>
-            <div className="mt-2 h-7 rounded-md bg-ink-900 text-center text-[10px] font-semibold leading-7 text-white">
+            <div className="mt-2 h-7 rounded-md bg-brand-500 text-center text-[10px] font-semibold leading-7 text-white">
               Submit decision
             </div>
           </div>
@@ -1213,11 +1203,11 @@ function ScreenMap() {
 
 function MapZone({ label, hint }: { label: string; hint: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg bg-surface-raised p-2.5 ring-1 ring-ink-200">
-      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-300" />
+    <div className="flex items-start gap-2 rounded-lg bg-surface-panel p-2.5 ring-1 ring-white/10">
+      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-semibold text-ink-900">{label}</div>
-        <div className="text-[11px] text-ink-500">{hint}</div>
+        <div className="text-[12px] font-semibold text-white">{label}</div>
+        <div className="text-[11px] text-white/50">{hint}</div>
       </div>
     </div>
   );
@@ -1225,8 +1215,8 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
 
 function TabPreview({ n, label }: { n: number; label: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-surface-raised px-2 py-1 text-[10px] font-semibold text-ink-800 shadow-card">
-      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-ink-900 text-[8px] font-semibold text-white">
+    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-ink-800 shadow-card">
+      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-500 text-[8px] font-semibold text-white">
         {n}
       </span>
       {label}
@@ -1236,7 +1226,7 @@ function TabPreview({ n, label }: { n: number; label: string }) {
 
 function MiniStep({ tab, items }: { tab: string; items: string[] }) {
   return (
-    <div className="rounded-md bg-surface-muted px-2 py-1.5">
+    <div className="rounded-md bg-ink-50 px-2 py-1.5 ring-1 ring-ink-100">
       <div className="text-[9px] font-semibold uppercase tracking-wider text-brand-600">{tab}</div>
       <div className="text-[11px] text-ink-700">{items.join(" · ")}</div>
     </div>
@@ -1361,7 +1351,7 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
 function LoadingScreen({ label }: { label: string }) {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className="flex items-center gap-2 text-ink-500">
+      <div className="flex items-center gap-2 text-white/50">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span className="text-sm">{label}</span>
       </div>

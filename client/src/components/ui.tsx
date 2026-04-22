@@ -14,15 +14,17 @@ export function Card({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: "default" | "muted" | "accent" | "dark";
+  tone?: "default" | "data" | "dark";
 }) {
   const tones = {
-    default: "bg-surface-raised ring-1 ring-ink-200/80 shadow-card",
-    muted: "bg-surface-muted ring-1 ring-ink-200/60",
-    accent: "bg-surface-tint ring-1 ring-brand-200",
-    dark: "bg-ink-900 text-white ring-1 ring-ink-800",
+    // Decision / action surfaces: white
+    default: "bg-surface-raised text-ink-900 shadow-card ring-1 ring-black/5",
+    // Data / insight surfaces: dark elevated panel
+    data: "bg-surface-panel text-white shadow-panel ring-1 ring-white/5",
+    // Heavy dark
+    dark: "bg-ink-900 text-white shadow-panel ring-1 ring-white/5",
   };
-  return <div className={cn("rounded-2xl", tones[tone], className)}>{children}</div>;
+  return <div className={cn("rounded-2xl", tones[tone])}>{children}</div>;
 }
 
 export function SectionTitle({
@@ -30,19 +32,25 @@ export function SectionTitle({
   title,
   subtitle,
   right,
+  tone = "default",
 }: {
   icon?: ReactNode;
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  tone?: "default" | "data";
 }) {
+  const titleClass =
+    tone === "data" ? "text-white" : "text-ink-900";
+  const subClass = tone === "data" ? "text-white/60" : "text-ink-500";
+  const iconClass = tone === "data" ? "text-white/70" : "text-ink-500";
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        {icon ? <span className="text-ink-500">{icon}</span> : null}
+        {icon ? <span className={iconClass}>{icon}</span> : null}
         <div className="min-w-0">
-          <h3 className="truncate text-[15px] font-semibold tracking-tight text-ink-900">{title}</h3>
-          {subtitle ? <p className="truncate text-xs text-ink-500">{subtitle}</p> : null}
+          <h3 className={cn("truncate text-[15px] font-semibold tracking-tight", titleClass)}>{title}</h3>
+          {subtitle ? <p className={cn("truncate text-xs", subClass)}>{subtitle}</p> : null}
         </div>
       </div>
       {right}
@@ -130,17 +138,26 @@ export function Pill({
   tone = "neutral",
   children,
   strong = false,
+  surface = "light",
 }: {
   tone?: "neutral" | "ok" | "warn" | "risk" | "info";
   children: ReactNode;
   strong?: boolean;
+  surface?: "light" | "dark";
 }) {
-  const soft = {
+  const softLight = {
     neutral: "bg-ink-100 text-ink-700",
     ok: "bg-emerald-50 text-emerald-700",
-    warn: "bg-brand-50 text-brand-700",
+    warn: "bg-ink-100 text-brand-700",
     risk: "bg-rose-50 text-rose-700",
-    info: "bg-brand-50 text-brand-700",
+    info: "bg-ink-100 text-brand-700",
+  };
+  const softDark = {
+    neutral: "bg-white/10 text-white/80",
+    ok: "bg-emerald-500/20 text-emerald-300",
+    warn: "bg-brand-500/20 text-brand-300",
+    risk: "bg-rose-500/20 text-rose-300",
+    info: "bg-brand-500/20 text-brand-300",
   };
   const bold = {
     neutral: "bg-ink-900 text-white",
@@ -149,7 +166,7 @@ export function Pill({
     risk: "bg-risk text-white",
     info: "bg-brand-500 text-white",
   };
-  const palette = strong ? bold : soft;
+  const palette = strong ? bold : surface === "dark" ? softDark : softLight;
   return (
     <span
       className={cn(
@@ -162,31 +179,40 @@ export function Pill({
   );
 }
 
-export function Bar({ value, inverted = false }: { value: number; inverted?: boolean }) {
+export function Bar({ value, inverted = false, onDark = false }: { value: number; inverted?: boolean; onDark?: boolean }) {
   const normal = Math.max(0, Math.min(100, value));
   const score = inverted ? 100 - normal : normal;
   let tone = "bg-ok";
   if (score < 40) tone = "bg-risk";
   else if (score < 65) tone = "bg-brand-500";
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
+    <div className={cn("h-1.5 w-full overflow-hidden rounded-full", onDark ? "bg-white/10" : "bg-ink-100")}>
       <div className={cn("h-full transition-all duration-500", tone)} style={{ width: `${normal}%` }} />
     </div>
   );
 }
 
-export function Delta({ value, invertedMeaning = false }: { value: number | undefined; invertedMeaning?: boolean }) {
+export function Delta({
+  value,
+  invertedMeaning = false,
+  onDark = false,
+}: {
+  value: number | undefined;
+  invertedMeaning?: boolean;
+  onDark?: boolean;
+}) {
   if (value === undefined) return null;
   if (value === 0) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[11px] text-ink-500">
+      <span className={cn("inline-flex items-center gap-0.5 text-[11px]", onDark ? "text-white/50" : "text-ink-500")}>
         <Minus className="h-3 w-3" />
         0
       </span>
     );
   }
   const good = invertedMeaning ? value < 0 : value > 0;
-  const tone = good ? "text-ok" : "text-risk";
+  let tone = good ? "text-emerald-400" : "text-rose-400";
+  if (!onDark) tone = good ? "text-ok" : "text-risk";
   const Icon = value > 0 ? ArrowUp : ArrowDown;
   return (
     <span className={cn("inline-flex items-center gap-0.5 text-[11px] font-semibold num", tone)}>
@@ -209,7 +235,7 @@ export function PhaseGuide({
   action?: ReactNode;
 }) {
   const tones = {
-    info: "bg-ink-900 text-white",
+    info: "bg-brand-500 text-white",
     ok: "bg-ok text-white",
     warn: "bg-brand-500 text-white",
     risk: "bg-risk text-white",
@@ -217,7 +243,7 @@ export function PhaseGuide({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-4 overflow-hidden rounded-2xl px-5 py-3.5",
+        "relative flex items-center justify-between gap-4 overflow-hidden rounded-2xl px-5 py-3.5 shadow-panel",
         tones[tone],
       )}
     >
@@ -235,16 +261,19 @@ export function Sparkline({
   inverted = false,
   width = 80,
   height = 26,
+  onDark = false,
 }: {
   values: number[];
   inverted?: boolean;
   width?: number;
   height?: number;
+  onDark?: boolean;
 }) {
   if (values.length < 2) {
+    const stroke = onDark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
     return (
-      <svg width={width} height={height} className="text-ink-300">
-        <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke="currentColor" strokeDasharray="3 3" />
+      <svg width={width} height={height}>
+        <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke={stroke} strokeDasharray="3 3" />
       </svg>
     );
   }
@@ -263,7 +292,10 @@ export function Sparkline({
   const first = values[0];
   const goingUp = last > first;
   const good = inverted ? !goingUp : goingUp;
-  const stroke = last === first ? "#76777c" : good ? "#0f9d58" : "#d93f5a";
+  const neutral = onDark ? "#9a9ba0" : "#76777c";
+  const up = onDark ? "#34d399" : "#0f9d58";
+  const down = onDark ? "#fb7185" : "#d93f5a";
+  const stroke = last === first ? neutral : good ? up : down;
   const lastX = (values.length - 1) * stepX;
   const lastY = height - ((last - min) / span) * height;
   return (
@@ -276,7 +308,7 @@ export function Sparkline({
         strokeLinejoin="round"
         points={points}
       />
-      <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke="white" strokeWidth={1} />
+      <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
     </svg>
   );
 }
