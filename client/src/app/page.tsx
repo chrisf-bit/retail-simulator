@@ -53,32 +53,34 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-white to-ink-100 p-6">
+    <div className="flex h-full w-full items-center justify-center p-6">
       <div className="w-full max-w-4xl">
-        <div className="mb-8 flex items-center gap-2 text-ink-700">
-          <Activity className="h-5 w-5 text-brand-600" />
-          <span className="text-sm font-semibold tracking-tight">Retail Leadership Simulation</span>
+        <div className="mb-8 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
+            <Activity className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-semibold tracking-tight text-white">Retail Leadership Simulation</span>
         </div>
 
-        <h1 className="mb-2 text-4xl font-semibold tracking-tight text-ink-900">Run a live session</h1>
-        <p className="mb-10 max-w-2xl text-base text-ink-600">
+        <h1 className="mb-2 text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>
+        <p className="mb-10 max-w-2xl text-base text-white/60">
           Multi-team, time-boxed decisions across six shifts. Facilitators control the session and observe all teams;
           teams share a laptop and make decisions under pressure.
         </p>
 
         {mode === "choose" ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Card className="p-6">
+            <Card className="flex flex-col p-6">
               <div className="mb-3 flex items-center gap-2">
-                <Monitor className="h-5 w-5 text-brand-600" />
-                <h2 className="text-lg font-bold text-ink-900">Facilitator</h2>
+                <Monitor className="h-5 w-5 text-ink-500" />
+                <h2 className="text-lg font-semibold tracking-tight text-ink-900">Facilitator</h2>
               </div>
               <p className="mb-5 text-sm text-ink-600">
-                Create a session, share the code with teams, and control round flow and disruptions.
+                Create a session, share the code with teams, and control shift flow and disruptions.
               </p>
 
               <div className="mb-5">
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink-600">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
                   Number of teams
                 </label>
                 <div className="flex items-center gap-2">
@@ -87,17 +89,17 @@ export default function LandingPage() {
                     onClick={() => adjustTeams(-1)}
                     disabled={expectedTeams <= MIN_TEAMS}
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg border-2 border-ink-200 bg-white text-ink-700 transition-colors hover:border-ink-300 hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40",
+                      "press flex h-11 w-11 items-center justify-center rounded-xl bg-ink-100 text-ink-800 transition-colors hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40",
                     )}
                     aria-label="Decrease team count"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
 
-                  <div className="flex flex-1 items-center justify-center gap-2 rounded-lg border-2 border-brand-200 bg-brand-50 px-3 py-2">
-                    <Users className="h-4 w-4 text-brand-700" />
-                    <span className="font-mono text-2xl font-bold text-brand-900 tabular-nums">{expectedTeams}</span>
-                    <span className="text-xs text-brand-700">teams</span>
+                  <div className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink-900 px-3 py-2.5 text-white">
+                    <Users className="h-4 w-4 text-brand-400" />
+                    <span className="num text-xl font-semibold">{expectedTeams}</span>
+                    <span className="text-xs text-white/60">teams</span>
                   </div>
 
                   <button
@@ -105,7 +107,7 @@ export default function LandingPage() {
                     onClick={() => adjustTeams(+1)}
                     disabled={expectedTeams >= MAX_TEAMS}
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg border-2 border-ink-200 bg-white text-ink-700 transition-colors hover:border-ink-300 hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40",
+                      "press flex h-11 w-11 items-center justify-center rounded-xl bg-ink-100 text-ink-800 transition-colors hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40",
                     )}
                     aria-label="Increase team count"
                   >
@@ -117,20 +119,20 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <Button size="lg" onClick={createFacilitator} disabled={submitting}>
+              <Button size="lg" onClick={createFacilitator} disabled={submitting} className="mt-auto">
                 Create session
               </Button>
             </Card>
 
-            <Card className="p-6">
+            <Card className="flex flex-col p-6">
               <div className="mb-3 flex items-center gap-2">
-                <Users className="h-5 w-5 text-brand-600" />
-                <h2 className="text-lg font-bold text-ink-900">Team</h2>
+                <Users className="h-5 w-5 text-ink-500" />
+                <h2 className="text-lg font-semibold tracking-tight text-ink-900">Team</h2>
               </div>
               <p className="mb-5 text-sm text-ink-600">
                 Join an active session using the code your facilitator shared.
               </p>
-              <Button size="lg" variant="secondary" onClick={() => setMode("team")}>
+              <Button size="lg" variant="quiet" onClick={() => setMode("team")} className="mt-auto">
                 Join a session
               </Button>
             </Card>
@@ -138,12 +140,12 @@ export default function LandingPage() {
         ) : (
           <Card className="mx-auto max-w-lg p-6">
             <div className="mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-brand-600" />
-              <h2 className="text-lg font-bold text-ink-900">Join as a team</h2>
+              <Users className="h-5 w-5 text-ink-500" />
+              <h2 className="text-lg font-semibold tracking-tight text-ink-900">Join as a team</h2>
             </div>
             <form onSubmit={joinTeam} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-600">
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
                   Session code
                 </label>
                 <input
@@ -151,25 +153,25 @@ export default function LandingPage() {
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. A7K2N"
                   maxLength={5}
-                  className="w-full rounded-lg border-2 border-ink-200 bg-white px-3 py-2 text-lg font-mono uppercase tracking-widest text-ink-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  className="w-full rounded-xl bg-ink-100 px-3 py-2.5 text-lg font-mono uppercase tracking-widest text-ink-900 placeholder:text-ink-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-ink-600">Team name</label>
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                  Team name
+                </label>
                 <input
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g. North Store"
                   maxLength={32}
-                  className="w-full rounded-lg border-2 border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                  className="w-full rounded-xl bg-ink-100 px-3 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
               {error ? (
-                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800">
-                  {error}
-                </p>
+                <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">{error}</p>
               ) : null}
               <div className="flex items-center gap-2">
                 <Button type="submit" disabled={submitting || !code || !teamName}>

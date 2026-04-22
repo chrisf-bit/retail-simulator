@@ -184,9 +184,9 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
   }
 
   return (
-    <Card className="p-5">
-      <SectionTitle icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
-      <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[10px] font-medium uppercase tracking-wider text-ink-500">
+    <Card tone="data" className="p-5">
+      <SectionTitle tone="data" icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
+      <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[10px] font-medium uppercase tracking-wider text-white/50">
         <div className="col-span-1">Rank</div>
         <div className="col-span-6">Team</div>
         <div className="col-span-3 text-right">Score</div>
@@ -200,18 +200,18 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
               key={row.teamId}
               className={cn(
                 "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
-                isLead ? "bg-ink-900 text-white" : "bg-surface-muted",
+                isLead ? "bg-brand-500 text-white" : "bg-white/5",
               )}
             >
-              <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-ink-700")}>
+              <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
                 #{row.rank}
               </div>
               <div className="col-span-6 flex items-center gap-2">
-                <Store className={cn("h-4 w-4", isLead ? "text-brand-400" : "text-ink-400")} />
-                <span className={cn("truncate text-sm font-semibold", isLead ? "text-white" : "text-ink-900")}>{row.name}</span>
-                {isLead ? <Pill tone="warn" strong>Lead</Pill> : null}
+                <Store className={cn("h-4 w-4", isLead ? "text-white" : "text-white/50")} />
+                <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
+                {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
               </div>
-              <div className={cn("col-span-3 text-right num text-base font-semibold", isLead ? "text-white" : "text-ink-900")}>
+              <div className={cn("col-span-3 text-right num text-base font-semibold text-white")}>
                 {row.score}
               </div>
               <div className="col-span-2 text-right">
@@ -232,16 +232,16 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
   const slots = Array.from({ length: expected }, (_, i) => state.teams[i]);
 
   return (
-    <Card className="p-4">
+    <Card tone="data" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-brand-600">Lobby</div>
-          <div className="mt-0.5 text-lg font-semibold tracking-tight text-ink-900">
+          <div className="text-[11px] font-medium uppercase tracking-wide text-brand-400">Lobby</div>
+          <div className="mt-0.5 text-lg font-semibold tracking-tight text-white">
             {allIn ? "All teams joined" : `Waiting for teams (${joined} / ${expected})`}
           </div>
         </div>
-        <div className="rounded-2xl bg-ink-900 px-4 py-2 text-center text-white">
-          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Share code</div>
+        <div className="rounded-2xl bg-brand-500 px-4 py-2 text-center text-white">
+          <div className="text-[10px] font-medium uppercase tracking-wider opacity-80">Share code</div>
           <div className="num text-2xl font-semibold tracking-[0.3em]">{state.code}</div>
         </div>
       </div>
@@ -252,24 +252,22 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
             key={i}
             className={cn(
               "flex items-center gap-2 rounded-xl px-3 py-2 transition-all",
-              t
-                ? "bg-emerald-50 ring-1 ring-emerald-200"
-                : "border border-dashed border-ink-300 bg-surface-raised",
+              t ? "bg-emerald-500/15 ring-1 ring-emerald-400/40" : "bg-white/5 ring-1 ring-white/5",
             )}
           >
             {t ? (
               <>
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-ok" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-ink-900">{t.name}</div>
-                  <div className="text-[10px] font-medium uppercase tracking-wide text-ok">Joined</div>
+                  <div className="truncate text-sm font-semibold text-white">{t.name}</div>
+                  <div className="text-[10px] font-medium uppercase tracking-wide text-emerald-300">Joined</div>
                 </div>
               </>
             ) : (
               <>
-                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-ink-400" />
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-white/40" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-ink-500">Team {i + 1}</div>
+                  <div className="truncate text-sm font-medium text-white/60">Team {i + 1}</div>
                   <div className="text-[10px] font-medium uppercase tracking-wide text-ink-400">Awaiting</div>
                 </div>
               </>
@@ -284,20 +282,20 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
 function MovementPill({ value }: { value: number }) {
   if (value === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-ink-500">
+      <span className="inline-flex items-center gap-1 text-xs text-white/50">
         <Minus className="h-3 w-3" />0
       </span>
     );
   }
   if (value > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-xs font-bold text-emerald-700">
+      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-xs font-semibold text-emerald-300">
         <ArrowUp className="h-3 w-3" />+{value}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-xs font-bold text-red-700">
+    <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/20 px-1.5 py-0.5 text-xs font-semibold text-rose-300">
       <ArrowDown className="h-3 w-3" />
       {value}
     </span>
@@ -309,8 +307,9 @@ function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: bo
   const insightsByTeam = new Map(state.insights.teams.map((i) => [i.teamId, i]));
   const moment = state.round?.moment;
   return (
-    <Card className="flex min-h-0 flex-1 flex-col p-3">
+    <Card tone="data" className="flex min-h-0 flex-1 flex-col p-3">
       <SectionTitle
+        tone="data"
         icon={<Layers className="h-4 w-4" />}
         title="Team coaching cards"
         subtitle="Observations, things to consider, and questions you can ask"
@@ -345,14 +344,14 @@ function CoachingCard({
   const momentResponseId = team.lastDecision?.momentResponseId;
   const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-surface-raised p-4 ring-1 ring-ink-200/80">
+    <div className="flex flex-col gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2">
-          <Store className="h-4 w-4 shrink-0 text-ink-500" />
-          <span className="truncate text-[15px] font-semibold tracking-tight text-ink-900">{team.name}</span>
+          <Store className="h-4 w-4 shrink-0 text-white/50" />
+          <span className="truncate text-[15px] font-semibold tracking-tight text-white">{team.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-ink-100 px-2 py-0.5 num text-[13px] font-semibold text-ink-800">
+          <span className="rounded-full bg-white/10 px-2 py-0.5 num text-[13px] font-semibold text-white">
             {team.score}
           </span>
           {team.submitted ? (
@@ -360,7 +359,7 @@ function CoachingCard({
               <CheckCircle2 className="h-3 w-3" /> Submitted
             </Pill>
           ) : (
-            <Pill tone="warn">Pending</Pill>
+            <Pill tone="warn" surface="dark">Pending</Pill>
           )}
         </div>
       </div>
@@ -368,50 +367,50 @@ function CoachingCard({
       <div className="grid grid-cols-5 gap-2">
         {kpis.map((k) => (
           <div key={k} className="min-w-0">
-            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-ink-500">
+            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">
               {KPI_SHORT[k]}
             </div>
             <div className="mt-0.5 flex items-baseline justify-between gap-1">
-              <span className="num text-sm font-semibold text-ink-900">{team.kpis[k]}</span>
-              <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
+              <span className="num text-sm font-semibold text-white">{team.kpis[k]}</span>
+              <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} onDark />
             </div>
             <div className="mt-1">
-              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} />
+              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} onDark />
             </div>
           </div>
         ))}
       </div>
 
       {moment ? (
-        <div className="rounded-xl bg-surface-muted p-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-600">
+        <div className="rounded-xl bg-white/5 p-2.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-400">
             <HeartHandshake className="h-3.5 w-3.5" /> People moment &middot; {moment.persona.name}
           </div>
           {momentResponse ? (
             <div className="flex items-start gap-2">
               <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
-              <p className="text-[12px] leading-snug text-ink-700">&ldquo;{momentResponse.label}&rdquo;</p>
+              <p className="text-[12px] leading-snug text-white/80">&ldquo;{momentResponse.label}&rdquo;</p>
             </div>
           ) : team.submitted ? (
-            <p className="text-[12px] italic text-ink-600">No response chosen. Worth asking why.</p>
+            <p className="text-[12px] italic text-white/60">No response chosen. Worth asking why.</p>
           ) : (
-            <p className="text-[12px] italic text-ink-500">Not yet responded.</p>
+            <p className="text-[12px] italic text-white/50">Not yet responded.</p>
           )}
         </div>
       ) : null}
 
       {reveal && team.revealedHidden ? (
-        <div className="rounded-xl bg-surface-muted p-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-ink-500">
+        <div className="rounded-xl bg-white/5 p-2.5">
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-white/50">
             <Eye className="h-3.5 w-3.5" /> Hidden drivers
           </div>
           <div className="grid grid-cols-4 gap-2">
             {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
               <div key={h} className="min-w-0">
-                <div className="truncate text-[10px] text-ink-500">{HIDDEN_LABELS[h]}</div>
+                <div className="truncate text-[10px] text-white/50">{HIDDEN_LABELS[h]}</div>
                 <div className="flex items-baseline justify-between gap-1">
-                  <span className="num text-xs font-semibold text-ink-900">{team.revealedHidden![h]}</span>
-                  <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} />
+                  <span className="num text-xs font-semibold text-white">{team.revealedHidden![h]}</span>
+                  <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} onDark />
                 </div>
               </div>
             ))}
@@ -466,14 +465,14 @@ function InsightList({
   italic?: boolean;
 }) {
   const tones = {
-    neutral: "bg-surface-muted",
-    info: "bg-brand-50",
-    warn: "bg-brand-50",
+    neutral: "bg-white/5",
+    info: "bg-brand-500/15",
+    warn: "bg-brand-500/15",
   };
   const labelTones = {
-    neutral: "text-ink-500",
-    info: "text-brand-600",
-    warn: "text-brand-600",
+    neutral: "text-white/60",
+    info: "text-brand-300",
+    warn: "text-brand-300",
   };
   return (
     <div className={cn("rounded-xl px-3 py-2.5", tones[tone])}>
@@ -483,7 +482,7 @@ function InsightList({
       </div>
       <ul className="space-y-1">
         {items.map((t, i) => (
-          <li key={i} className={cn("text-[13px] leading-snug text-ink-800", italic && "italic")}>
+          <li key={i} className={cn("text-[13px] leading-snug text-white/85", italic && "italic")}>
             {italic ? "“" : null}
             {t}
             {italic ? "”" : null}
@@ -497,20 +496,21 @@ function InsightList({
 function ScriptPanel({ state }: { state: SessionStatePublic }) {
   const script = state.insights.script;
   return (
-    <Card className="p-5">
+    <Card tone="data" className="p-5">
       <SectionTitle
+        tone="data"
         icon={<ScrollText className="h-4 w-4" />}
         title={script.headline}
         subtitle="Your talk track for this phase"
       />
       <div className="space-y-3">
         <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-brand-700">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-brand-400">
             <ListChecks className="h-4 w-4" /> Say / do
           </div>
           <ul className="space-y-1.5">
             {script.talkTrack.map((t, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm leading-snug text-ink-800">
+              <li key={i} className="flex items-start gap-2 text-sm leading-snug text-white/85">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
                 <span>{t}</span>
               </li>
@@ -519,13 +519,13 @@ function ScriptPanel({ state }: { state: SessionStatePublic }) {
         </div>
 
         {script.watchFor.length > 0 ? (
-          <div className="rounded-lg border border-ink-200 bg-ink-50 p-2.5">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-700">
+          <div className="rounded-lg bg-white/5 p-2.5">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/60">
               <Eye className="h-4 w-4" /> Watch for
             </div>
             <ul className="space-y-1">
               {script.watchFor.map((w, i) => (
-                <li key={i} className="text-xs leading-snug text-ink-700">
+                <li key={i} className="text-xs leading-snug text-white/70">
                   {w}
                 </li>
               ))}
@@ -541,17 +541,18 @@ function PatternsPanel({ state }: { state: SessionStatePublic }) {
   const patterns = state.insights.patterns;
   const prompts = state.prompts;
   return (
-    <Card className="flex min-h-0 flex-1 flex-col p-3">
+    <Card tone="data" className="flex min-h-0 flex-1 flex-col p-3">
       <SectionTitle
+        tone="data"
         icon={<Sparkles className="h-5 w-5" />}
         title="Patterns across the room"
         subtitle="Things worth naming"
       />
       <div className="flex-1 space-y-2 overflow-auto">
         {patterns.length === 0 && prompts.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-ink-200 bg-ink-50 p-5 text-center">
-            <p className="text-xs text-ink-500">
-              Room-level patterns will appear once teams have played at least one round.
+          <div className="flex h-full items-center justify-center rounded-lg bg-white/5 p-5 text-center">
+            <p className="text-xs text-white/50">
+              Room-level patterns will appear once teams have played at least one shift.
             </p>
           </div>
         ) : null}
@@ -581,18 +582,18 @@ function PatternCard({
   teamName?: string;
 }) {
   const tones = {
-    info: "border-l-brand-500 bg-brand-50",
-    warn: "border-l-amber-500 bg-amber-50",
-    positive: "border-l-emerald-500 bg-emerald-50",
+    info: "border-l-brand-500 bg-brand-500/10",
+    warn: "border-l-brand-500 bg-brand-500/10",
+    positive: "border-l-emerald-400 bg-emerald-400/10",
   };
   return (
-    <div className={cn("rounded-lg border-l-4 border border-ink-200 p-3 shadow-sm", tones[tone])}>
+    <div className={cn("rounded-lg border-l-4 p-3", tones[tone])}>
       {teamName ? (
-        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-700">
+        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/60">
           <AlertTriangle className="h-4 w-4" /> {teamName}
         </div>
       ) : null}
-      <p className="text-sm leading-snug text-ink-800">{text}</p>
+      <p className="text-sm leading-snug text-white/90">{text}</p>
     </div>
   );
 }
@@ -610,15 +611,16 @@ function ControlPanel({
   const canDisrupt = state.phase === "round" && state.round?.phase !== "disrupted";
 
   return (
-    <Card className="p-5">
+    <Card tone="data" className="p-5">
       <SectionTitle
+        tone="data"
         icon={<HelpCircle className="h-4 w-4" />}
         title="Shift controls"
         subtitle="Disruption auto-triggers at 1 min. Override below if needed."
       />
       <div className="grid grid-cols-2 gap-2">
         <Button
-          variant="quiet"
+          variant="primary"
           size="sm"
           disabled={!canDisrupt}
           onClick={() => socket.emit("facilitator:trigger_disruption", { sessionId })}
@@ -635,7 +637,7 @@ function ControlPanel({
         </Button>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-surface-muted p-2 text-[11px]">
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[11px]">
         <StatPill label="Phase" value={state.phase} />
         <StatPill label="Shift phase" value={state.round?.phase ?? "—"} />
         <StatPill
@@ -649,9 +651,9 @@ function ControlPanel({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-surface-raised px-2 py-1.5 text-center">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">{label}</div>
-      <div className="mt-0.5 truncate text-xs font-semibold text-ink-800">{value}</div>
+    <div className="rounded-lg bg-white/5 px-2 py-1.5 text-center">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-white/50">{label}</div>
+      <div className="mt-0.5 truncate text-xs font-semibold text-white">{value}</div>
     </div>
   );
 }

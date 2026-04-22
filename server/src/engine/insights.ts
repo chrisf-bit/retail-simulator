@@ -349,25 +349,28 @@ function phaseScript(phase: SessionPhase, roundNumber: number): FacilitatorScrip
       };
     case "round_results":
       return {
-        headline: `Short debrief of round ${roundNumber} (2-3 minutes)`,
+        headline: `Debrief shift ${roundNumber}`,
         talkTrack: [
-          "Don't reveal the scoring logic. Ask what they notice about their own movement.",
-          "Pick one team with a surprising result and ask them to narrate what happened.",
-          "Keep it light. The deeper conversation belongs in the full debrief.",
+          "What surprised you most about this shift?",
+          "Which single decision do you think moved the needle most?",
+          "Where did you feel the pressure bite hardest?",
+          "If you could replay this shift, what would you do differently?",
         ],
         watchFor: [
-          "Who says 'we' versus 'I' when explaining the round.",
-          "Whether they attribute the outcome to luck, the game, or their choices.",
+          "Who says 'we' versus 'I' when explaining the shift.",
+          "Whether teams attribute the outcome to luck, the game, or their choices.",
         ],
       };
     case "debrief":
       return {
-        headline: "Run the full debrief (10 minutes)",
+        headline: "Full session debrief",
         talkTrack: [
-          "Open with: looking back, what do you notice about the pattern of your own decisions?",
-          "Use the coaching cues below for each team. These are prompts, not answers.",
-          "Introduce the hidden drivers now. Ask whether they felt them at the time.",
-          "Close with: what is one thing you want to try differently on Monday morning?",
+          "Looking across all six shifts, what pattern do you see in your own decisions?",
+          "Where did your leadership instincts serve you well? Where did they let you down?",
+          "What did the hidden drivers - trust, capability, safety risk, leadership consistency - reveal about how you were actually leading?",
+          "Which shift felt the most different to manage, and why?",
+          "What is the one moment you most want to pull apart together as a room?",
+          "What is one thing you will try differently on Monday morning?",
         ],
         watchFor: [
           "Insight versus performance. Who is genuinely reflecting and who is defending?",

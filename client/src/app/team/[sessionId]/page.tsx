@@ -95,13 +95,14 @@ const SEVERITY_TONES: Record<"low" | "medium" | "high", "neutral" | "warn" | "ri
   high: "risk",
 };
 
-type TabId = 1 | 2 | 3 | 4;
+type TabId = 1 | 2 | 3 | 4 | 5;
 
 const TAB_DEFS: Array<{ id: TabId; label: string }> = [
   { id: 1, label: "Focus" },
   { id: 2, label: "Team" },
-  { id: 3, label: "Respond" },
-  { id: 4, label: "Confidence" },
+  { id: 3, label: "Issue" },
+  { id: 4, label: "People" },
+  { id: 5, label: "Confidence" },
 ];
 
 export default function TeamPlayerPage() {
@@ -166,8 +167,9 @@ export default function TeamPlayerPage() {
   const tabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
     2: !!leadership && allocationTotal === 100,
-    3: state.round?.moment ? !!momentResponseId : true,
-    4: !!confidence,
+    3: !!primaryIssueId,
+    4: state.round?.moment ? !!momentResponseId : true,
+    5: !!confidence,
   };
   const requiredAll =
     !!priority && !!action && !!leadership && allocationTotal === 100 && !!confidence &&
@@ -543,9 +545,9 @@ function DecisionPanel({
     <Card className="flex h-full min-h-0 flex-col overflow-hidden p-0">
       <div className="flex items-center justify-between px-5 pt-4">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decision</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decisions</div>
           <div className="text-lg font-semibold tracking-tight text-ink-900">
-            {submitted ? "Locked in" : `${completedTabs} of 4 complete`}
+            {submitted ? "Locked in" : `${completedTabs} of ${TAB_DEFS.length} complete`}
           </div>
         </div>
         {submitted ? (
@@ -590,17 +592,22 @@ function DecisionPanel({
           />
         ) : null}
         {activeTab === 3 ? (
-          <RespondStep
+          <IssueStep
             issues={issues}
             primaryIssueId={primaryIssueId}
             setPrimaryIssueId={setPrimaryIssueId}
+            disabled={!inputsActive}
+          />
+        ) : null}
+        {activeTab === 4 ? (
+          <PeopleStep
             moment={moment}
             momentResponseId={momentResponseId}
             setMomentResponseId={setMomentResponseId}
             disabled={!inputsActive}
           />
         ) : null}
-        {activeTab === 4 ? (
+        {activeTab === 5 ? (
           <ConfidenceStep
             confidence={confidence}
             setConfidence={setConfidence}
@@ -644,32 +651,27 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "press flex flex-1 flex-col items-center gap-0.5 rounded-lg px-3 py-2.5 transition-all",
+        "press flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all",
         active
           ? "bg-white text-ink-900 shadow-card"
           : "text-ink-500 hover:bg-white/50 hover:text-ink-700",
       )}
     >
-      <span className="flex items-center gap-1.5">
-        {done ? (
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-ok text-white">
-            <CheckCircle2 className="h-3 w-3" />
-          </span>
-        ) : (
-          <span
-            className={cn(
-              "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
-              active ? "bg-brand-500 text-white" : "bg-ink-200 text-ink-600",
-            )}
-          >
-            {step}
-          </span>
-        )}
-        <span className={cn("text-[10px] font-semibold uppercase tracking-wider", active ? "text-ink-500" : "text-ink-400")}>
-          Step {step}
+      {done ? (
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok text-white">
+          <CheckCircle2 className="h-3.5 w-3.5" />
         </span>
-      </span>
-      <span className={cn("text-[13px]", active ? "font-semibold tracking-tight text-ink-900" : "font-medium")}>
+      ) : (
+        <span
+          className={cn(
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+            active ? "bg-brand-500 text-white" : "bg-ink-200 text-ink-600",
+          )}
+        >
+          {step}
+        </span>
+      )}
+      <span className={cn("truncate text-[13px]", active ? "font-semibold tracking-tight text-ink-900" : "font-medium")}>
         {label}
       </span>
     </button>
@@ -834,61 +836,66 @@ function TeamStep({
   );
 }
 
-function RespondStep({
+function IssueStep({
   issues,
   primaryIssueId,
   setPrimaryIssueId,
-  moment,
-  momentResponseId,
-  setMomentResponseId,
   disabled,
 }: {
   issues: Issue[];
   primaryIssueId: string | null;
   setPrimaryIssueId: (id: string | null) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div>
+      <StepHeader
+        title="Primary issue"
+        narrative="Targeting a specific issue sharpens its impact this shift."
+        instruction="Tap one to target it. Optional — leave unset to spread your effort."
+        optional
+      />
+      <div className="mt-4">
+        <IssuePicker
+          issues={issues}
+          value={primaryIssueId}
+          onChange={setPrimaryIssueId}
+          disabled={disabled}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PeopleStep({
+  moment,
+  momentResponseId,
+  setMomentResponseId,
+  disabled,
+}: {
   moment?: TeamMoment;
   momentResponseId: string | null;
   setMomentResponseId: (id: string) => void;
   disabled: boolean;
 }) {
+  if (!moment) {
+    return (
+      <StepHeader
+        title="People moment"
+        narrative="No people moment this shift."
+        instruction="You can move on."
+      />
+    );
+  }
   return (
-    <div className="space-y-6">
-      <div>
-        <StepHeader
-          title="Primary issue"
-          narrative="Targeting a specific issue sharpens its impact this shift."
-          instruction="Tap one to target it. Optional — leave unset to spread your effort."
-          optional
-        />
-        <div className="mt-3">
-          <IssuePicker
-            issues={issues}
-            value={primaryIssueId}
-            onChange={setPrimaryIssueId}
-            disabled={disabled}
-          />
-        </div>
-      </div>
-
-      <div className="border-t border-ink-100 pt-5">
-        {moment ? (
-          <>
-            <StepHeader
-              title="People moment"
-              narrative={`${moment.persona.name} (${moment.persona.role}) needs you.`}
-              instruction="Read the situation below, then pick your response."
-            />
-            <div className="mt-3">
-              <MomentBlock moment={moment} value={momentResponseId} onChange={setMomentResponseId} disabled={disabled} />
-            </div>
-          </>
-        ) : (
-          <StepHeader
-            title="People moment"
-            narrative="No people moment this shift."
-            instruction="You can move on."
-          />
-        )}
+    <div>
+      <StepHeader
+        title="People moment"
+        narrative={`${moment.persona.name} (${moment.persona.role}) needs you.`}
+        instruction="Read the situation below, then pick your response."
+      />
+      <div className="mt-4">
+        <MomentBlock moment={moment} value={momentResponseId} onChange={setMomentResponseId} disabled={disabled} />
       </div>
     </div>
   );
