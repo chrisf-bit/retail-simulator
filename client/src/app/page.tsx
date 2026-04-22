@@ -19,6 +19,10 @@ export default function LandingPage() {
   function createFacilitator() {
     const socket = getSocket();
     setSubmitting(true);
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith("team:")) sessionStorage.removeItem(key);
+    }
     socket.once("session:created", ({ sessionId }: { sessionId: string }) => {
       router.push(`/facilitator/${sessionId}`);
     });

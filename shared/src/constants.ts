@@ -1,4 +1,4 @@
-import type { KpiKey, Priority, ActionApproach, LeadershipStyle, HiddenDriverKey } from "./types";
+import type { KpiKey, Priority, ActionApproach, LeadershipStyle, HiddenDriverKey, MomentArchetype } from "./types";
 
 export const ROUND_COUNT = 3;
 export const ROUND_DURATION_MS = 4 * 60 * 1000;
@@ -73,4 +73,11 @@ export const HIDDEN_INVERTED: Record<HiddenDriverKey, boolean> = {
   trust: false,
   capability: false,
   leadership_consistency: false,
+};
+
+export const ARCHETYPE_LABELS: Record<MomentArchetype, string> = {
+  directive: "Directive",
+  coaching: "Coaching",
+  delegate: "Delegate",
+  collaborative: "Collaborative",
 };

@@ -12,6 +12,7 @@ import {
   Clock,
   Eye,
   Flag,
+  HeartHandshake,
   HelpCircle,
   Layers,
   Lightbulb,
@@ -35,7 +36,7 @@ import type {
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT } from "@sim/shared";
+import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT } from "@sim/shared";
 import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
@@ -270,7 +271,7 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
               <>
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ink-400" />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-ink-500">Slot {i + 1}</div>
+                  <div className="truncate text-sm font-medium text-ink-500">Team {i + 1}</div>
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-400">Awaiting</div>
                 </div>
               </>
@@ -308,6 +309,7 @@ function MovementPill({ value }: { value: number }) {
 function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: boolean }) {
   if (state.teams.length === 0) return null;
   const insightsByTeam = new Map(state.insights.teams.map((i) => [i.teamId, i]));
+  const moment = state.round?.moment;
   return (
     <Card className="flex min-h-0 flex-1 flex-col p-3">
       <SectionTitle
@@ -317,7 +319,13 @@ function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: bo
       />
       <div className="grid flex-1 grid-cols-1 gap-2 overflow-auto xl:grid-cols-2">
         {state.teams.map((t) => (
-          <CoachingCard key={t.id} team={t} insight={insightsByTeam.get(t.id)} reveal={reveal} />
+          <CoachingCard
+            key={t.id}
+            team={t}
+            insight={insightsByTeam.get(t.id)}
+            reveal={reveal}
+            moment={moment}
+          />
         ))}
       </div>
     </Card>
@@ -328,12 +336,16 @@ function CoachingCard({
   team,
   insight,
   reveal,
+  moment,
 }: {
   team: TeamPublic;
   insight: TeamInsight | undefined;
   reveal: boolean;
+  moment?: import("@sim/shared").TeamMoment;
 }) {
   const kpis: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
+  const momentResponseId = team.lastDecision?.momentResponseId;
+  const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
   return (
     <div className="flex flex-col gap-2 rounded-xl border-2 border-ink-200 bg-white p-3 shadow-sm">
       <div className="flex items-center justify-between">
@@ -367,6 +379,24 @@ function CoachingCard({
           </div>
         ))}
       </div>
+
+      {moment ? (
+        <div className="rounded-md border border-brand-200 bg-brand-50/60 p-2">
+          <div className="mb-1 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-brand-700">
+            <HeartHandshake className="h-3 w-3" /> People moment: {moment.persona.name}
+          </div>
+          {momentResponse ? (
+            <div className="flex items-start gap-2">
+              <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
+              <p className="text-[11px] leading-snug text-ink-800">&ldquo;{momentResponse.label}&rdquo;</p>
+            </div>
+          ) : team.submitted ? (
+            <p className="text-[11px] italic text-amber-800">No response chosen. Worth asking why.</p>
+          ) : (
+            <p className="text-[11px] italic text-ink-500">Not yet responded.</p>
+          )}
+        </div>
+      ) : null}
 
       {reveal && team.revealedHidden ? (
         <div className="rounded-md border border-brand-200 bg-brand-50/60 p-1.5">

@@ -55,12 +55,35 @@ export interface Alert {
   timestamp: number;
 }
 
+export type MomentArchetype = "directive" | "coaching" | "delegate" | "collaborative";
+
+export interface MomentOption {
+  id: string;
+  label: string;
+  archetype: MomentArchetype;
+}
+
+export interface Persona {
+  name: string;
+  role: string;
+  tenure: string;
+}
+
+export interface TeamMoment {
+  id: string;
+  persona: Persona;
+  situation: string;
+  prompt: string;
+  options: MomentOption[];
+}
+
 export interface Decision {
   priority: Priority;
   action: ActionApproach;
   leadership: LeadershipStyle;
   allocation: ResourceAllocation;
   primaryIssueId?: string;
+  momentResponseId?: string;
   submittedAt: number;
 }
 
@@ -97,6 +120,8 @@ export interface TeamFull extends TeamPublic {
 export interface RoundHistoryEntry {
   round: number;
   decision: Decision;
+  momentArchetype?: MomentArchetype;
+  momentPersonaName?: string;
   kpiDelta: Partial<Kpis>;
   hiddenDelta: Partial<HiddenDrivers>;
   roundScore: number;
@@ -110,6 +135,7 @@ export interface RoundState {
   durationMs: number;
   issues: Issue[];
   alerts: Alert[];
+  moment?: TeamMoment;
   disruption?: DisruptionEvent;
 }
 

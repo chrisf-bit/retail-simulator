@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import type {
   FacilitatorScript,
   LeadershipStyle,
+  MomentArchetype,
   Priority,
   SessionInsights,
   SessionPattern,
@@ -9,7 +10,7 @@ import type {
   TeamFull,
   TeamInsight,
 } from "@sim/shared";
-import { LEADERSHIP_LABELS, PRIORITY_LABELS } from "@sim/shared";
+import { ARCHETYPE_LABELS, LEADERSHIP_LABELS, PRIORITY_LABELS } from "@sim/shared";
 
 export function generateInsights(
   teams: TeamFull[],
@@ -124,6 +125,38 @@ function teamInsight(team: TeamFull): TeamInsight {
     }
   }
 
+  const momentArchetypes = history.map((h) => h.momentArchetype).filter((a): a is MomentArchetype => !!a);
+  const momentSkips = history.length - momentArchetypes.length;
+  if (history.length >= 2 && momentArchetypes.length >= 2) {
+    const counts = countBy(momentArchetypes);
+    const dominant = entriesOf(counts).sort((a, b) => b[1] - a[1])[0];
+    if (dominant && dominant[1] === momentArchetypes.length) {
+      observations.push(
+        `Used ${ARCHETYPE_LABELS[dominant[0] as MomentArchetype]} every time a direct report came to them.`,
+      );
+      if (dominant[0] === "directive") {
+        considerations.push(
+          "Their default in people moments is directive. New managers of managers often over-rely on this under pressure.",
+        );
+        questions.push("What do you think your team learns from a directive answer versus a question back to them?");
+      }
+      if (dominant[0] === "delegate") {
+        considerations.push(
+          "Consistently handing decisions back can read as trust or as avoidance. Worth surfacing how it is landing.",
+        );
+      }
+      if (dominant[0] === "coaching") {
+        observations.push("Holding a coaching stance with their direct reports is a rare default.");
+      }
+    }
+  }
+  if (momentSkips > 0 && history.length >= 2) {
+    observations.push(`Did not respond to ${momentSkips} of ${history.length} people moments.`);
+    considerations.push(
+      "Skipping a people moment is itself a signal. Their direct report just didn't get a response.",
+    );
+  }
+
   const primaryPicks = history.filter((h) => h.decision.primaryIssueId).length;
   if (primaryPicks === 0 && history.length >= 2) {
     observations.push("Have not picked a primary issue to target in any round.");
@@ -224,6 +257,27 @@ function sessionPatterns(teams: TeamFull[], roundNumber: number): SessionPattern
         id: nanoid(6),
         tone: "info",
         text: `Score gap between ${top.name} and ${bottom.name} is widening. Resist comparing openly, but surface the approach difference.`,
+      });
+    }
+  }
+
+  const latestArchetypes = teams
+    .map((t) => t.history[t.history.length - 1]?.momentArchetype)
+    .filter((a): a is MomentArchetype => !!a);
+  if (latestArchetypes.length === teams.length && teams.length >= 2) {
+    const counts = countBy(latestArchetypes);
+    const [topArch, topCount] = entriesOf(counts).sort((a, b) => b[1] - a[1])[0] ?? ["directive", 0];
+    if (topCount === teams.length) {
+      patterns.push({
+        id: nanoid(6),
+        tone: "info",
+        text: `Every team chose ${ARCHETYPE_LABELS[topArch as MomentArchetype]} in the people moment. Ask what felt unavailable about the other options.`,
+      });
+    } else if (topArch === "directive" && topCount >= Math.ceil(teams.length * 0.75)) {
+      patterns.push({
+        id: nanoid(6),
+        tone: "warn",
+        text: `Directive is the dominant instinct in people moments across the room. For new managers of managers, that is worth naming.`,
       });
     }
   }

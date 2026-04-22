@@ -8,6 +8,8 @@ import type {
   ResourceAllocation,
   Issue,
   DisruptionEvent,
+  MomentArchetype,
+  TeamMoment,
 } from "@sim/shared";
 
 export function clamp(value: number, min = 0, max = 100): number {
@@ -134,6 +136,39 @@ function issueFitBonus(
   return { kpi, hidden };
 }
 
+const MOMENT_KPI_EFFECTS: Record<MomentArchetype, Partial<Kpis>> = {
+  directive: { operations: +2, engagement: -2 },
+  coaching: { engagement: +4, customer: +1, operations: -1 },
+  delegate: { engagement: +2, operations: -1 },
+  collaborative: { engagement: +3, customer: +1 },
+};
+
+const MOMENT_HIDDEN_EFFECTS: Record<MomentArchetype, Partial<HiddenDrivers>> = {
+  directive: { leadership_consistency: +3, capability: -2, trust: -1 },
+  coaching: { capability: +5, trust: +3, leadership_consistency: -1 },
+  delegate: { capability: +2, leadership_consistency: -2, trust: +1 },
+  collaborative: { trust: +5, capability: +1, leadership_consistency: +1 },
+};
+
+function momentEffects(
+  decision: Decision,
+  moment?: TeamMoment,
+): { kpi: Partial<Kpis>; hidden: Partial<HiddenDrivers> } {
+  if (!moment) return { kpi: {}, hidden: {} };
+  if (!decision.momentResponseId) {
+    return {
+      kpi: { engagement: -3, operations: -1 },
+      hidden: { trust: -3, leadership_consistency: -2, capability: -1 },
+    };
+  }
+  const chosen = moment.options.find((o) => o.id === decision.momentResponseId);
+  if (!chosen) return { kpi: {}, hidden: {} };
+  return {
+    kpi: MOMENT_KPI_EFFECTS[chosen.archetype],
+    hidden: MOMENT_HIDDEN_EFFECTS[chosen.archetype],
+  };
+}
+
 function disruptionEffects(
   disruption: DisruptionEvent | undefined,
   decision: Decision,
@@ -174,9 +209,10 @@ export function applyDecision(params: {
   hidden: HiddenDrivers;
   decision: Decision;
   issues: Issue[];
+  moment?: TeamMoment;
   disruption?: DisruptionEvent;
 }): { nextKpis: Kpis; nextHidden: HiddenDrivers; kpiDelta: Partial<Kpis>; hiddenDelta: Partial<HiddenDrivers>; roundScore: number } {
-  const { kpis, hidden, decision, issues, disruption } = params;
+  const { kpis, hidden, decision, issues, moment, disruption } = params;
 
   let kpiDelta: Partial<Kpis> = {};
   let hiddenDelta: Partial<HiddenDrivers> = {};
@@ -197,6 +233,10 @@ export function applyDecision(params: {
   const fit = issueFitBonus(issues, decision);
   kpiDelta = mergeDelta(kpiDelta, fit.kpi);
   hiddenDelta = mergeDelta(hiddenDelta, fit.hidden);
+
+  const mom = momentEffects(decision, moment);
+  kpiDelta = mergeDelta(kpiDelta, mom.kpi);
+  hiddenDelta = mergeDelta(hiddenDelta, mom.hidden);
 
   const dis = disruptionEffects(disruption, decision);
   kpiDelta = mergeDelta(kpiDelta, dis.kpi);

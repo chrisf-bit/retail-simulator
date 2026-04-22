@@ -15,6 +15,7 @@ import type {
 } from "@sim/shared";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS, ROUND_COUNT, ROUND_DURATION_MS } from "@sim/shared";
 import { ALERT_BANK, DISRUPTION_BANK, ISSUE_BANK } from "./scenarios.js";
+import { MOMENT_BANK } from "./moments.js";
 import { applyDecision, summariseRisk, summariseStrength } from "./scoring.js";
 import { generatePrompts } from "./prompts.js";
 import { generateInsights } from "./insights.js";
@@ -58,6 +59,12 @@ function buildDisruption(): DisruptionEvent {
   };
 }
 
+function buildMoment(usedIds: Set<string>) {
+  const remaining = MOMENT_BANK.filter((m) => !usedIds.has(m.id));
+  const pool = remaining.length > 0 ? remaining : MOMENT_BANK;
+  return pickN(pool, 1)[0];
+}
+
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -72,6 +79,7 @@ export class Session {
   phase: SessionPhase = "lobby";
   teams = new Map<string, TeamFull>();
   prompts: FacilitatorPrompt[] = [];
+  usedMomentIds = new Set<string>();
   round?: RoundState;
   roundTimer?: NodeJS.Timeout;
   disruptionTimer?: NodeJS.Timeout;
@@ -118,6 +126,9 @@ export class Session {
     }
 
     const now = Date.now();
+    const moment = buildMoment(this.usedMomentIds);
+    this.usedMomentIds.add(moment.id);
+
     this.round = {
       number: nextNumber,
       phase: "active",
@@ -126,6 +137,7 @@ export class Session {
       durationMs: ROUND_DURATION_MS,
       issues: buildIssues(),
       alerts: buildAlerts(),
+      moment,
     };
 
     for (const team of this.teams.values()) {
@@ -189,6 +201,7 @@ export class Session {
         hidden: team.hidden,
         decision,
         issues: this.round.issues,
+        moment: this.round.moment,
         disruption: this.round.disruption,
       });
 
@@ -199,9 +212,15 @@ export class Session {
       team.lastMovement = team.score - previousScore;
       team.strength = summariseStrength(team.kpis);
       team.risk = summariseRisk(team.kpis, team.hidden);
+      const responseArchetype = this.round.moment && decision.momentResponseId
+        ? this.round.moment.options.find((o) => o.id === decision.momentResponseId)?.archetype
+        : undefined;
+
       team.history.push({
         round: this.round.number,
         decision,
+        momentArchetype: responseArchetype,
+        momentPersonaName: this.round.moment?.persona.name,
         kpiDelta: result.kpiDelta,
         hiddenDelta: result.hiddenDelta,
         roundScore: result.roundScore,

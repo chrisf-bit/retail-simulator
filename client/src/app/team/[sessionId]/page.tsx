@@ -10,14 +10,17 @@ import {
   Clock,
   Compass,
   Gauge,
+  HeartHandshake,
   Lightbulb,
   Loader2,
+  MessageCircleQuestion,
   Send,
   Shield,
   ShoppingBag,
   Sparkles,
   Store,
   Target,
+  UserCircle2,
   Users2,
   Wrench,
 } from "lucide-react";
@@ -29,10 +32,12 @@ import type {
   Priority,
   ResourceAllocation,
   SessionStatePublic,
+  TeamMoment,
   TeamPublic,
 } from "@sim/shared";
 import {
   ACTION_LABELS,
+  ARCHETYPE_LABELS,
   DEFAULT_ALLOCATION,
   HIDDEN_INVERTED,
   HIDDEN_LABELS,
@@ -85,6 +90,7 @@ export default function TeamPlayerPage() {
   const [leadership, setLeadership] = useState<LeadershipStyle>("collaborative");
   const [allocation, setAllocation] = useState<ResourceAllocation>(DEFAULT_ALLOCATION);
   const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
+  const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
@@ -104,6 +110,7 @@ export default function TeamPlayerPage() {
   const roundNumber = state?.round?.number;
   useEffect(() => {
     setPrimaryIssueId(null);
+    setMomentResponseId(null);
   }, [roundNumber]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
@@ -128,6 +135,7 @@ export default function TeamPlayerPage() {
       leadership,
       allocation,
       primaryIssueId: primaryIssueId ?? undefined,
+      momentResponseId: momentResponseId ?? undefined,
     };
     socket.emit("team:submit_decision", { sessionId, teamId, decision });
   }
@@ -156,6 +164,14 @@ export default function TeamPlayerPage() {
         <div className="grid min-h-0 flex-1 grid-cols-12 gap-3 p-3">
           <div className="col-span-12 flex min-h-0 flex-col gap-3 lg:col-span-7">
             <KpiStrip team={team} />
+            {state.round?.moment ? (
+              <PeopleMomentPanel
+                moment={state.round.moment}
+                responseId={momentResponseId}
+                onSelect={setMomentResponseId}
+                disabled={!canSubmit}
+              />
+            ) : null}
             <div className="grid min-h-0 flex-1 grid-cols-5 gap-3">
               <IssuesPanel
                 state={state}
@@ -178,6 +194,7 @@ export default function TeamPlayerPage() {
               allocation={allocation}
               setAllocation={setAllocation}
               primaryIssueId={primaryIssueId}
+              momentResponseId={momentResponseId}
               canSubmit={canSubmit}
               submitted={team.submitted}
               onSubmit={submit}
@@ -276,6 +293,69 @@ function KpiStrip({ team }: { team: TeamPublic }) {
             </div>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+function PeopleMomentPanel({
+  moment,
+  responseId,
+  onSelect,
+  disabled,
+}: {
+  moment: TeamMoment;
+  responseId: string | null;
+  onSelect: (id: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <Card tone="accent" className="p-3">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-brand-200 bg-brand-50 text-brand-700">
+          <UserCircle2 className="h-6 w-6" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">People moment</span>
+            <Pill tone="info" strong>
+              <HeartHandshake className="h-3 w-3" /> Leading people
+            </Pill>
+          </div>
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <span className="text-sm font-bold text-ink-900">{moment.persona.name}</span>
+            <span className="text-xs text-ink-600">
+              {moment.persona.role} &middot; {moment.persona.tenure}
+            </span>
+          </div>
+          <p className="mt-1.5 text-[13px] leading-snug text-ink-800">{moment.situation}</p>
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold italic text-brand-800">
+            <MessageCircleQuestion className="h-3.5 w-3.5" /> {moment.prompt}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {moment.options.map((opt) => {
+          const active = responseId === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(opt.id)}
+              className={cn(
+                "rounded-lg border-2 px-3 py-2 text-left text-[12px] leading-snug transition-all",
+                active
+                  ? "border-brand-500 bg-brand-50 text-brand-900 shadow-sm ring-2 ring-brand-200"
+                  : "border-ink-200 bg-white text-ink-700 hover:border-ink-400 hover:bg-ink-50",
+                disabled && "cursor-not-allowed opacity-60",
+              )}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
       </div>
     </Card>
   );
@@ -380,6 +460,7 @@ function DecisionPanel({
   allocation,
   setAllocation,
   primaryIssueId,
+  momentResponseId,
   canSubmit,
   submitted,
   onSubmit,
@@ -393,6 +474,7 @@ function DecisionPanel({
   allocation: ResourceAllocation;
   setAllocation: (a: ResourceAllocation) => void;
   primaryIssueId: string | null;
+  momentResponseId: string | null;
   canSubmit: boolean;
   submitted: boolean;
   onSubmit: () => void;
@@ -416,9 +498,10 @@ function DecisionPanel({
         )}
       </div>
 
-      <div className="grid flex-1 grid-rows-[auto_auto_auto_auto_1fr_auto] gap-3 overflow-auto p-3">
+      <div className="flex flex-1 flex-col gap-3 overflow-auto p-3">
         <RadioGroup<Priority>
           label="A. Priority focus"
+          description="Under pressure, where does your attention land first?"
           options={Object.keys(PRIORITY_LABELS) as Priority[]}
           labels={PRIORITY_LABELS}
           icons={PRIORITY_ICONS}
@@ -429,6 +512,7 @@ function DecisionPanel({
 
         <RadioGroup<ActionApproach>
           label="B. Action approach"
+          description="How do you translate that priority into action this round?"
           options={Object.keys(ACTION_LABELS) as ActionApproach[]}
           labels={ACTION_LABELS}
           icons={ACTION_ICONS}
@@ -439,6 +523,7 @@ function DecisionPanel({
 
         <RadioGroup<LeadershipStyle>
           label="C. Leadership style"
+          description="How will you lead your team through this one?"
           options={Object.keys(LEADERSHIP_LABELS) as LeadershipStyle[]}
           labels={LEADERSHIP_LABELS}
           value={leadership}
@@ -447,7 +532,7 @@ function DecisionPanel({
         />
 
         <div>
-          <div className="mb-1.5 flex items-center justify-between">
+          <div className="mb-0.5 flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-ink-500">D. Resource allocation</span>
             <span
               className={cn(
@@ -457,6 +542,9 @@ function DecisionPanel({
             >
               Total: {total}%
             </span>
+          </div>
+          <div className="mb-1.5 text-[11px] italic text-ink-500">
+            Where does your team's time and attention land this round? Must total 100%.
           </div>
           <div className="space-y-1.5">
             {ALLOCATION_LABELS.map((a) => {
@@ -500,6 +588,21 @@ function DecisionPanel({
           )}
         </div>
 
+        <div className="flex items-center gap-2 rounded-lg border-2 border-dashed border-ink-200 bg-ink-50 px-3 py-2 text-xs">
+          <HeartHandshake className={cn("h-4 w-4 shrink-0", momentResponseId ? "text-brand-600" : "text-ink-400")} />
+          {momentResponseId ? (
+            <span className="text-ink-700">
+              <span className="font-bold text-brand-700">F. People moment</span> response recorded. This moves trust and
+              capability.
+            </span>
+          ) : (
+            <span className="text-ink-500">
+              <span className="font-bold text-ink-700">F. People moment:</span> pick a response to your direct report
+              above. Skipping costs trust.
+            </span>
+          )}
+        </div>
+
         <Button size="xl" onClick={onSubmit} disabled={!canSubmit || total !== 100}>
           {submitted ? (
             <>
@@ -518,6 +621,7 @@ function DecisionPanel({
 
 function RadioGroup<T extends string>({
   label,
+  description,
   options,
   labels,
   icons,
@@ -526,6 +630,7 @@ function RadioGroup<T extends string>({
   disabled,
 }: {
   label: string;
+  description?: string;
   options: T[];
   labels: Record<T, string>;
   icons?: Record<T, React.ComponentType<{ className?: string }>>;
@@ -535,7 +640,8 @@ function RadioGroup<T extends string>({
 }) {
   return (
     <div>
-      <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-ink-500">{label}</div>
+      <div className="mb-0.5 text-xs font-bold uppercase tracking-wider text-ink-500">{label}</div>
+      {description ? <div className="mb-1.5 text-[11px] italic text-ink-500">{description}</div> : null}
       <div className="grid grid-cols-2 gap-2">
         {options.map((opt) => {
           const active = value === opt;
