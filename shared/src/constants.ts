@@ -8,7 +8,7 @@ import type {
   ConfidenceLevel,
 } from "./types";
 
-export const ROUND_COUNT = 6;
+export const ROUND_COUNT = 5;
 export const ROUND_DURATION_MS = 5 * 60 * 1000;
 export const BRIEFING_DURATION_MS = 5 * 60 * 1000;
 export const DEBRIEF_DURATION_MS = 10 * 60 * 1000;

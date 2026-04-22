@@ -64,7 +64,7 @@ export default function LandingPage() {
 
         <h1 className="mb-2 text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>
         <p className="mb-10 max-w-2xl text-base text-white/60">
-          Multi-team, time-boxed decisions across six shifts. Facilitators control the session and observe all teams;
+          Multi-team, time-boxed decisions across five shifts. Facilitators control the session and observe all teams;
           teams share a laptop and make decisions under pressure.
         </p>
 
