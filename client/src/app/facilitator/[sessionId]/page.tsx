@@ -145,14 +145,14 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   };
   const urgent = timeLeftMs < 60_000 && state.phase === "round";
   return (
-    <header className="flex shrink-0 items-center justify-between gap-4 border-b border-ink-200 bg-surface-raised px-5 py-2.5 shadow-card">
+    <header className="flex shrink-0 items-center justify-between gap-4 border-b-2 border-ink-900 bg-ink-900 px-5 py-2.5 text-white">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-ink-900 text-white shadow-btn-ink">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white">
           <Activity className="h-6 w-6" />
         </div>
         <div>
-          <div className="text-lg font-bold tracking-tight text-ink-900">Facilitator dashboard</div>
-          <div className="text-sm text-ink-600">
+          <div className="text-xl font-black tracking-tighter">Facilitator</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-ink-300">
             {phaseText[state.phase]}
             {" · "}
             {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
@@ -160,20 +160,18 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-1.5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-brand-700">Session code</div>
-          <div className="font-mono text-2xl font-bold tracking-[0.3em] text-brand-900">{state.code}</div>
+        <div className="rounded-xl border-2 border-brand-500 bg-brand-500 px-4 py-1.5">
+          <div className="text-[10px] font-black uppercase tracking-wider text-brand-100">Session code</div>
+          <div className="display-num text-3xl tracking-[0.3em] text-white">{state.code}</div>
         </div>
         <div
           className={cn(
-            "flex items-center gap-2.5 rounded-xl border px-4 py-1.5",
-            urgent ? "border-rose-400 bg-rose-50" : "border-ink-200 bg-surface-raised",
+            "flex items-center gap-2.5 rounded-xl border-2 px-4 py-1.5",
+            urgent ? "border-risk bg-risk" : "border-white/20 bg-ink-800",
           )}
         >
-          <Clock className={cn("h-5 w-5", urgent ? "text-risk" : "text-ink-500")} />
-          <span className={cn("font-mono text-2xl font-bold tabular-nums", urgent ? "text-risk" : "text-ink-900")}>
-            {formatClock(timeLeftMs)}
-          </span>
+          <Clock className={cn("h-5 w-5", urgent ? "text-white" : "text-brand-400")} />
+          <span className="display-num text-3xl text-white">{formatClock(timeLeftMs)}</span>
         </div>
       </div>
     </header>
@@ -187,8 +185,8 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
 
   return (
     <Card className="p-3">
-      <SectionTitle icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
-      <div className="grid grid-cols-12 gap-2 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-ink-500">
+      <SectionTitle icon={<Trophy className="h-5 w-5" />} title="Leaderboard" />
+      <div className="grid grid-cols-12 gap-2 px-2 pb-1 text-[10px] font-black uppercase tracking-wider text-ink-500">
         <div className="col-span-1">Rank</div>
         <div className="col-span-6">Team</div>
         <div className="col-span-3 text-right">Score</div>
@@ -201,19 +199,19 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
             <div
               key={row.teamId}
               className={cn(
-                "grid grid-cols-12 items-center gap-2 rounded-lg border px-2 py-1.5 transition-colors",
-                isLead ? "border-brand-300 bg-brand-50 shadow-sm" : "border-ink-200 bg-white",
+                "grid grid-cols-12 items-center gap-2 rounded-lg border-2 px-2.5 py-2 transition-colors",
+                isLead ? "border-ink-900 bg-brand-500 text-white" : "border-ink-300 bg-surface-raised",
               )}
             >
-              <div className={cn("col-span-1 font-mono text-sm font-bold", isLead ? "text-brand-700" : "text-ink-800")}>
+              <div className={cn("col-span-1 display-num text-lg", isLead ? "text-white" : "text-ink-800")}>
                 #{row.rank}
               </div>
               <div className="col-span-6 flex items-center gap-2">
-                <Store className={cn("h-4 w-4", isLead ? "text-brand-600" : "text-ink-400")} />
-                <span className="truncate text-sm font-semibold text-ink-900">{row.name}</span>
-                {isLead ? <Pill tone="info" strong>Lead</Pill> : null}
+                <Store className={cn("h-5 w-5", isLead ? "text-white" : "text-brand-600")} />
+                <span className={cn("truncate text-sm font-black", isLead ? "text-white" : "text-ink-900")}>{row.name}</span>
+                {isLead ? <Pill tone="accent" strong>Lead</Pill> : null}
               </div>
-              <div className="col-span-3 text-right font-mono text-sm font-bold tabular-nums text-ink-900">
+              <div className={cn("col-span-3 text-right display-num text-lg", isLead ? "text-white" : "text-ink-900")}>
                 {row.score}
               </div>
               <div className="col-span-2 text-right">
@@ -237,14 +235,14 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
     <Card tone="accent" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-brand-700">Lobby</div>
-          <div className="mt-0.5 text-base font-bold text-ink-900">
-            {allIn ? "All teams joined" : `Waiting for teams (${joined} of ${expected})`}
+          <div className="text-xs font-black uppercase tracking-[0.2em] text-brand-600">Lobby</div>
+          <div className="mt-0.5 text-xl font-black tracking-tight text-ink-900">
+            {allIn ? "All teams joined" : `Waiting for teams (${joined} / ${expected})`}
           </div>
         </div>
-        <div className="rounded-lg border-2 border-brand-200 bg-white px-3 py-1.5 text-center">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-brand-700">Share code</div>
-          <div className="font-mono text-xl font-bold tracking-[0.3em] text-brand-900">{state.code}</div>
+        <div className="rounded-lg border-2 border-ink-900 bg-brand-500 px-3 py-1.5 text-center text-white">
+          <div className="text-[10px] font-black uppercase tracking-wider">Share code</div>
+          <div className="display-num text-2xl tracking-[0.3em]">{state.code}</div>
         </div>
       </div>
 
@@ -255,24 +253,24 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
             className={cn(
               "flex items-center gap-2 rounded-lg border-2 px-3 py-2 transition-all",
               t
-                ? "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm"
-                : "border-dashed border-ink-300 bg-white text-ink-400",
+                ? "border-ink-900 bg-emerald-50 shadow-btn-ink"
+                : "border-dashed border-ink-300 bg-surface-raised",
             )}
           >
             {t ? (
               <>
-                <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="h-6 w-6 shrink-0 text-ok" />
                 <div className="min-w-0">
-                  <div className="truncate text-base font-bold">{t.name}</div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Joined</div>
+                  <div className="truncate text-base font-black text-ink-900">{t.name}</div>
+                  <div className="text-[11px] font-black uppercase tracking-wider text-ok">Joined</div>
                 </div>
               </>
             ) : (
               <>
                 <Loader2 className="h-6 w-6 shrink-0 animate-spin text-ink-400" />
                 <div className="min-w-0">
-                  <div className="truncate text-base font-semibold text-ink-500">Team {i + 1}</div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-ink-400">Awaiting</div>
+                  <div className="truncate text-base font-black text-ink-500">Team {i + 1}</div>
+                  <div className="text-[11px] font-black uppercase tracking-wider text-ink-400">Awaiting</div>
                 </div>
               </>
             )}
