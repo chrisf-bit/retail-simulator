@@ -362,20 +362,6 @@ export function Sparkline({
         points={points}
       />
       <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
-
-      {/* Final value label next to the endpoint */}
-      {height >= 22 ? (
-        <text
-          x={Math.min(lastX + 4, width - 1)}
-          y={Math.max(7, Math.min(height - 1, lastY + 3))}
-          fontSize={8}
-          fontWeight={600}
-          fill={stroke}
-          textAnchor={lastX + 4 > width - 12 ? "end" : "start"}
-        >
-          {Math.round(last)}
-        </text>
-      ) : null}
     </svg>
   );
 }

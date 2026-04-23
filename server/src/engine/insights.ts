@@ -612,7 +612,7 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
         headline: `Shift ${roundNumber} is live`,
         talkTrack: [
           "Stay out of the way. Resist the urge to coach mid-shift.",
-          "Trigger the disruption when you want to test adaptability, not before minute two.",
+          "A disruption lands automatically one minute in. Use Disrupt now if you want to bring it forward.",
           "Make notes on body language and who is speaking in each team.",
         ],
         watchFor: [
