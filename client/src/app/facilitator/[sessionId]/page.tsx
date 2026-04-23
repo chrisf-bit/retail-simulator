@@ -22,6 +22,7 @@ import {
   Minus,
   Play,
   PlayCircle,
+  Download,
   ScrollText,
   Sparkles,
   Square,
@@ -73,6 +74,7 @@ export default function FacilitatorPage() {
   const searchParams = useSearchParams();
   const { state, socket, connected, offsetMs, error } = useSessionState();
   const [notAuthorised, setNotAuthorised] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const token = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -100,10 +102,15 @@ export default function FacilitatorPage() {
 
   useEffect(() => {
     if (error === "Not authorised") setNotAuthorised(true);
+    if (error === "Session not found") setSessionEnded(true);
   }, [error]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
   const timeLeft = useCountdown(endsAt, offsetMs);
+
+  if (sessionEnded) {
+    return <SessionEndedScreen />;
+  }
 
   if (notAuthorised) {
     return <NotAuthorisedScreen />;
@@ -157,7 +164,7 @@ export default function FacilitatorPage() {
         <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-5">
           <ScriptPanel state={state} />
           <PatternsPanel state={state} />
-          <ControlPanel sessionId={sessionId} state={state} socket={socket} />
+          <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
         </div>
       </main>
     </div>
@@ -636,40 +643,66 @@ function ControlPanel({
   sessionId,
   state,
   socket,
+  token,
 }: {
   sessionId: string;
   state: SessionStatePublic;
   socket: Socket;
+  token: string | null;
 }) {
   const canEndRound = state.phase === "round";
   const canDisrupt = state.phase === "round" && state.round?.phase !== "disrupted";
+  const reportReady = state.phase === "debrief" || state.phase === "finished";
+
+  function openReport() {
+    if (!token) return;
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
+    const url = `${serverUrl}/api/sessions/${sessionId}/report.html?token=${encodeURIComponent(token)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 
   return (
     <Card tone="data" className="p-5">
-      <SectionTitle
-        tone="data"
-        icon={<HelpCircle className="h-4 w-4" />}
-        title="Shift controls"
-        subtitle="Disruption auto-triggers at 1 min. Override below if needed."
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={!canDisrupt}
-          onClick={() => socket.emit("facilitator:trigger_disruption", { sessionId })}
-        >
-          <Zap className="h-4 w-4" /> Disrupt now
-        </Button>
-        <Button
-          variant="quiet"
-          size="sm"
-          disabled={!canEndRound}
-          onClick={() => socket.emit("facilitator:end_round", { sessionId })}
-        >
-          <Square className="h-4 w-4" /> End shift early
-        </Button>
-      </div>
+      {reportReady ? (
+        <>
+          <SectionTitle
+            tone="data"
+            icon={<Download className="h-4 w-4" />}
+            title="Session report"
+            subtitle="Download a printable summary for the room"
+          />
+          <Button variant="primary" onClick={openReport} disabled={!token} className="w-full justify-center">
+            <Download className="h-4 w-4" /> Download session report
+          </Button>
+        </>
+      ) : (
+        <>
+          <SectionTitle
+            tone="data"
+            icon={<HelpCircle className="h-4 w-4" />}
+            title="Shift controls"
+            subtitle="Disruption auto-triggers at 1 min. Override below if needed."
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!canDisrupt}
+              onClick={() => socket.emit("facilitator:trigger_disruption", { sessionId })}
+            >
+              <Zap className="h-4 w-4" /> Disrupt now
+            </Button>
+            <Button
+              variant="quiet"
+              size="sm"
+              disabled={!canEndRound}
+              onClick={() => socket.emit("facilitator:end_round", { sessionId })}
+            >
+              <Square className="h-4 w-4" /> End shift early
+            </Button>
+          </div>
+        </>
+      )}
 
       <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[11px]">
         <StatPill label="Phase" value={state.phase} />
@@ -706,6 +739,30 @@ function NotAuthorisedScreen() {
           This dashboard is only available to the facilitator who created the session. Reopen it from the original
           link you were given when the session was created.
         </p>
+      </Card>
+    </div>
+  );
+}
+
+function SessionEndedScreen() {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <Card tone="data" className="max-w-md p-8 text-center">
+        <div className="mb-3 flex justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+            <Flag className="h-5 w-5" />
+          </div>
+        </div>
+        <h2 className="text-xl font-semibold tracking-tight text-white">Session has ended</h2>
+        <p className="mt-2 text-sm text-white/70">
+          This session is no longer active. Sessions are retained for 24 hours, then released. Start a new one from the
+          home page.
+        </p>
+        <div className="mt-5 flex justify-center">
+          <Button variant="primary" onClick={() => (window.location.href = "/")}>
+            Back to home
+          </Button>
+        </div>
       </Card>
     </div>
   );

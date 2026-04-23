@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Clock,
   Compass,
+  Flag,
   Flame,
   Gauge,
   HeartHandshake,
@@ -109,8 +110,9 @@ export default function TeamPlayerPage() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params.sessionId;
   const router = useRouter();
-  const { state, socket, connected, offsetMs } = useSessionState();
+  const { state, socket, connected, offsetMs, error } = useSessionState();
   const [teamId, setTeamId] = useState<string | null>(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const [priority, setPriority] = useState<Priority | null>(null);
   const [action, setAction] = useState<ActionApproach | null>(null);
@@ -164,6 +166,14 @@ export default function TeamPlayerPage() {
   const timeLeft = useCountdown(endsAt, offsetMs);
   useTeamHeartbeat(sessionId, teamId, connected);
 
+  useEffect(() => {
+    if (error === "Unable to rejoin" || error === "Session code not recognised") {
+      sessionStorage.removeItem(`team:${sessionId}`);
+      setSessionEnded(true);
+    }
+  }, [error, sessionId]);
+
+  if (sessionEnded) return <SessionEndedScreen />;
   if (!connected || !state) return <LoadingScreen label="Connecting" />;
   if (!team) return <LoadingScreen label="Loading" />;
 
@@ -1386,6 +1396,29 @@ function ReconnectingOverlay() {
           <span className="ml-2 text-white/60">Your progress is safe.</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SessionEndedScreen() {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <Card tone="data" className="max-w-md p-8 text-center">
+        <div className="mb-3 flex justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
+            <Flag className="h-5 w-5" />
+          </div>
+        </div>
+        <h2 className="text-xl font-semibold tracking-tight text-white">Session has ended</h2>
+        <p className="mt-2 text-sm text-white/70">
+          Your facilitator has closed this session, or it has expired. Thanks for playing.
+        </p>
+        <div className="mt-5 flex justify-center">
+          <Button variant="primary" onClick={() => (window.location.href = "/")}>
+            Back to home
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 }
