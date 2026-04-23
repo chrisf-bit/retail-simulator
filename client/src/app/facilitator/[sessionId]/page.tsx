@@ -625,18 +625,21 @@ function PatternCard({
   text: string;
   teamName?: string;
 }) {
-  const tones = {
-    info: "border-l-brand-500 bg-brand-500/10",
-    warn: "border-l-brand-500 bg-brand-500/10",
-    positive: "border-l-emerald-400 bg-emerald-400/10",
-  };
+  const eyebrowLabel = {
+    info: "Noticed",
+    warn: "Watch",
+    positive: "Working well",
+  }[tone];
+  const eyebrowColor = {
+    info: "text-white/50",
+    warn: "text-white/80",
+    positive: "text-emerald-300",
+  }[tone];
   return (
-    <div className={cn("rounded-lg border-l-4 p-3", tones[tone])}>
-      {teamName ? (
-        <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/60">
-          <AlertTriangle className="h-4 w-4" /> {teamName}
-        </div>
-      ) : null}
+    <div className="rounded-xl bg-white/5 px-3.5 py-2.5 ring-1 ring-white/5">
+      <div className={cn("mb-1 text-[10px] font-semibold uppercase tracking-[0.08em]", eyebrowColor)}>
+        {teamName ? `${teamName} · ${eyebrowLabel}` : eyebrowLabel}
+      </div>
       <p className="text-sm leading-snug text-white/90">{text}</p>
     </div>
   );
