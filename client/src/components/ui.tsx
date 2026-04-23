@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Minus } from "lucide-react";
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
@@ -259,15 +259,17 @@ export function PhaseGuide({
 export function Sparkline({
   values,
   inverted = false,
-  width = 80,
-  height = 26,
+  height = 28,
+  minWidth = 60,
   onDark = false,
   baselinePoints,
 }: {
   values: number[];
   inverted?: boolean;
-  width?: number;
+  /** Pixel height. The chart fills its parent horizontally. */
   height?: number;
+  /** Minimum width in pixels. Used as fallback during SSR and the first client paint. */
+  minWidth?: number;
   onDark?: boolean;
   /**
    * Number of leading points that represent the pre-session baseline (vs.
@@ -277,6 +279,22 @@ export function Sparkline({
    */
   baselinePoints?: number;
 }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState<number>(minWidth);
+
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = Math.floor(el.clientWidth);
+      if (w > 0) setWidth(w);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const gridColor = onDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
   const gridStrongColor = onDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)";
   const axisColor = onDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
@@ -284,7 +302,9 @@ export function Sparkline({
 
   // Reserve a small left gutter for y-axis labels (0/100) and a small top
   // gutter so the 100 label isn't clipped. Line is drawn in the remaining box.
-  const gutterLeft = 16;
+  // At very narrow widths the gutter shrinks and labels hide to avoid clipping.
+  const showLabels = width >= 52;
+  const gutterLeft = showLabels ? 16 : 4;
   const gutterTop = 2;
   const gutterBottom = 2;
   const plotW = Math.max(1, width - gutterLeft);
@@ -300,9 +320,11 @@ export function Sparkline({
   if (values.length < 2) {
     const stroke = onDark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
     return (
-      <svg width={width} height={height} className="overflow-visible">
-        <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={stroke} strokeDasharray="3 3" />
-      </svg>
+      <div ref={hostRef} style={{ width: "100%", height, display: "block" }}>
+        <svg width={width} height={height} className="overflow-visible">
+          <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={stroke} strokeDasharray="3 3" />
+        </svg>
+      </div>
     );
   }
 
@@ -325,44 +347,49 @@ export function Sparkline({
   const dividerX = showBaselineDivider ? toX(baselinePoints as number, values.length) : 0;
 
   return (
-    <svg width={width} height={height} className="overflow-visible">
-      {/* Y-axis spine */}
-      <line x1={gutterLeft} y1={toY(0)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
-      {/* Tick marks on the y-axis */}
-      <line x1={gutterLeft - 2} y1={toY(0)} x2={gutterLeft} y2={toY(0)} stroke={axisColor} strokeWidth={0.75} />
-      <line x1={gutterLeft - 2} y1={toY(50)} x2={gutterLeft} y2={toY(50)} stroke={axisColor} strokeWidth={0.75} />
-      <line x1={gutterLeft - 2} y1={toY(100)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
+    <div ref={hostRef} style={{ width: "100%", height, display: "block" }}>
+      <svg width={width} height={height} className="overflow-visible">
+        {showLabels ? (
+          <>
+            {/* Y-axis spine */}
+            <line x1={gutterLeft} y1={toY(0)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
+            {/* Tick marks on the y-axis */}
+            <line x1={gutterLeft - 2} y1={toY(0)} x2={gutterLeft} y2={toY(0)} stroke={axisColor} strokeWidth={0.75} />
+            <line x1={gutterLeft - 2} y1={toY(50)} x2={gutterLeft} y2={toY(50)} stroke={axisColor} strokeWidth={0.75} />
+            <line x1={gutterLeft - 2} y1={toY(100)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
+            {/* Axis labels */}
+            <text x={gutterLeft - 3} y={toY(100) + 3} fontSize={7} fill={axisLabel} textAnchor="end">100</text>
+            <text x={gutterLeft - 3} y={toY(0) + 2} fontSize={7} fill={axisLabel} textAnchor="end">0</text>
+          </>
+        ) : null}
 
-      {/* Gridlines across the plot */}
-      <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={gridColor} strokeDasharray="2 3" />
-      <line x1={gutterLeft} y1={toY(25)} x2={width} y2={toY(25)} stroke={gridColor} strokeDasharray="1 4" />
-      <line x1={gutterLeft} y1={toY(75)} x2={width} y2={toY(75)} stroke={gridColor} strokeDasharray="1 4" />
+        {/* Gridlines across the plot */}
+        <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={gridColor} strokeDasharray="2 3" />
+        <line x1={gutterLeft} y1={toY(25)} x2={width} y2={toY(25)} stroke={gridColor} strokeDasharray="1 4" />
+        <line x1={gutterLeft} y1={toY(75)} x2={width} y2={toY(75)} stroke={gridColor} strokeDasharray="1 4" />
 
-      {/* Axis labels */}
-      <text x={gutterLeft - 3} y={toY(100) + 3} fontSize={7} fill={axisLabel} textAnchor="end">100</text>
-      <text x={gutterLeft - 3} y={toY(0) + 2} fontSize={7} fill={axisLabel} textAnchor="end">0</text>
+        {/* Baseline/session divider */}
+        {showBaselineDivider ? (
+          <>
+            <line x1={dividerX} y1={gutterTop} x2={dividerX} y2={gutterTop + plotH} stroke={gridStrongColor} strokeDasharray="2 2" />
+            {showLabels && height >= 28 ? (
+              <text x={dividerX - 1} y={gutterTop + plotH - 1} fontSize={7} fill={axisLabel} textAnchor="end">start</text>
+            ) : null}
+          </>
+        ) : null}
 
-      {/* Baseline/session divider */}
-      {showBaselineDivider ? (
-        <>
-          <line x1={dividerX} y1={gutterTop} x2={dividerX} y2={gutterTop + plotH} stroke={gridStrongColor} strokeDasharray="2 2" />
-          {height >= 28 ? (
-            <text x={dividerX - 1} y={gutterTop + plotH - 1} fontSize={7} fill={axisLabel} textAnchor="end">start</text>
-          ) : null}
-        </>
-      ) : null}
-
-      {/* Line */}
-      <polyline
-        fill="none"
-        stroke={stroke}
-        strokeWidth={1.75}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={points}
-      />
-      <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
-    </svg>
+        {/* Line */}
+        <polyline
+          fill="none"
+          stroke={stroke}
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points}
+        />
+        <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
+      </svg>
+    </div>
   );
 }
 

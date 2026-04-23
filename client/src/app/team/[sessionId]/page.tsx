@@ -429,7 +429,7 @@ function KpiStrip({
               {view === "values" ? (
                 <Bar value={i.value} inverted={i.inverted} onDark />
               ) : (
-                <Sparkline values={i.series} inverted={i.inverted} width={110} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+                <Sparkline values={i.series} inverted={i.inverted} height={28} onDark baselinePoints={BASELINE_WEEKS} />
               )}
             </div>
           </div>
@@ -1332,7 +1332,7 @@ function ResultsPanel({
                   <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
                 </div>
                 <div className="mt-2">
-                  <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={120} height={42} baselinePoints={BASELINE_WEEKS} />
+                  <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} height={42} baselinePoints={BASELINE_WEEKS} />
                 </div>
               </div>
             ))}
@@ -1354,7 +1354,7 @@ function ResultsPanel({
                     <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} />
                   </div>
                   <div className="mt-1.5">
-                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} width={100} height={36} baselinePoints={BASELINE_WEEKS} />
+                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} height={36} baselinePoints={BASELINE_WEEKS} />
                   </div>
                 </div>
               ))}

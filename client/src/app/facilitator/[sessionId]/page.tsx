@@ -422,7 +422,7 @@ function CoachingCard({
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} onDark />
             </div>
             <div className="mt-1">
-              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={82} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} height={28} onDark baselinePoints={BASELINE_WEEKS} />
             </div>
           </div>
         ))}
