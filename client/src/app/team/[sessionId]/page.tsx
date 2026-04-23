@@ -216,12 +216,14 @@ export default function TeamPlayerPage() {
       ) : state.phase === "round_results" ? (
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
-        <main className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_2fr] gap-5 p-5">
-          <aside className="flex min-h-0 flex-col gap-3">
+        <main className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_2fr] gap-4 p-4">
+          <aside className="flex min-h-0 flex-col gap-3 overflow-hidden">
             <ZoneLabel label="Context" tone="neutral" />
             <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
-            <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
-            <AlertsPanel state={state} />
+            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,auto)] gap-3">
+              <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
+              <AlertsPanel state={state} />
+            </div>
           </aside>
 
           <section className="flex min-w-0 flex-col min-h-0 gap-3">
@@ -371,11 +373,11 @@ function KpiStrip({
   }));
 
   return (
-    <Card tone="data" className="p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <Card tone="data" className="shrink-0 p-3">
+      <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Gauge className="h-4 w-4 text-white/60" />
-          <h3 className="text-[15px] font-semibold tracking-tight text-white">Store performance</h3>
+          <h3 className="text-[14px] font-semibold tracking-tight text-white">Store performance</h3>
         </div>
         <div className="flex rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
           <button
@@ -402,15 +404,15 @@ function KpiStrip({
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-1.5">
         {items.map((i) => (
-          <div key={i.key} className="rounded-xl bg-white/5 p-2.5">
+          <div key={i.key} className="rounded-lg bg-white/5 px-2 py-1.5">
             <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">{i.label}</div>
-            <div className="mt-0.5 flex items-baseline justify-between gap-1">
-              <span className="num text-lg font-semibold text-white">{i.value}</span>
+            <div className="mt-0 flex items-baseline justify-between gap-1">
+              <span className="num text-base font-semibold text-white">{i.value}</span>
               <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} onDark />
             </div>
-            <div className="mt-1.5">
+            <div className="mt-1">
               {view === "values" ? (
                 <Bar value={i.value} inverted={i.inverted} onDark />
               ) : (
@@ -426,17 +428,17 @@ function KpiStrip({
 
 function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
   return (
-    <Card tone="data" className="flex min-h-0 flex-col p-4">
-      <div className="mb-3 flex items-center gap-2">
+    <Card tone="data" className="flex min-h-0 flex-col p-3">
+      <div className="mb-2 flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-white/60" />
-        <h3 className="text-[15px] font-semibold tracking-tight text-white">Active issues</h3>
+        <h3 className="text-[14px] font-semibold tracking-tight text-white">Active issues</h3>
       </div>
-      <div className="space-y-2">
-        {issues.map((i) => {
+      <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
+        {issues.slice(0, 3).map((i) => {
           const targeted = primaryIssueId === i.id;
           return (
-            <div key={i.id} className="rounded-xl bg-white/5 p-3">
-              <div className="mb-1 flex items-start justify-between gap-2">
+            <div key={i.id} className="rounded-lg bg-white/5 p-2.5">
+              <div className="mb-0.5 flex items-start justify-between gap-2">
                 <h4 className="text-[13px] font-semibold text-white">{i.title}</h4>
                 {targeted ? (
                   <Pill tone="info" strong>
@@ -446,7 +448,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
                   <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
                 )}
               </div>
-              <p className="text-xs text-white/70">{i.description}</p>
+              <p className="text-[11px] leading-snug text-white/70">{i.description}</p>
             </div>
           );
         })}
@@ -460,28 +462,28 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
   const alerts = state.round?.alerts ?? [];
   const disruption = state.round?.disruption;
   return (
-    <Card tone="data" className="flex min-h-0 flex-col p-4">
-      <div className="mb-3 flex items-center gap-2">
+    <Card tone="data" className="flex min-h-0 flex-col p-3">
+      <div className="mb-2 flex items-center gap-2">
         <BellRing className="h-4 w-4 text-white/60" />
-        <h3 className="text-[15px] font-semibold tracking-tight text-white">Alerts</h3>
+        <h3 className="text-[14px] font-semibold tracking-tight text-white">Alerts</h3>
       </div>
-      <div className="space-y-2">
+      <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="rounded-xl bg-risk p-3 text-white">
-            <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
+          <div className="rounded-lg bg-risk p-2.5 text-white">
+            <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
             <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
-            <p className="mt-0.5 text-xs opacity-90">{disruption.message}</p>
+            <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
-          <div key={a.id} className="rounded-xl bg-white/5 p-3">
+          <div key={a.id} className="rounded-lg bg-white/5 p-2.5">
             <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-white/50">
               {a.kind === "head_office" ? "Head office" : "Operational"}
             </div>
             <h4 className="text-[13px] font-semibold text-white">{a.title}</h4>
-            <p className="mt-0.5 text-xs text-white/70">{a.message}</p>
+            <p className="mt-0.5 text-[11px] leading-snug text-white/70">{a.message}</p>
           </div>
         ))}
         {!disruption && alerts.length === 0 ? <p className="text-xs text-white/50">No alerts.</p> : null}
@@ -852,7 +854,7 @@ function IssueStep({
       <StepHeader
         title="Primary issue"
         narrative="Targeting a specific issue sharpens its impact this shift."
-        instruction="Tap one to target it. Optional — leave unset to spread your effort."
+        instruction="Tap one to target it. Optional. Leave unset to spread your effort."
         optional
       />
       <div className="mt-4">
@@ -915,7 +917,7 @@ function ConfidenceStep({
     <div>
       <StepHeader
         title="Confidence"
-        narrative="How confident are you in your plan for this shift? Confidence multiplies every outcome — good and bad — across all of the decisions you just made."
+        narrative="How confident are you in your plan for this shift? Confidence multiplies every outcome, good and bad, across all of the decisions you just made."
         instruction="Choose one of the three levels below."
       />
       <div className="mt-4 grid grid-cols-3 gap-3">
@@ -1322,11 +1324,11 @@ function ResultsPanel({
         <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
           <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
             <span className="text-[11px] font-medium uppercase tracking-wide">Strength</span>
-            <div className="text-base font-semibold">{team.strength ?? "—"}</div>
+            <div className="text-base font-semibold">{team.strength ?? "-"}</div>
           </div>
           <div className="rounded-xl bg-rose-50 px-4 py-3 text-rose-900">
             <span className="text-[11px] font-medium uppercase tracking-wide">Risk</span>
-            <div className="text-base font-semibold">{team.risk ?? "—"}</div>
+            <div className="text-base font-semibold">{team.risk ?? "-"}</div>
           </div>
         </div>
       </Card>

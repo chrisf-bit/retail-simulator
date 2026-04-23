@@ -639,7 +639,7 @@ function ControlPanel({
 
       <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[11px]">
         <StatPill label="Phase" value={state.phase} />
-        <StatPill label="Shift phase" value={state.round?.phase ?? "—"} />
+        <StatPill label="Shift phase" value={state.round?.phase ?? "-"} />
         <StatPill
           label="Submitted"
           value={`${state.teams.filter((t) => t.submitted).length}/${state.teams.length}`}

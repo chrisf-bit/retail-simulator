@@ -70,10 +70,10 @@ npm run dev:client
 
 Located in `server/src/engine/`.
 
-- `scenarios.ts` — issue, alert, and disruption banks.
-- `scoring.ts` — decision-to-delta mapping for both visible KPIs and hidden drivers, plus per-round score.
-- `prompts.ts` — facilitator prompt generation from team patterns.
-- `session.ts` — session state machine, round lifecycle, timer orchestration, and public state shape.
+- `scenarios.ts`: issue, alert, and disruption banks.
+- `scoring.ts`: decision-to-delta mapping for both visible KPIs and hidden drivers, plus per-round score.
+- `prompts.ts`: facilitator prompt generation from team patterns.
+- `session.ts`: session state machine, round lifecycle, timer orchestration, and public state shape.
 
 Each decision always produces a positive effect on at least one KPI, a negative effect on at least one KPI, and a change in at least one hidden driver. The round score combines visible KPIs with weighted hidden drivers and a safety-risk penalty.
 
@@ -94,7 +94,7 @@ Client → server:
 Server → client:
 - `session:created` `{ sessionId, code }`
 - `session:joined` `{ sessionId, teamId }`
-- `session:state` — full public session snapshot, rebroadcast on every change.
+- `session:state`: full public session snapshot, rebroadcast on every change.
 - `error` `{ message }`
 
 The server embeds `serverNow` in every snapshot so clients can compute a local offset and render a synchronised countdown.
@@ -104,7 +104,7 @@ The server embeds `serverNow` in every snapshot so clients can compute a local o
 ## Design principles
 
 - **No scrolling.** Every key screen fits within the viewport.
-- **Enterprise aesthetic.** Inspired by Stripe / Linear / Notion — neutral base, deep blue accent, muted status colours (green / amber / red).
+- **Enterprise aesthetic.** Dark page, dark data panels, single Sainsbury's orange accent. See CLAUDE.md for the full design system.
 - **No emojis.** Only Lucide icons.
 - **Fast decisions.** All four decision inputs live in a single panel with clear hit areas and a single submit action.
 
