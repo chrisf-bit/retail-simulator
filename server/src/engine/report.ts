@@ -6,6 +6,10 @@ import {
   KPI_SHORT,
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
+  crestFor,
+  type CrestAccent,
+  type CrestIcon,
+  type CrestShape,
 } from "@sim/shared";
 import type { Session } from "./session.js";
 
@@ -20,6 +24,65 @@ const LOWER_IS_BETTER: Record<string, boolean> = {
   shrinkage: true,
   safety_risk: true,
 };
+
+function crestSvg(teamName: string, size = 44): string {
+  const c = crestFor(teamName);
+  const stroke = "#17181a";
+  const fill = "#ffffff";
+  const accent = "#ee6a00";
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">${shape(c.shape, stroke, fill)}${accentShape(c.accent, c.shape, accent)}${iconShape(c.icon, stroke)}</svg>`;
+}
+
+function shape(s: CrestShape, stroke: string, fill: string): string {
+  const attrs = `fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"`;
+  switch (s) {
+    case "shield":
+      return `<path d="M32 6 L54 14 V32 C54 46 44 54 32 58 C20 54 10 46 10 32 V14 Z" ${attrs}/>`;
+    case "hexagon":
+      return `<path d="M32 4 L56 18 V46 L32 60 L8 46 V18 Z" ${attrs}/>`;
+    case "circle":
+      return `<circle cx="32" cy="32" r="26" ${attrs}/>`;
+    case "square":
+      return `<rect x="8" y="8" width="48" height="48" rx="12" ${attrs}/>`;
+    case "diamond":
+      return `<path d="M32 4 L60 32 L32 60 L4 32 Z" ${attrs}/>`;
+  }
+}
+
+function accentShape(a: CrestAccent, s: CrestShape, color: string): string {
+  switch (a) {
+    case "dot":
+      return `<circle cx="${s === "diamond" ? 50 : 48}" cy="${s === "diamond" ? 20 : 16}" r="3" fill="${color}"/>`;
+    case "stripe":
+      return `<path d="M10 20 L54 20" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+    case "ring":
+      return `<circle cx="32" cy="32" r="23" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="2 4"/>`;
+    case "corner":
+      return `<path d="M44 8 L56 8 L56 20" stroke="${color}" stroke-width="2" stroke-linecap="round" fill="none"/>`;
+    case "underline":
+      return `<path d="M18 48 L46 48" stroke="${color}" stroke-width="2" stroke-linecap="round"/>`;
+    case "bar":
+      return `<rect x="30.5" y="14" width="3" height="8" rx="1" fill="${color}"/>`;
+  }
+}
+
+function iconShape(i: CrestIcon, stroke: string): string {
+  const a = `stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  switch (i) {
+    case "storefront":
+      return `<g ${a} transform="translate(20 22)"><path d="M1 5 L4 1 H20 L23 5"/><path d="M3 5 V21 H21 V5"/><path d="M1 5 H23"/><path d="M10 21 V14 H14 V21"/></g>`;
+    case "trolley":
+      return `<g ${a} transform="translate(18 26)"><path d="M2 2 H6 L8 6"/><path d="M8 6 H26 L23 15 H10 Z"/><circle cx="12" cy="19" r="2"/><circle cx="22" cy="19" r="2"/></g>`;
+    case "basket":
+      return `<g ${a} transform="translate(18 22)"><path d="M8 6 C8 2 12 0 14 0 C16 0 20 2 20 6"/><path d="M2 6 H26 L23 20 H5 Z"/><path d="M10 6 L11 20"/><path d="M18 6 L17 20"/></g>`;
+    case "tag":
+      return `<g ${a} transform="translate(18 18)"><path d="M2 14 L14 2 L28 2 L28 16 L16 28 Z"/><circle cx="22" cy="8" r="2"/></g>`;
+    case "scales":
+      return `<g ${a} transform="translate(18 22)"><path d="M14 2 V22"/><path d="M8 22 H20"/><path d="M3 8 H25"/><path d="M7 8 L4 14"/><path d="M7 8 L10 14"/><path d="M21 8 L18 14"/><path d="M21 8 L24 14"/><path d="M3 14 H11"/><path d="M17 14 H25"/></g>`;
+    case "key":
+      return `<g ${a} transform="translate(18 22)"><circle cx="8" cy="12" r="6"/><circle cx="8" cy="12" r="2" fill="${stroke}"/><path d="M14 12 H28"/><path d="M22 12 V16"/><path d="M26 12 V15"/></g>`;
+  }
+}
 
 function escapeHtml(input: string): string {
   return input
@@ -290,6 +353,7 @@ function teamSection(team: TeamFull, rank: number, baseline: TrendSeries): strin
     <section class="team">
       <header class="team-header">
         <div class="rank">#${rank}</div>
+        <div class="crest">${crestSvg(team.name, 48)}</div>
         <div>
           <h2>${escapeHtml(team.name)}</h2>
           <p class="sub">Final score <strong class="num">${signed(team.score)}</strong> over ${team.history.length} shift${team.history.length === 1 ? "" : "s"}.</p>
@@ -330,7 +394,7 @@ export function generateReport(session: Session): string {
       (t, i) => `
         <tr>
           <td class="num">${i + 1}</td>
-          <td>${escapeHtml(t.name)}</td>
+          <td><div class="team-cell"><span class="crest-small">${crestSvg(t.name, 22)}</span>${escapeHtml(t.name)}</div></td>
           <td class="num">${signed(t.score)}</td>
         </tr>
       `.trim(),
@@ -502,7 +566,7 @@ export function generateReport(session: Session): string {
   section.team .team-header {
     display: flex;
     gap: 16px;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 4px;
   }
   section.team .team-header .rank {
@@ -511,8 +575,11 @@ export function generateReport(session: Session): string {
     color: var(--brand);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
-    min-width: 48px;
+    min-width: 40px;
   }
+  section.team .team-header .crest { line-height: 0; }
+  .team-cell { display: inline-flex; align-items: center; gap: 8px; }
+  .crest-small { line-height: 0; display: inline-flex; }
   section.team .sub { color: var(--ink-500); font-size: 12px; }
   .cols {
     display: grid;

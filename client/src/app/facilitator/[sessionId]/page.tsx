@@ -38,7 +38,9 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import { ARCHETYPE_LABELS, BASELINE_WEEKS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
-import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
+import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
+import { TeamCrest } from "@/components/TeamCrest";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
 
@@ -189,10 +191,15 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
         <div>
           <div className="text-xl font-semibold tracking-tighter text-white">Facilitator</div>
-          <div className="mt-0.5 text-xs text-white/50">
-            {phaseText[state.phase]}
-            {" · "}
-            {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
+          <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
+            <span>
+              {phaseText[state.phase]}
+              {" · "}
+              {state.teams.length} / {state.expectedTeams} team{state.expectedTeams === 1 ? "" : "s"}
+            </span>
+            {state.phase === "round" || state.phase === "round_results" ? (
+              <ShiftRibbon current={state.round?.number ?? 0} total={ROUND_COUNT} onDark size="sm" />
+            ) : null}
           </div>
         </div>
       </div>
@@ -247,7 +254,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
               </div>
               <div className="col-span-6 flex items-center gap-2">
                 <ConnectionDot status={status} />
-                <Store className={cn("h-4 w-4", isLead ? "text-white" : "text-white/50")} />
+                <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
                 <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
                 {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
               </div>
@@ -388,7 +395,7 @@ function CoachingCard({
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
-          <Store className="h-4 w-4 shrink-0 text-white/50" />
+          <TeamCrest name={team.name} size={22} tone="light" />
           <span className="truncate text-[15px] font-semibold tracking-tight text-white">{team.name}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -423,20 +430,25 @@ function CoachingCard({
       </div>
 
       {moment ? (
-        <div className="rounded-xl bg-white/5 p-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-400">
-            <HeartHandshake className="h-3.5 w-3.5" /> People moment &middot; {moment.persona.name}
+        <div className="flex items-start gap-2.5 rounded-xl bg-white/5 p-2.5">
+          <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
+            <PersonaAvatar name={moment.persona.name} size={32} />
           </div>
-          {momentResponse ? (
-            <div className="flex items-start gap-2">
-              <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
-              <p className="text-[12px] leading-snug text-white/80">&ldquo;{momentResponse.label}&rdquo;</p>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-400">
+              <HeartHandshake className="h-3.5 w-3.5" /> People moment &middot; {moment.persona.name}
             </div>
-          ) : team.submitted ? (
-            <p className="text-[12px] italic text-white/60">No response chosen. Worth asking why.</p>
-          ) : (
-            <p className="text-[12px] italic text-white/50">Not yet responded.</p>
-          )}
+            {momentResponse ? (
+              <div className="flex items-start gap-2">
+                <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
+                <p className="text-[12px] leading-snug text-white/80">&ldquo;{momentResponse.label}&rdquo;</p>
+              </div>
+            ) : team.submitted ? (
+              <p className="text-[12px] italic text-white/60">No response chosen. Worth asking why.</p>
+            ) : (
+              <p className="text-[12px] italic text-white/50">Not yet responded.</p>
+            )}
+          </div>
         </div>
       ) : null}
 

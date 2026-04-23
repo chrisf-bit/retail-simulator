@@ -47,6 +47,7 @@ export interface Issue {
   description: string;
   severity: Severity;
   tags: Priority[];
+  icon?: string;
 }
 
 export interface Alert {
@@ -55,6 +56,7 @@ export interface Alert {
   title: string;
   message: string;
   timestamp: number;
+  icon?: string;
 }
 
 export type MomentArchetype = "directive" | "coaching" | "delegate" | "collaborative";

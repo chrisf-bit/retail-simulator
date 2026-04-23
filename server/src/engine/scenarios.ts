@@ -7,6 +7,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Chilled aisle has 180 units within 24h expiry.",
     severity: "medium",
     tags: ["commercial", "safety_loss"],
+    icon: "package_check",
   },
   {
     id: "iss_till_queue",
@@ -14,6 +15,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Front-end service levels breaching threshold.",
     severity: "high",
     tags: ["customer", "commercial"],
+    icon: "hourglass",
   },
   {
     id: "iss_sickness",
@@ -21,6 +23,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Duty manager short-handed in backroom.",
     severity: "medium",
     tags: ["people_team"],
+    icon: "user_minus",
   },
   {
     id: "iss_theft_pattern",
@@ -28,6 +31,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Security footage shows three incidents this week in spirits aisle.",
     severity: "high",
     tags: ["safety_loss"],
+    icon: "shield_alert",
   },
   {
     id: "iss_delivery_late",
@@ -35,6 +39,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Backroom team blocked, shop floor gaps forming.",
     severity: "medium",
     tags: ["commercial"],
+    icon: "truck",
   },
   {
     id: "iss_complaint_escalation",
@@ -42,6 +47,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Refund refused at self-scan, customer demanding manager.",
     severity: "medium",
     tags: ["customer"],
+    icon: "message_circle_warning",
   },
   {
     id: "iss_team_conflict",
@@ -49,6 +55,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Supervisor flagged a dispute affecting morale and output.",
     severity: "medium",
     tags: ["people_team"],
+    icon: "users",
   },
   {
     id: "iss_planogram",
@@ -56,6 +63,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Head Office flagged compliance shortfall in beers & wines.",
     severity: "low",
     tags: ["commercial"],
+    icon: "layout_grid",
   },
   {
     id: "iss_waste",
@@ -63,6 +71,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Bakery and produce departments over index this week.",
     severity: "medium",
     tags: ["commercial", "safety_loss"],
+    icon: "trash2",
   },
   {
     id: "iss_wet_floor",
@@ -70,6 +79,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Wet floor sign missing. A customer flagged it, colleague had walked past twice.",
     severity: "high",
     tags: ["safety_loss", "customer"],
+    icon: "droplets",
   },
   {
     id: "iss_safeguarding",
@@ -77,6 +87,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Colleague raised worry about an unaccompanied child who has been in store for 40 minutes.",
     severity: "high",
     tags: ["safety_loss", "customer"],
+    icon: "eye",
   },
   {
     id: "iss_new_starter_overwhelmed",
@@ -84,6 +95,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Two weeks in, hasn't eaten lunch all week. Peers sensing it but saying nothing.",
     severity: "medium",
     tags: ["people_team"],
+    icon: "user_round",
   },
   {
     id: "iss_cash_variance",
@@ -91,6 +103,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Same colleague signed both off. Pattern rather than a one-off.",
     severity: "medium",
     tags: ["safety_loss"],
+    icon: "banknote",
   },
   {
     id: "iss_bread_outage",
@@ -98,6 +111,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "In-store bake behind schedule, peak trade in an hour.",
     severity: "medium",
     tags: ["commercial", "customer"],
+    icon: "wheat",
   },
   {
     id: "iss_trolley_return",
@@ -105,6 +119,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Colleague rota for retrieval slipped. Complaints starting at customer service.",
     severity: "low",
     tags: ["customer"],
+    icon: "shopping_cart",
   },
   {
     id: "iss_fridge_warm",
@@ -112,6 +127,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Engineer called last week, same unit flagged again. Stock still on sale.",
     severity: "high",
     tags: ["safety_loss", "commercial"],
+    icon: "thermometer",
   },
   {
     id: "iss_self_scan_errors",
@@ -119,6 +135,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "One bank throwing item-not-recognised errors. Supervisor overrides tracking at 40 per hour.",
     severity: "medium",
     tags: ["customer", "commercial"],
+    icon: "scan_line",
   },
   {
     id: "iss_lone_working",
@@ -126,6 +143,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Second colleague pulled away for an escalation, desk covered solo for the last 30 minutes.",
     severity: "medium",
     tags: ["people_team", "safety_loss"],
+    icon: "user_round",
   },
   {
     id: "iss_aggressive_customer",
@@ -133,6 +151,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Incident logged but colleague back on shop floor. Wellbeing unclear.",
     severity: "high",
     tags: ["people_team", "safety_loss"],
+    icon: "shield_alert",
   },
   {
     id: "iss_promo_pricing",
@@ -140,6 +159,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Shelf edge shows 2-for-5, till rings up at full price. Complaints building.",
     severity: "medium",
     tags: ["customer", "commercial"],
+    icon: "tag",
   },
   {
     id: "iss_online_picking",
@@ -147,6 +167,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Van leaves in 45 minutes. Pickers short two colleagues, trolleys half done.",
     severity: "medium",
     tags: ["commercial", "customer"],
+    icon: "clipboard_list",
   },
   {
     id: "iss_staff_whatsapp",
@@ -154,6 +175,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Screenshots circulating about a manager's tone. You've not been added to the group.",
     severity: "medium",
     tags: ["people_team"],
+    icon: "message_square",
   },
   {
     id: "iss_health_visit",
@@ -161,6 +183,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Environmental Health confirmed arrival between 2 and 4pm. Bakery prep area last audit flagged two actions.",
     severity: "high",
     tags: ["safety_loss", "commercial"],
+    icon: "clipboard_check",
   },
   {
     id: "iss_schedule_short",
@@ -168,6 +191,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Saturday shows 11 colleagues against a forecast of 14. Two pending holiday approvals sitting with you.",
     severity: "medium",
     tags: ["people_team", "commercial"],
+    icon: "calendar_x",
   },
   {
     id: "iss_markdown_pattern",
@@ -175,6 +199,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Produce hitting 60% markdown rate this week. Buyer emailed asking for a store view by end of day.",
     severity: "medium",
     tags: ["commercial"],
+    icon: "trending_down",
   },
   {
     id: "iss_colleague_photo",
@@ -182,6 +207,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Colleague says it was for evidence of aggressive behaviour. Customer saw and is threatening to report.",
     severity: "high",
     tags: ["people_team", "safety_loss", "customer"],
+    icon: "video",
   },
   {
     id: "iss_returns_trend",
@@ -189,6 +215,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "14 returns of the same baby formula in 48 hours, same batch code. No recall notice yet.",
     severity: "high",
     tags: ["safety_loss", "customer"],
+    icon: "undo2",
   },
   {
     id: "iss_supplier_demo",
@@ -196,6 +223,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Supplier rep has set up a sampling stand without booking. Engaging customers, blocking an aisle.",
     severity: "low",
     tags: ["commercial", "customer"],
+    icon: "hand_platter",
   },
   {
     id: "iss_till_closed_sign",
@@ -203,6 +231,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "Three tills hand-labelled closed by a colleague who said they were too tired to run them. No authorisation.",
     severity: "medium",
     tags: ["customer", "people_team"],
+    icon: "sticky_note",
   },
   {
     id: "iss_stocktake_variance",
@@ -210,6 +239,7 @@ export const ISSUE_BANK: Issue[] = [
     description: "High-value category off by 1.8%. Unusual for the store. Loss prevention pinging for a view.",
     severity: "medium",
     tags: ["safety_loss", "commercial"],
+    icon: "calculator",
   },
 ];
 
@@ -218,86 +248,103 @@ export const ALERT_BANK: Omit<Alert, "id" | "timestamp">[] = [
     kind: "head_office",
     title: "Head Office: weekly compliance review",
     message: "Regional visit next Tuesday, availability audit expected.",
+    icon: "building2",
   },
   {
     kind: "operational",
     title: "Chiller alarm temporarily silenced",
     message: "Engineering callout logged, response in 45 minutes.",
+    icon: "bell_off",
   },
   {
     kind: "head_office",
     title: "Head Office: price file update live",
     message: "118 SKUs changed overnight, verify edge labels.",
+    icon: "tag",
   },
   {
     kind: "operational",
     title: "Self-scan unit 4 offline",
     message: "Awaiting engineer, divert customers to manned tills.",
+    icon: "scan_line",
   },
   {
     kind: "head_office",
     title: "Head Office: new range launch Thursday",
     message: "Free-from range expanding 40 SKUs. POS and ranging brief in the morning pack.",
+    icon: "sparkles",
   },
   {
     kind: "operational",
     title: "Fire door alarmed overnight",
     message: "Security log shows it was wedged open between 2 and 4am. No one flagged it.",
+    icon: "door_open",
   },
   {
     kind: "head_office",
     title: "Mandatory refresher training due",
     message: "Age-restricted sales module closes Friday, 14 colleagues still outstanding.",
+    icon: "graduation_cap",
   },
   {
     kind: "operational",
     title: "Trolley wash rota skipped",
     message: "Last two nights missed. Colleague said they weren't sure whose task it was this week.",
+    icon: "shopping_cart",
   },
   {
     kind: "operational",
     title: "Handheld scanner battery bank empty",
     message: "Backroom team losing scan time waiting for replacements.",
+    icon: "battery_low",
   },
   {
     kind: "head_office",
     title: "Head Office: social media callout",
     message: "Your store tagged in a positive local post about a colleague. 3,200 likes so far.",
+    icon: "heart",
   },
   {
     kind: "operational",
     title: "Sprinkler inspection outstanding",
     message: "Annual check was due last month. Contractor has rebooked twice. Next slot is Friday.",
+    icon: "shield",
   },
   {
     kind: "head_office",
     title: "Peak trade window shift",
     message: "Regional data shows peak moving 40 minutes later this week. Staffing plan may need a look.",
+    icon: "trending_up",
   },
   {
     kind: "operational",
     title: "Goods-in dock blocked",
     message: "Third party delivery overshot its window, still unloading. Our slot now at risk.",
+    icon: "truck",
   },
   {
     kind: "head_office",
     title: "Head Office: colleague survey pulse",
     message: "Store's engagement pulse sits below cluster average. Cluster lead has asked for a 10-line response.",
+    icon: "gauge",
   },
   {
     kind: "operational",
     title: "Till receipt roll stock low",
     message: "Two banks ran out during yesterday's peak. Order not placed.",
+    icon: "receipt",
   },
   {
     kind: "head_office",
     title: "Weather warning: amber",
     message: "Met Office amber wind warning from 4pm. Traffic and customer flow impact likely.",
+    icon: "cloud_lightning",
   },
   {
     kind: "operational",
     title: "Colleague parking permit dispute",
     message: "Three colleagues clamped this week. Contractor says they had correct permits.",
+    icon: "car",
   },
 ];
 

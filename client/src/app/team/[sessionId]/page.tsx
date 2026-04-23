@@ -4,6 +4,8 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   BarChart3,
   BellRing,
   CheckCircle2,
@@ -17,6 +19,7 @@ import {
   LineChart,
   Loader2,
   MessageCircleQuestion,
+  Minus,
   Scale,
   Send,
   Shield,
@@ -56,9 +59,12 @@ import {
   PRIORITY_LABELS,
   ROUND_COUNT,
 } from "@sim/shared";
-import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, Sparkline } from "@/components/ui";
+import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRibbon, Sparkline } from "@/components/ui";
+import { TeamCrest } from "@/components/TeamCrest";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { formatClock, useCountdown, useSessionState, useTeamHeartbeat } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
+import { ScenarioIcon } from "@/lib/scenarioIcons";
 
 const PRIORITY_ICONS: Record<Priority, React.ComponentType<{ className?: string }>> = {
   safety_loss: Shield,
@@ -312,24 +318,12 @@ function TeamHeader({
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white">
-          <Store className="h-5 w-5" />
-        </div>
+        <TeamCrest name={team.name} size={44} tone="light" />
         <div>
           <div className="text-xl font-semibold tracking-tighter text-white">{team.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-white/50">
-            {phase === "round" ? (
-              <>
-                <span>Shift {round} of {totalRounds}</span>
-                <span className="flex items-center gap-1">
-                  {Array.from({ length: totalRounds }).map((_, idx) => (
-                    <span
-                      key={idx}
-                      className={cn("h-1.5 w-1.5 rounded-full", idx + 1 <= round ? "bg-brand-500" : "bg-white/15")}
-                    />
-                  ))}
-                </span>
-              </>
+          <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
+            {phase === "round" || phase === "round_results" ? (
+              <ShiftRibbon current={round} total={totalRounds} onDark size="sm" />
             ) : (
               <span>{phaseLabel(phase)}</span>
             )}
@@ -458,7 +452,12 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
           return (
             <div key={i.id} className="rounded-lg bg-white/5 p-2.5">
               <div className="mb-0.5 flex items-start justify-between gap-2">
-                <h4 className="text-[13px] font-semibold text-white">{i.title}</h4>
+                <div className="flex min-w-0 items-start gap-2">
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70">
+                    <ScenarioIcon name={i.icon} className="h-3.5 w-3.5" />
+                  </div>
+                  <h4 className="text-[13px] font-semibold text-white">{i.title}</h4>
+                </div>
                 {targeted ? (
                   <Pill tone="info" strong>
                     <Target className="h-3 w-3" /> Targeted
@@ -467,7 +466,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
                   <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
                 )}
               </div>
-              <p className="text-[11px] leading-snug text-white/70">{i.description}</p>
+              <p className="pl-7 text-[11px] leading-snug text-white/70">{i.description}</p>
             </div>
           );
         })}
@@ -498,11 +497,18 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
         ) : null}
         {alerts.slice(0, 2).map((a) => (
           <div key={a.id} className="rounded-lg bg-white/5 p-2.5">
-            <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-white/50">
-              {a.kind === "head_office" ? "Head office" : "Operational"}
+            <div className="mb-0.5 flex items-start gap-2">
+              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70">
+                <ScenarioIcon name={a.icon} className="h-3.5 w-3.5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-medium uppercase tracking-wide text-white/50">
+                  {a.kind === "head_office" ? "Head office" : "Operational"}
+                </div>
+                <h4 className="text-[13px] font-semibold text-white">{a.title}</h4>
+                <p className="mt-0.5 text-[11px] leading-snug text-white/70">{a.message}</p>
+              </div>
             </div>
-            <h4 className="text-[13px] font-semibold text-white">{a.title}</h4>
-            <p className="mt-0.5 text-[11px] leading-snug text-white/70">{a.message}</p>
           </div>
         ))}
         {!disruption && alerts.length === 0 ? <p className="text-xs text-white/50">No alerts.</p> : null}
@@ -1074,8 +1080,8 @@ function MomentBlock({
   return (
     <div>
       <div className="mb-3 flex items-start gap-3 rounded-xl bg-ink-50 p-4 ring-1 ring-ink-200">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink-700 ring-1 ring-ink-200">
-          <UserCircle2 className="h-6 w-6" />
+        <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-ink-200">
+          <PersonaAvatar name={moment.persona.name} size={48} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-ink-900">
@@ -1264,58 +1270,82 @@ function ResultsPanel({
 }) {
   const rank = state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0;
   const kpis: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
+  const shiftN = state.round?.number ?? 0;
+  const movement = team.lastMovement;
+  const MovementArrow = movement > 0 ? ArrowUp : movement < 0 ? ArrowDown : Minus;
   return (
     <div className="flex flex-1 items-center justify-center overflow-hidden p-5">
-      <Card className="w-full max-w-4xl p-6">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <Pill tone="info">Shift {state.round?.number} of {totalRounds} complete</Pill>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tighter text-ink-900">How the shift played out</h2>
-            <p className="text-sm text-ink-500">Your facilitator will move on when the room is ready.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-ink-900 px-4 py-2 text-center text-white">
-              <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Rank</div>
-              <div className="num text-3xl font-semibold">#{rank}</div>
+      <Card className="w-full max-w-4xl overflow-hidden p-0">
+        {/* Scorecard banner */}
+        <div className="flex items-center gap-4 border-b border-ink-100 bg-ink-50 px-6 py-4">
+          <TeamCrest name={team.name} size={44} tone="dark" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">
+              Shift {shiftN} scorecard
             </div>
-            <div className="rounded-2xl bg-ink-100 px-4 py-2 text-center">
-              <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">Shift score</div>
-              <div
+            <div className="truncate text-lg font-semibold tracking-tight text-ink-900">{team.name}</div>
+          </div>
+          <ShiftRibbon current={shiftN} total={totalRounds} size="sm" />
+        </div>
+
+        {/* Hero: score movement + rank */}
+        <div className="grid grid-cols-[1fr_auto] items-center gap-6 border-b border-ink-100 px-6 py-5">
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Shift score movement</div>
+            <div className="mt-1 flex items-baseline gap-3">
+              <span
                 className={cn(
-                  "num text-3xl font-semibold",
-                  team.lastMovement > 0 ? "text-ok" : team.lastMovement < 0 ? "text-risk" : "text-ink-900",
+                  "num text-5xl font-semibold tracking-tight",
+                  movement > 0 ? "text-ok" : movement < 0 ? "text-risk" : "text-ink-900",
                 )}
               >
-                {team.lastMovement > 0 ? "+" : ""}
-                {team.lastMovement}
-              </div>
+                {movement > 0 ? "+" : ""}{movement}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-full",
+                  movement > 0 ? "bg-emerald-100 text-ok" : movement < 0 ? "bg-rose-100 text-risk" : "bg-ink-100 text-ink-500",
+                )}
+              >
+                <MovementArrow className="h-4 w-4" />
+              </span>
+              <span className="text-sm text-ink-500">total {team.score}</span>
             </div>
+          </div>
+          <div className="flex flex-col items-center rounded-2xl bg-ink-900 px-5 py-2 text-center text-white">
+            <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Rank</div>
+            <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-3">
-          {kpis.map((k) => (
-            <div key={k}>
-              <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{KPI_SHORT[k]}</div>
-              <div className="mt-1 flex items-baseline justify-between">
-                <span className="num text-2xl font-semibold text-ink-900">{team.kpis[k]}</span>
-                <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
+        {/* KPIs */}
+        <div className="px-6 pt-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Store indicators</div>
+          </div>
+          <div className="grid grid-cols-5 gap-3">
+            {kpis.map((k) => (
+              <div key={k} className="rounded-xl bg-ink-50 p-3">
+                <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{KPI_SHORT[k]}</div>
+                <div className="mt-1 flex items-baseline justify-between">
+                  <span className="num text-2xl font-semibold text-ink-900">{team.kpis[k]}</span>
+                  <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
+                </div>
+                <div className="mt-2">
+                  <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={100} height={36} baselinePoints={BASELINE_WEEKS} />
+                </div>
               </div>
-              <div className="mt-2">
-                <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={100} height={36} baselinePoints={BASELINE_WEEKS} />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
+        {/* Hidden drivers */}
         {team.revealedHidden ? (
-          <div className="mt-6">
-            <div className="mb-3 flex items-center gap-2">
-              <Pill tone="info">Hidden drivers</Pill>
-            </div>
+          <div className="px-6 pt-4">
+            <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-500">Hidden drivers</div>
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
-                <div key={h}>
+                <div key={h} className="rounded-xl bg-ink-50 p-3">
                   <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">
                     {HIDDEN_LABELS[h]}
                   </div>
@@ -1332,7 +1362,8 @@ function ResultsPanel({
           </div>
         ) : null}
 
-        <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+        {/* Strength / risk */}
+        <div className="grid grid-cols-2 gap-3 px-6 py-5 text-sm">
           <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
             <span className="text-[11px] font-medium uppercase tracking-wide">Strength</span>
             <div className="text-base font-semibold">{team.strength ?? "-"}</div>
@@ -1341,6 +1372,12 @@ function ResultsPanel({
             <span className="text-[11px] font-medium uppercase tracking-wide">Risk</span>
             <div className="text-base font-semibold">{team.risk ?? "-"}</div>
           </div>
+        </div>
+
+        {/* Footer: filed-away chrome */}
+        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50 px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-ink-500">
+          <span>Shift {shiftN} of {totalRounds}</span>
+          <span>Your facilitator will move on when the room is ready</span>
         </div>
       </Card>
     </div>

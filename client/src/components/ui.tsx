@@ -357,6 +357,59 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   );
 }
 
+/**
+ * Horizontal ribbon showing which shift we're on. Past shifts are filled, the
+ * current shift pulses brand-orange, future shifts are muted. Self-numbered,
+ * no icons, works on dark and light.
+ */
+export function ShiftRibbon({
+  current,
+  total,
+  onDark = false,
+  size = "md",
+}: {
+  /** 1-indexed. 0 or undefined means "not started" (all muted). */
+  current?: number;
+  total: number;
+  onDark?: boolean;
+  size?: "sm" | "md";
+}) {
+  const items = Array.from({ length: total }, (_, i) => i + 1);
+  const cur = current ?? 0;
+  const pastBg = onDark ? "bg-white/40" : "bg-ink-900";
+  const pastText = onDark ? "text-ink-900" : "text-white";
+  const futureBg = onDark ? "bg-white/10" : "bg-ink-100";
+  const futureText = onDark ? "text-white/50" : "text-ink-400";
+  const sizes = size === "sm"
+    ? { pill: "h-5 min-w-5 px-1.5", text: "text-[10px]", gap: "gap-1" }
+    : { pill: "h-6 min-w-6 px-2", text: "text-[11px]", gap: "gap-1.5" };
+  return (
+    <div className={cn("flex items-center", sizes.gap)} aria-label={`Shift ${cur || 0} of ${total}`}>
+      {items.map((n) => {
+        const isPast = n < cur;
+        const isCurrent = n === cur;
+        return (
+          <span
+            key={n}
+            className={cn(
+              "inline-flex items-center justify-center rounded-full font-semibold tabular-nums tracking-tight",
+              sizes.pill,
+              sizes.text,
+              isCurrent
+                ? "bg-brand-500 text-white"
+                : isPast
+                  ? cn(pastBg, pastText)
+                  : cn(futureBg, futureText),
+            )}
+          >
+            {n}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ConnectionDot({
   status,
   size = "md",
