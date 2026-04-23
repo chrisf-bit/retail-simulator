@@ -30,6 +30,7 @@ import { MOMENT_BANK } from "./moments.js";
 import { applyDecision, summariseRisk, summariseStrength } from "./scoring.js";
 import { generatePrompts } from "./prompts.js";
 import { generateInsights } from "./insights.js";
+import { deleteSessionFile, readAllSessionFiles, SESSION_TTL_MS, writeSessionFile } from "./persistence.js";
 
 function startingKpis(): Kpis {
   return { sales: 60, shrinkage: 35, customer: 62, engagement: 65, operations: 60 };
@@ -118,6 +119,21 @@ function generateCode(): string {
   return out;
 }
 
+export interface PersistedSession {
+  id: string;
+  code: string;
+  facilitatorToken: string;
+  expectedTeams: number;
+  phase: SessionPhase;
+  teams: TeamFull[];
+  prompts: FacilitatorPrompt[];
+  usedMomentIds: string[];
+  baselineTrend: TrendSeries;
+  round?: RoundState;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class Session {
   id = nanoid(10);
   code = generateCode();
@@ -129,14 +145,115 @@ export class Session {
   usedMomentIds = new Set<string>();
   baselineTrend: TrendSeries = buildBaselineTrend();
   round?: RoundState;
+  createdAt = Date.now();
+  updatedAt = Date.now();
   private lastBroadcastStatuses?: Map<string, ConnectionStatus>;
   roundTimer?: NodeJS.Timeout;
   disruptionTimer?: NodeJS.Timeout;
+  writeTimer?: NodeJS.Timeout;
   private onUpdate: () => void;
 
   constructor(onUpdate: () => void, expectedTeams: number = DEFAULT_EXPECTED_TEAMS) {
     this.onUpdate = onUpdate;
     this.expectedTeams = Math.max(MIN_TEAMS, Math.min(MAX_TEAMS, Math.floor(expectedTeams)));
+  }
+
+  /**
+   * Rehydrate a Session from a persisted snapshot. Repopulates every field
+   * and re-schedules timers if the round was mid-flight when we wrote the
+   * snapshot.
+   */
+  static restore(data: PersistedSession, onUpdate: () => void): Session {
+    const session = new Session(onUpdate, data.expectedTeams);
+    session.id = data.id;
+    session.code = data.code;
+    session.facilitatorToken = data.facilitatorToken;
+    session.phase = data.phase;
+    session.teams = new Map(data.teams.map((t) => [t.id, t]));
+    session.prompts = data.prompts ?? [];
+    session.usedMomentIds = new Set(data.usedMomentIds ?? []);
+    session.baselineTrend = data.baselineTrend;
+    session.round = data.round;
+    session.createdAt = data.createdAt;
+    session.updatedAt = data.updatedAt;
+    session.rescheduleTimers();
+    return session;
+  }
+
+  toJSON(): PersistedSession {
+    return {
+      id: this.id,
+      code: this.code,
+      facilitatorToken: this.facilitatorToken,
+      expectedTeams: this.expectedTeams,
+      phase: this.phase,
+      teams: Array.from(this.teams.values()),
+      prompts: this.prompts,
+      usedMomentIds: Array.from(this.usedMomentIds),
+      baselineTrend: this.baselineTrend,
+      round: this.round,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
+  }
+
+  /**
+   * Debounced write. Called on every state change via onUpdate. Batches rapid
+   * updates so we write at most once every 500ms per session.
+   */
+  scheduleWrite(): void {
+    this.updatedAt = Date.now();
+    if (this.writeTimer) clearTimeout(this.writeTimer);
+    this.writeTimer = setTimeout(() => {
+      this.writeTimer = undefined;
+      writeSessionFile(this.id, this.toJSON()).catch((err) => {
+        console.warn(`[persistence] write failed for ${this.id}:`, err);
+      });
+    }, 500);
+  }
+
+  /**
+   * Used by the SIGTERM handler to flush any pending write synchronously
+   * before the process exits.
+   */
+  hasPendingWrite(): boolean {
+    return this.writeTimer !== undefined;
+  }
+  cancelPendingWrite(): void {
+    if (this.writeTimer) {
+      clearTimeout(this.writeTimer);
+      this.writeTimer = undefined;
+    }
+  }
+
+  /**
+   * On rehydrate, re-schedule round and disruption timers based on endsAt and
+   * startedAt relative to wall-clock now.
+   */
+  private rescheduleTimers(): void {
+    if (!this.round) return;
+    const phase = this.round.phase;
+    if (phase === "locked" || phase === "reveal") return;
+    const now = Date.now();
+
+    const remaining = this.round.endsAt - now;
+    if (remaining <= 0) {
+      // We were down past the end of the round. Resolve it now.
+      setImmediate(() => this.endRound());
+      return;
+    }
+    this.roundTimer = setTimeout(() => this.endRound(), remaining);
+
+    if (!this.round.disruption && this.round.phase === "active") {
+      const disruptionAt = this.round.startedAt + 60_000;
+      const untilDisruption = disruptionAt - now;
+      if (untilDisruption > 0) {
+        this.disruptionTimer = setTimeout(() => this.triggerDisruption(), untilDisruption);
+      } else {
+        // Missed the 1-min trigger while the server was down. Fire it now.
+        setImmediate(() => this.triggerDisruption());
+      }
+    }
   }
 
   isFull(): boolean {
@@ -438,17 +555,69 @@ export class Session {
   dispose() {
     if (this.roundTimer) clearTimeout(this.roundTimer);
     if (this.disruptionTimer) clearTimeout(this.disruptionTimer);
+    if (this.writeTimer) clearTimeout(this.writeTimer);
   }
 }
 
 export class SessionStore {
   private byId = new Map<string, Session>();
   private byCode = new Map<string, Session>();
+  private broadcast: (sessionId: string) => void;
 
-  create(onUpdate: (sessionId: string) => void, expectedTeams?: number): Session {
-    const session = new Session(() => onUpdate(session.id), expectedTeams);
+  constructor(broadcast: (sessionId: string) => void) {
+    this.broadcast = broadcast;
+  }
+
+  private handleUpdate = (sessionId: string): void => {
+    this.broadcast(sessionId);
+    const session = this.byId.get(sessionId);
+    if (session) session.scheduleWrite();
+  };
+
+  /**
+   * Load every persisted session from disk. Drops any that are older than
+   * SESSION_TTL_MS. Called once on boot before we start accepting connections.
+   */
+  async hydrate(): Promise<void> {
+    const files = await readAllSessionFiles<PersistedSession>();
+    const now = Date.now();
+    for (const { sessionId, data, updatedAt } of files) {
+      if (now - updatedAt > SESSION_TTL_MS) {
+        await deleteSessionFile(sessionId);
+        continue;
+      }
+      try {
+        const session = Session.restore(data, () => this.handleUpdate(sessionId));
+        this.byId.set(session.id, session);
+        this.byCode.set(session.code, session);
+      } catch (err) {
+        console.warn(`[persistence] failed to restore ${sessionId}:`, err);
+      }
+    }
+    console.log(`[persistence] hydrated ${this.byId.size} session(s) from ${files.length} file(s)`);
+  }
+
+  /**
+   * Evict sessions older than SESSION_TTL_MS from memory and disk. Called
+   * periodically.
+   */
+  async cleanup(): Promise<void> {
+    const now = Date.now();
+    for (const [id, session] of this.byId) {
+      if (now - session.updatedAt > SESSION_TTL_MS) {
+        session.dispose();
+        this.byId.delete(id);
+        this.byCode.delete(session.code);
+        await deleteSessionFile(id);
+      }
+    }
+  }
+
+  create(expectedTeams?: number): Session {
+    const session = new Session(() => this.handleUpdate(session.id), expectedTeams);
     this.byId.set(session.id, session);
     this.byCode.set(session.code, session);
+    session.scheduleWrite();
     return session;
   }
 
