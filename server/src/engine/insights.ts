@@ -19,25 +19,44 @@ export function generateInsights(
   roundNumber: number,
 ): SessionInsights {
   return {
-    teams: teams.map(teamInsight),
+    teams: teams.map((t) => teamInsight(t, roundNumber)),
     patterns: sessionPatterns(teams, roundNumber),
     script: phaseScript(phase, roundNumber, teams),
   };
 }
 
-function teamInsight(team: TeamFull): TeamInsight {
+/**
+ * Deterministic pick from a pool using a seed string. Same seed always picks
+ * the same item, so two teams who made identical decisions still get different
+ * questions because their teamId + round differ.
+ */
+function pick<T>(pool: T[], seed: string): T {
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) + h + seed.charCodeAt(i)) >>> 0;
+  return pool[h % pool.length];
+}
+
+function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
   const observations: string[] = [];
-  const considerations: string[] = [];
   const questions: string[] = [];
   const history = team.history;
+  const seed = `${team.id}:${roundNumber}`;
 
   if (history.length === 0) {
     return {
       teamId: team.id,
       teamName: team.name,
       observations: ["No decisions submitted yet."],
-      considerations: ["What might they be organising themselves around before the first shift starts?"],
-      questions: ["Who do you think is going to end up driving the decisions on your team?"],
+      questions: [
+        pick(
+          [
+            "Who do you think is going to end up driving the decisions on your team?",
+            "What's the first thing you're going to check once the shift opens?",
+            "What sort of leader do you want to be today?",
+          ],
+          seed,
+        ),
+      ],
       strengthNote: team.strength,
       riskNote: team.risk,
     };
@@ -47,7 +66,6 @@ function teamInsight(team: TeamFull): TeamInsight {
   const roundsPlayed = history.length;
   const isFirstRound = roundsPlayed === 1;
 
-  // --- Round 1: lean on the single decision for concrete, per-team observations ---
   if (isFirstRound) {
     const d = latest.decision;
     observations.push(
@@ -72,22 +90,16 @@ function teamInsight(team: TeamFull): TeamInsight {
               : "problem resolution";
       observations.push(`Weighted resource heavily into ${where} (${maxAlloc}%).`);
     }
-    if (d.allocation.problem_resolution <= 10) {
-      considerations.push("What would you want to ask them about how little they put into problem resolution?");
-    }
-    if (!d.primaryIssueId) {
-      observations.push("Did not pick a primary issue to target.");
-      considerations.push("What do you think leaving no primary issue might tell you about how they read the board?");
-    }
     if (latest.momentArchetype) {
       observations.push(
         `Responded to the people moment with a ${ARCHETYPE_LABELS[latest.momentArchetype].toLowerCase()} stance.`,
       );
     } else {
       observations.push("Did not respond to the people moment.");
-      considerations.push("What might have made the people moment feel unavailable or low-priority for them?");
     }
-
+    if (!d.primaryIssueId) {
+      observations.push("Did not pick a primary issue to target.");
+    }
     const bigMover = Object.entries(latest.kpiDelta)
       .map(([k, v]) => [k, v ?? 0] as const)
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
@@ -96,28 +108,127 @@ function teamInsight(team: TeamFull): TeamInsight {
       observations.push(`Biggest move was ${bigMover[0]} (${dir} ${Math.abs(bigMover[1])}).`);
     }
 
+    // --- Varied questions: each trigger has a pool, picked by team+round seed ---
+    const pushed: string[] = [];
+
     if (d.confidence === "confident") {
-      questions.push("What told you this was a shift to press on rather than ease into?");
+      pushed.push(
+        pick(
+          [
+            "What told you this was a shift to press forward rather than ease into?",
+            "What would you need to see to back off the confident stance next shift?",
+            "If you could label the feeling behind that confidence, what would it be?",
+          ],
+          seed + ":conf-high",
+        ),
+      );
     } else if (d.confidence === "cautious") {
-      questions.push("What made caution feel like the right stance for shift one?");
-    }
-    if (d.leadership === "directive") {
-      questions.push("If you had more time on that shift, what might you have done instead of directing?");
-    }
-    if (!d.primaryIssueId) {
-      questions.push("How do you decide what is worth giving focus to versus what can wait?");
+      pushed.push(
+        pick(
+          [
+            "What made caution feel like the right stance for shift one?",
+            "What would have had to be different for you to press forward instead?",
+            "How did playing cautious sit with the rest of your team?",
+          ],
+          seed + ":conf-low",
+        ),
+      );
     }
 
-    if (questions.length === 0) {
-      questions.push("What one decision do you most want to pull apart from that shift?");
+    if (d.leadership === "directive") {
+      pushed.push(
+        pick(
+          [
+            "If you had more time on that shift, what might you have done instead of directing?",
+            "What signalled to you that directive was the stance that fit?",
+            "How did you want your team to feel after you made those calls?",
+          ],
+          seed + ":lead-dir",
+        ),
+      );
+    } else if (d.leadership === "coaching") {
+      pushed.push(
+        pick(
+          [
+            "What did coaching cost you in speed, and was it worth it?",
+            "When did you feel the urge to switch out of coaching into something more direct?",
+          ],
+          seed + ":lead-coach",
+        ),
+      );
+    } else if (d.leadership === "delegated") {
+      pushed.push(
+        pick(
+          [
+            "How did you decide what to hand over versus what to hold on to?",
+            "What would have to go wrong for you to pull the decisions back in?",
+          ],
+          seed + ":lead-del",
+        ),
+      );
     }
+
+    if (!d.primaryIssueId) {
+      pushed.push(
+        pick(
+          [
+            "How do you decide what is worth giving focus to versus what can wait?",
+            "When you scanned the issues, what pulled your attention first and why?",
+          ],
+          seed + ":no-primary",
+        ),
+      );
+    }
+
+    if (latest.momentArchetype === "directive") {
+      pushed.push(
+        pick(
+          [
+            "What do you think your direct report wanted most from that exchange?",
+            "What stopped you from turning that into a question back to them?",
+          ],
+          seed + ":mom-dir",
+        ),
+      );
+    } else if (latest.momentArchetype === "delegate") {
+      pushed.push(
+        pick(
+          [
+            "What made it feel right to hand that back to them in the moment?",
+            "How confident are you that they left with what they needed?",
+          ],
+          seed + ":mom-del",
+        ),
+      );
+    }
+
+    if (bigMover && bigMover[1] <= -5) {
+      pushed.push(`What do you think pulled ${bigMover[0]} down that shift?`);
+    } else if (bigMover && bigMover[1] >= 8) {
+      pushed.push(`What do you think lifted ${bigMover[0]} that sharply?`);
+    }
+
+    // Fallback closers, rotated so all teams don't land on the same one.
+    if (pushed.length === 0) {
+      pushed.push(
+        pick(
+          [
+            "What one decision do you most want to pull apart from that shift?",
+            "If you ran that shift again, what would you try differently?",
+            "What did that shift tell you about how you lead under pressure?",
+          ],
+          seed + ":fallback",
+        ),
+      );
+    }
+
+    questions.push(...pushed);
 
     return {
       teamId: team.id,
       teamName: team.name,
       observations: observations.slice(0, 4),
-      considerations: considerations.slice(0, 3),
-      questions: questions.slice(0, 2),
+      questions: questions.slice(0, 3),
       strengthNote: team.strength,
       riskNote: team.risk,
     };
@@ -131,30 +242,70 @@ function teamInsight(team: TeamFull): TeamInsight {
     observations.push(
       `Chose ${PRIORITY_LABELS[dominantPriority[0] as Priority]} as priority every shift (${dominantPriority[1]}/${roundsPlayed}).`,
     );
-    considerations.push("Was that single priority conviction, or a default they haven't questioned yet?");
+    questions.push(
+      pick(
+        [
+          `What keeps drawing you back to ${PRIORITY_LABELS[dominantPriority[0] as Priority]}?`,
+          `If you had to put that priority to one side next shift, what would you lead with?`,
+          `What might you be missing by going with ${PRIORITY_LABELS[dominantPriority[0] as Priority]} every time?`,
+        ],
+        seed + ":prio-same",
+      ),
+    );
   } else if (entriesOf(priorityCounts).length >= 3) {
     observations.push(`Spread their priority across ${entriesOf(priorityCounts).length} different focus areas.`);
-    considerations.push("Has their priority shifting been responsive, or reactive?");
+    questions.push(
+      pick(
+        [
+          "Has your priority shifting been responsive to what the room threw up, or reactive?",
+          "When you look back, which of your priority picks do you think you got most right?",
+        ],
+        seed + ":prio-spread",
+      ),
+    );
   }
 
   const styles = history.map((h) => h.decision.leadership);
   const directiveCount = styles.filter((s) => s === "directive").length;
-  if (directiveCount >= 2) {
+  if (directiveCount >= Math.ceil(roundsPlayed * 0.6)) {
     observations.push(`Used directive leadership in ${directiveCount} of ${styles.length} shifts.`);
-    considerations.push("What might their team be quietly reading into the directive stance?");
-    questions.push("What would have changed if you had coached this one through instead of directing?");
+    questions.push(
+      pick(
+        [
+          "What would have changed if you had coached this one through instead of directing?",
+          "Where did the directive stance help you, and where did it cost you?",
+          "What does directive look like from your team's side of the conversation?",
+        ],
+        seed + ":dir-heavy",
+      ),
+    );
   }
   const styleSet = new Set(styles);
   if (roundsPlayed >= 3 && styleSet.size === 1) {
     observations.push(`Held the same leadership style (${LEADERSHIP_LABELS[styles[0]]}) across all shifts.`);
-    considerations.push("Was holding one style deliberate, or did pressure narrow their options?");
+    questions.push(
+      pick(
+        [
+          "Was holding one style across every shift deliberate, or did pressure narrow your options?",
+          "When you imagine changing style next shift, what would it cost you to do that?",
+        ],
+        seed + ":style-locked",
+      ),
+    );
   }
 
   const escalations = history.filter((h) => h.decision.action === "escalate").length;
   if (escalations >= 2) {
     observations.push(`Escalated in ${escalations} of ${roundsPlayed} shifts.`);
-    considerations.push("Is frequent escalation careful judgement, or quiet doubt in their own authority?");
-    questions.push("What makes a decision yours to own versus one to send upward?");
+    questions.push(
+      pick(
+        [
+          "What makes a decision yours to own versus one to send upward?",
+          "If escalation wasn't available, how would you have handled those moments?",
+        ],
+        seed + ":escalate",
+      ),
+    );
   }
 
   const salesDelta = latest.kpiDelta.sales ?? 0;
@@ -162,45 +313,60 @@ function teamInsight(team: TeamFull): TeamInsight {
   if (salesDelta <= -6) observations.push(`Sales slipped by ${salesDelta} in shift ${latest.round}.`);
 
   if (team.kpis.customer < 45) {
-    considerations.push("Where does the customer sit in their thinking right now?");
-    questions.push("If you could only move one indicator next shift, which would you pick and why?");
+    questions.push(
+      pick(
+        [
+          "If you could only move one indicator next shift, which would you pick and why?",
+          "Where does the customer sit in your thinking right now?",
+          "What would a customer walking round your store say about their visit?",
+        ],
+        seed + ":cust-low",
+      ),
+    );
   } else if (team.kpis.customer > 75) {
     observations.push(`Customer experience is holding high (${team.kpis.customer}).`);
   }
 
   if (team.hidden.trust < 40) {
-    considerations.push("What small, cumulative signals might have eroded their team's trust?");
-    questions.push("How would your team describe the last ten minutes of working with you?");
+    questions.push(
+      pick(
+        [
+          "How would your team describe the last ten minutes of working with you?",
+          "What signal do you think you've been sending that's pulling trust down?",
+        ],
+        seed + ":trust-low",
+      ),
+    );
   } else if (team.hidden.trust > 75) {
     observations.push(`Trust is building strongly (${team.hidden.trust}).`);
   }
 
-  if (team.hidden.capability > 72) {
-    considerations.push("If they can name how capability grew here, could they repeat it?");
-  }
-  if (team.hidden.capability < 40) {
-    considerations.push("Is the way they're leading creating learning, or avoiding it?");
-  }
-
   if (team.hidden.safety_risk > 60) {
     observations.push(`Safety risk has drifted high (${team.hidden.safety_risk}).`);
-    considerations.push("What has safety been quietly traded for?");
-    questions.push("Which risk are you most comfortable carrying, and which one is quietly bothering you?");
-  }
-
-  if (team.hidden.leadership_consistency < 35) {
-    considerations.push("What mixed signals might their team be picking up about what good looks like?");
+    questions.push(
+      pick(
+        [
+          "Which risk are you most comfortable carrying, and which one is quietly bothering you?",
+          "What has safety been quietly traded for across these shifts?",
+        ],
+        seed + ":safety-high",
+      ),
+    );
   }
 
   const allocs = history.map((h) => h.decision.allocation);
   if (allocs.length >= 2) {
     const avgResolution = allocs.reduce((a, b) => a + b.problem_resolution, 0) / allocs.length;
     if (avgResolution < 15) {
-      considerations.push("What does consistently low problem-resolution resource suggest about where their attention defaults?");
-    }
-    const avgFloor = allocs.reduce((a, b) => a + b.shop_floor, 0) / allocs.length;
-    if (avgFloor > 45) {
-      considerations.push("With shop floor so heavily weighted, what might be going unnoticed in the backroom or with the team?");
+      questions.push(
+        pick(
+          [
+            "What's behind consistently low resource into problem resolution?",
+            "When you rebuild next shift's allocation, what changes first?",
+          ],
+          seed + ":alloc-res",
+        ),
+      );
     }
   }
 
@@ -212,11 +378,26 @@ function teamInsight(team: TeamFull): TeamInsight {
     if (topN === confidences.length && top !== "measured") {
       observations.push(`Played ${CONFIDENCE_LABELS[top as ConfidenceLevel]} in every shift so far.`);
       if (top === "confident") {
-        considerations.push("When consistent confidence amplifies everything, what keeps it grounded rather than reckless?");
-        questions.push("What tells you a decision is worth pressing on versus one worth hedging?");
+        questions.push(
+          pick(
+            [
+              "What tells you a decision is worth pressing on versus one worth hedging?",
+              "When has that confident stance caught you out?",
+            ],
+            seed + ":conf-every",
+          ),
+        );
       }
       if (top === "cautious") {
-        considerations.push("Is playing cautious shift after shift habit or strategy?");
+        questions.push(
+          pick(
+            [
+              "Is playing cautious every shift habit, or strategy?",
+              "What would the shift have to look like for you to press forward?",
+            ],
+            seed + ":cautious-every",
+          ),
+        );
       }
     }
   }
@@ -231,40 +412,65 @@ function teamInsight(team: TeamFull): TeamInsight {
         `Used ${ARCHETYPE_LABELS[dominant[0] as MomentArchetype]} every time a direct report came to them.`,
       );
       if (dominant[0] === "directive") {
-        considerations.push("What might new managers of managers default to under pressure, and why?");
-        questions.push("What does your team learn from a directive answer versus a question back to them?");
-      }
-      if (dominant[0] === "delegate") {
-        considerations.push("How is consistently handing decisions back landing with those direct reports?");
-      }
-      if (dominant[0] === "coaching") {
-        observations.push("Holding a coaching stance with their direct reports is a rare default.");
+        questions.push(
+          pick(
+            [
+              "What does your team learn from a directive answer versus a question back to them?",
+              "Which of those people moments do you most wish you'd handled differently?",
+            ],
+            seed + ":pm-dir",
+          ),
+        );
       }
     }
   }
   if (momentSkips > 0) {
     observations.push(`Did not respond to ${momentSkips} of ${roundsPlayed} people moments.`);
-    considerations.push("What does a non-response look like from the direct report's side?");
+    questions.push(
+      pick(
+        [
+          "When you passed on the people moment, what was pulling your attention instead?",
+          "How does a non-response land from the direct report's side?",
+        ],
+        seed + ":pm-skip",
+      ),
+    );
   }
 
   const primaryPicks = history.filter((h) => h.decision.primaryIssueId).length;
   if (primaryPicks === 0) {
     observations.push("Have not picked a primary issue to target in any shift.");
-    considerations.push("What does spreading attention evenly across everything suggest about focus?");
+    questions.push(
+      pick(
+        [
+          "What's stopped you from committing to a primary issue in any shift?",
+          "If you had to pick one moment when naming a primary issue would have mattered, which was it?",
+        ],
+        seed + ":no-primary-multi",
+      ),
+    );
   } else if (primaryPicks === roundsPlayed) {
     observations.push(`Picked a primary issue in every shift (${primaryPicks}/${roundsPlayed}).`);
   }
 
   if (questions.length === 0) {
-    questions.push("Looking at this shift, what one decision would you make differently if you ran it again?");
+    questions.push(
+      pick(
+        [
+          "Looking at this shift, what one decision would you make differently if you ran it again?",
+          "What surprised you most about how that shift played out?",
+          "Where did the pressure bite hardest, and what did you do with it?",
+        ],
+        seed + ":multi-fallback",
+      ),
+    );
   }
 
   return {
     teamId: team.id,
     teamName: team.name,
     observations: observations.slice(0, 3),
-    considerations: considerations.slice(0, 3),
-    questions: questions.slice(0, 2),
+    questions: questions.slice(0, 3),
     strengthNote: team.strength,
     riskNote: team.risk,
   };
@@ -445,12 +651,6 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
   }
 }
 
-/**
- * Build a debrief talk-track that actually reflects what just happened in this
- * shift across the room. Every round gets a different set of questions based on
- * the room's priority/style/confidence mix, who leads the board, and any people-
- * moment patterns.
- */
 function roundResultsScript(roundNumber: number, teams: TeamFull[]): FacilitatorScript {
   const questions: string[] = [];
 
@@ -459,7 +659,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
     .filter((x): x is { team: TeamFull; h: NonNullable<typeof x.h> } => !!x.h);
 
   if (lastDecisions.length >= 2) {
-    // Priority mix
     const priorityCounts = countBy(lastDecisions.map((x) => x.h.decision.priority));
     const priorityEntries = entriesOf(priorityCounts).sort((a, b) => b[1] - a[1]);
     if (priorityEntries[0] && priorityEntries[0][1] === lastDecisions.length) {
@@ -474,7 +673,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
       questions.push(`Most teams went ${majority}, one went ${minority}. What would you want to ask the outlier?`);
     }
 
-    // Leadership style mix
     const styleCounts = countBy(lastDecisions.map((x) => x.h.decision.leadership));
     const styleEntries = entriesOf(styleCounts).sort((a, b) => b[1] - a[1]);
     if (styleEntries[0] && styleEntries[0][1] === lastDecisions.length) {
@@ -484,7 +682,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
       questions.push("Leadership styles diverged this shift. What signal do you think your team was reading from you?");
     }
 
-    // Confidence mix
     const confCounts = countBy(lastDecisions.map((x) => x.h.decision.confidence));
     const confidentTeams = lastDecisions.filter((x) => x.h.decision.confidence === "confident");
     const cautiousTeams = lastDecisions.filter((x) => x.h.decision.confidence === "cautious");
@@ -496,7 +693,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
       questions.push("Every team played cautious this shift. What was the room reading that pulled it toward playing safe?");
     }
 
-    // Score spread
     const sorted = [...teams].sort((a, b) => b.score - a.score);
     const top = sorted[0];
     const bottom = sorted[sorted.length - 1];
@@ -504,7 +700,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
       questions.push(`The gap between ${top.name} and ${bottom.name} is widening. What approach difference do you think is behind it?`);
     }
 
-    // People moment mix
     const archetypes = lastDecisions
       .map((x) => x.h.momentArchetype)
       .filter((a): a is MomentArchetype => !!a);
@@ -521,7 +716,6 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
       questions.push(`${skipped} team${skipped === 1 ? " did" : "s did"} not respond to the people moment. What does a silence like that land as for the direct report?`);
     }
 
-    // Hidden drivers shift across the room
     const avgTrust = teams.reduce((a, t) => a + t.hidden.trust, 0) / teams.length;
     const avgSafety = teams.reduce((a, t) => a + t.hidden.safety_risk, 0) / teams.length;
     if (avgSafety >= 60) {
@@ -532,14 +726,12 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
     }
   }
 
-  // Always include at least one open reflective question to close the debrief.
   const closers = [
     "What surprised you most about this shift?",
     "Where did you feel the pressure bite hardest?",
     "If you could replay this shift, what would you do differently?",
     "Which single decision do you think moved the needle most?",
   ];
-  // Seed the closer by round so the same one doesn't appear every shift.
   questions.push(closers[(roundNumber - 1) % closers.length]);
 
   return {

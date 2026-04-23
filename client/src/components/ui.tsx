@@ -277,27 +277,36 @@ export function Sparkline({
    */
   baselinePoints?: number;
 }) {
-  const gridColor = onDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
-  const gridStrongColor = onDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
-  const axisLabel = onDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+  const gridColor = onDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+  const gridStrongColor = onDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)";
+  const axisColor = onDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
+  const axisLabel = onDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)";
+
+  // Reserve a small left gutter for y-axis labels (0/100) and a small top
+  // gutter so the 100 label isn't clipped. Line is drawn in the remaining box.
+  const gutterLeft = 16;
+  const gutterTop = 2;
+  const gutterBottom = 2;
+  const plotW = Math.max(1, width - gutterLeft);
+  const plotH = Math.max(1, height - gutterTop - gutterBottom);
 
   // Full 0..100 fixed scale so small movements look small.
   const min = 0;
   const max = 100;
   const span = max - min;
-  const toY = (v: number) => height - ((v - min) / span) * height;
+  const toY = (v: number) => gutterTop + plotH - ((v - min) / span) * plotH;
+  const toX = (i: number, n: number) => gutterLeft + (i * plotW) / Math.max(1, n - 1);
 
   if (values.length < 2) {
     const stroke = onDark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
     return (
       <svg width={width} height={height} className="overflow-visible">
-        <line x1={0} y1={toY(50)} x2={width} y2={toY(50)} stroke={stroke} strokeDasharray="3 3" />
+        <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={stroke} strokeDasharray="3 3" />
       </svg>
     );
   }
 
-  const stepX = width / Math.max(1, values.length - 1);
-  const points = values.map((v, i) => `${i * stepX},${toY(v)}`).join(" ");
+  const points = values.map((v, i) => `${toX(i, values.length)},${toY(v)}`).join(" ");
   const last = values[values.length - 1];
   const first = values[0];
   const goingUp = last > first;
@@ -306,28 +315,44 @@ export function Sparkline({
   const up = onDark ? "#34d399" : "#0f9d58";
   const down = onDark ? "#fb7185" : "#d93f5a";
   const stroke = last === first ? neutral : good ? up : down;
-  const lastX = (values.length - 1) * stepX;
+  const lastX = toX(values.length - 1, values.length);
   const lastY = toY(last);
 
   const showBaselineDivider =
     typeof baselinePoints === "number" &&
     baselinePoints > 0 &&
     baselinePoints < values.length;
-  const dividerX = showBaselineDivider ? (baselinePoints as number) * stepX : 0;
-
-  // Only bother with tick labels when there's room for them.
-  const showLabels = height >= 32;
+  const dividerX = showBaselineDivider ? toX(baselinePoints as number, values.length) : 0;
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      <line x1={0} y1={toY(50)} x2={width} y2={toY(50)} stroke={gridColor} strokeDasharray="2 3" />
-      <line x1={0} y1={toY(25)} x2={width} y2={toY(25)} stroke={gridColor} strokeDasharray="1 4" />
-      <line x1={0} y1={toY(75)} x2={width} y2={toY(75)} stroke={gridColor} strokeDasharray="1 4" />
+      {/* Y-axis spine */}
+      <line x1={gutterLeft} y1={toY(0)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
+      {/* Tick marks on the y-axis */}
+      <line x1={gutterLeft - 2} y1={toY(0)} x2={gutterLeft} y2={toY(0)} stroke={axisColor} strokeWidth={0.75} />
+      <line x1={gutterLeft - 2} y1={toY(50)} x2={gutterLeft} y2={toY(50)} stroke={axisColor} strokeWidth={0.75} />
+      <line x1={gutterLeft - 2} y1={toY(100)} x2={gutterLeft} y2={toY(100)} stroke={axisColor} strokeWidth={0.75} />
 
+      {/* Gridlines across the plot */}
+      <line x1={gutterLeft} y1={toY(50)} x2={width} y2={toY(50)} stroke={gridColor} strokeDasharray="2 3" />
+      <line x1={gutterLeft} y1={toY(25)} x2={width} y2={toY(25)} stroke={gridColor} strokeDasharray="1 4" />
+      <line x1={gutterLeft} y1={toY(75)} x2={width} y2={toY(75)} stroke={gridColor} strokeDasharray="1 4" />
+
+      {/* Axis labels */}
+      <text x={gutterLeft - 3} y={toY(100) + 3} fontSize={7} fill={axisLabel} textAnchor="end">100</text>
+      <text x={gutterLeft - 3} y={toY(0) + 2} fontSize={7} fill={axisLabel} textAnchor="end">0</text>
+
+      {/* Baseline/session divider */}
       {showBaselineDivider ? (
-        <line x1={dividerX} y1={0} x2={dividerX} y2={height} stroke={gridStrongColor} strokeDasharray="2 2" />
+        <>
+          <line x1={dividerX} y1={gutterTop} x2={dividerX} y2={gutterTop + plotH} stroke={gridStrongColor} strokeDasharray="2 2" />
+          {height >= 28 ? (
+            <text x={dividerX - 1} y={gutterTop + plotH - 1} fontSize={7} fill={axisLabel} textAnchor="end">start</text>
+          ) : null}
+        </>
       ) : null}
 
+      {/* Line */}
       <polyline
         fill="none"
         stroke={stroke}
@@ -338,11 +363,18 @@ export function Sparkline({
       />
       <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
 
-      {showLabels ? (
-        <>
-          <text x={0} y={toY(100) + 8} fontSize={8} fill={axisLabel}>100</text>
-          <text x={0} y={toY(0)} fontSize={8} fill={axisLabel}>0</text>
-        </>
+      {/* Final value label next to the endpoint */}
+      {height >= 22 ? (
+        <text
+          x={Math.min(lastX + 4, width - 1)}
+          y={Math.max(7, Math.min(height - 1, lastY + 3))}
+          fontSize={8}
+          fontWeight={600}
+          fill={stroke}
+          textAnchor={lastX + 4 > width - 12 ? "end" : "start"}
+        >
+          {Math.round(last)}
+        </text>
       ) : null}
     </svg>
   );

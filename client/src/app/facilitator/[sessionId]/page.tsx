@@ -15,7 +15,6 @@ import {
   HeartHandshake,
   HelpCircle,
   Layers,
-  Lightbulb,
   ListChecks,
   Loader2,
   MessageCircleQuestion,
@@ -423,7 +422,7 @@ function CoachingCard({
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} onDark />
             </div>
             <div className="mt-1">
-              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} onDark baselinePoints={BASELINE_WEEKS} />
+              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={82} height={28} onDark baselinePoints={BASELINE_WEEKS} />
             </div>
           </div>
         ))}
@@ -479,14 +478,6 @@ function CoachingCard({
               label="Observed"
               items={insight.observations}
               tone="neutral"
-            />
-          ) : null}
-          {insight.considerations.length > 0 ? (
-            <InsightList
-              icon={<Lightbulb className="h-3 w-3" />}
-              label="Things to consider"
-              items={insight.considerations}
-              tone="warn"
             />
           ) : null}
           {insight.questions.length > 0 ? (

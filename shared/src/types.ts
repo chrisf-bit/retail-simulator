@@ -190,7 +190,6 @@ export interface TeamInsight {
   teamId: string;
   teamName: string;
   observations: string[];
-  considerations: string[];
   questions: string[];
   strengthNote?: string;
   riskNote?: string;
