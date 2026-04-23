@@ -50,20 +50,28 @@ function pickN<T>(source: T[], n: number): T[] {
   return out;
 }
 
-function buildIssues(): Issue[] {
-  return pickN(ISSUE_BANK, 3);
+function buildIssues(usedIds: Set<string>): Issue[] {
+  const remaining = ISSUE_BANK.filter((i) => !usedIds.has(i.id));
+  const pool = remaining.length >= 3 ? remaining : ISSUE_BANK;
+  return pickN(pool, 3);
 }
 
-function buildAlerts(): Alert[] {
-  return pickN(ALERT_BANK, 2).map((a) => ({
+// Alerts and disruptions in the banks have no stable ids, so we use title as
+// the dedup key within a session.
+function buildAlerts(usedTitles: Set<string>): Alert[] {
+  const remaining = ALERT_BANK.filter((a) => !usedTitles.has(a.title));
+  const pool = remaining.length >= 2 ? remaining : ALERT_BANK;
+  return pickN(pool, 2).map((a) => ({
     ...a,
     id: nanoid(6),
     timestamp: Date.now(),
   }));
 }
 
-function buildDisruption(): DisruptionEvent {
-  const base = pickN(DISRUPTION_BANK, 1)[0];
+function buildDisruption(usedTitles: Set<string>): DisruptionEvent {
+  const remaining = DISRUPTION_BANK.filter((d) => !usedTitles.has(d.title));
+  const pool = remaining.length > 0 ? remaining : DISRUPTION_BANK;
+  const base = pickN(pool, 1)[0];
   return {
     ...base,
     id: nanoid(6),
@@ -128,6 +136,9 @@ export interface PersistedSession {
   teams: TeamFull[];
   prompts: FacilitatorPrompt[];
   usedMomentIds: string[];
+  usedIssueIds?: string[];
+  usedAlertTitles?: string[];
+  usedDisruptionTitles?: string[];
   baselineTrend: TrendSeries;
   round?: RoundState;
   createdAt: number;
@@ -143,6 +154,9 @@ export class Session {
   teams = new Map<string, TeamFull>();
   prompts: FacilitatorPrompt[] = [];
   usedMomentIds = new Set<string>();
+  usedIssueIds = new Set<string>();
+  usedAlertTitles = new Set<string>();
+  usedDisruptionTitles = new Set<string>();
   baselineTrend: TrendSeries = buildBaselineTrend();
   round?: RoundState;
   createdAt = Date.now();
@@ -172,6 +186,9 @@ export class Session {
     session.teams = new Map(data.teams.map((t) => [t.id, t]));
     session.prompts = data.prompts ?? [];
     session.usedMomentIds = new Set(data.usedMomentIds ?? []);
+    session.usedIssueIds = new Set(data.usedIssueIds ?? []);
+    session.usedAlertTitles = new Set(data.usedAlertTitles ?? []);
+    session.usedDisruptionTitles = new Set(data.usedDisruptionTitles ?? []);
     session.baselineTrend = data.baselineTrend;
     session.round = data.round;
     session.createdAt = data.createdAt;
@@ -190,6 +207,9 @@ export class Session {
       teams: Array.from(this.teams.values()),
       prompts: this.prompts,
       usedMomentIds: Array.from(this.usedMomentIds),
+      usedIssueIds: Array.from(this.usedIssueIds),
+      usedAlertTitles: Array.from(this.usedAlertTitles),
+      usedDisruptionTitles: Array.from(this.usedDisruptionTitles),
       baselineTrend: this.baselineTrend,
       round: this.round,
       createdAt: this.createdAt,
@@ -319,14 +339,20 @@ export class Session {
     const moment = buildMoment(this.usedMomentIds);
     this.usedMomentIds.add(moment.id);
 
+    const issues = buildIssues(this.usedIssueIds);
+    for (const i of issues) this.usedIssueIds.add(i.id);
+
+    const alerts = buildAlerts(this.usedAlertTitles);
+    for (const a of alerts) this.usedAlertTitles.add(a.title);
+
     this.round = {
       number: nextNumber,
       phase: "active",
       startedAt: now,
       endsAt: now + ROUND_DURATION_MS,
       durationMs: ROUND_DURATION_MS,
-      issues: buildIssues(),
-      alerts: buildAlerts(),
+      issues,
+      alerts,
       moment,
     };
 
@@ -349,7 +375,9 @@ export class Session {
 
   triggerDisruption() {
     if (!this.round || this.round.phase !== "active") return;
-    this.round.disruption = buildDisruption();
+    const disruption = buildDisruption(this.usedDisruptionTitles);
+    this.usedDisruptionTitles.add(disruption.title);
+    this.round.disruption = disruption;
     this.round.phase = "disrupted";
     this.onUpdate();
   }

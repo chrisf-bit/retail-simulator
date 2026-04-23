@@ -79,4 +79,56 @@ export const MOMENT_BANK: TeamMoment[] = [
       { id: "opt_d", label: "Work out a solution together that could extend to others later.", archetype: "collaborative" },
     ],
   },
+  {
+    id: "mom_ben_whistle",
+    persona: { name: "Ben Okafor", role: "Team Leader", tenure: "2 years in role" },
+    situation:
+      "Ben pulls you into the back office looking uncomfortable. \"I've watched the same colleague under-ring discounted items for friends three times this week. I haven't told anyone. I don't want to get it wrong.\"",
+    prompt: "Ben is asking you to take the next step. How do you respond?",
+    options: [
+      { id: "opt_a", label: "Thank them and tell them you'll take it from here. Loss prevention's call next.", archetype: "directive" },
+      { id: "opt_b", label: "Ask them what made this the moment they decided to speak up.", archetype: "coaching" },
+      { id: "opt_c", label: "Tell them they've done the right thing and ask how they want to see it handled.", archetype: "delegate" },
+      { id: "opt_d", label: "Walk through the process with them so they know what happens next and their part in it.", archetype: "collaborative" },
+    ],
+  },
+  {
+    id: "mom_kate_feedback",
+    persona: { name: "Kate Ryan", role: "Duty Manager", tenure: "7 years in store" },
+    situation:
+      "You gave Kate feedback this morning about how she handled a customer complaint. She nodded in the moment but has been cool all afternoon, avoiding eye contact. You're about to head into a planning session together.",
+    prompt: "You sense the feedback didn't land the way you intended. How do you open the next conversation?",
+    options: [
+      { id: "opt_a", label: "Park it and push on with the planning session. Performance stands, don't dilute it.", archetype: "directive" },
+      { id: "opt_b", label: "Check in: ask how the feedback sat with her overnight.", archetype: "coaching" },
+      { id: "opt_c", label: "Leave her space. Trust her to raise it if she needs to.", archetype: "delegate" },
+      { id: "opt_d", label: "Name what you're noticing and offer to replay the conversation together.", archetype: "collaborative" },
+    ],
+  },
+  {
+    id: "mom_nadia_overstretch",
+    persona: { name: "Nadia Hassan", role: "Assistant Manager", tenure: "1 year in role" },
+    situation:
+      "Nadia has quietly been covering two team leader roles for a fortnight while you recruit. She keeps saying \"I'm fine\" but you've seen her stay 90 minutes past shift three days running. She has asked for \"a quick five minutes\".",
+    prompt: "You know what's coming. What's the stance you want to walk in with?",
+    options: [
+      { id: "opt_a", label: "Get ahead of it: tell her what you're taking off her plate, effective now.", archetype: "directive" },
+      { id: "opt_b", label: "Ask her what 'fine' has actually looked like for her these two weeks.", archetype: "coaching" },
+      { id: "opt_c", label: "Hand her the choice: what does she want to drop, and what does she want to keep?", archetype: "delegate" },
+      { id: "opt_d", label: "Sit down together and rebuild the coverage plan from scratch.", archetype: "collaborative" },
+    ],
+  },
+  {
+    id: "mom_ryan_return",
+    persona: { name: "Ryan Doyle", role: "Team Leader", tenure: "Back from 6 months off sick" },
+    situation:
+      "Ryan is two weeks back after long-term sick leave. Everyone has been warm, but his team has been carefully skirting the bigger decisions around him. He catches you at the coffee machine. \"I feel like I'm being handled. Am I?\"",
+    prompt: "It's a direct question and he's looking at you. How do you respond?",
+    options: [
+      { id: "opt_a", label: "Be straight: yes, the team has been cautious. Tell him what you'll change.", archetype: "directive" },
+      { id: "opt_b", label: "Ask him what being handled feels like from where he's standing.", archetype: "coaching" },
+      { id: "opt_c", label: "Tell him his team will take their cue from him. What does he want to signal?", archetype: "delegate" },
+      { id: "opt_d", label: "Suggest you and he meet the team together and reset expectations openly.", archetype: "collaborative" },
+    ],
+  },
 ];
