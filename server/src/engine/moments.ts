@@ -10,7 +10,7 @@ export const MOMENT_BANK: TeamMoment[] = [
     options: [
       { id: "opt_a", label: "Hold the line. Explain your rationale and move on.", archetype: "directive" },
       { id: "opt_b", label: "Ask them what specifically they're seeing that you might be missing.", archetype: "coaching" },
-      { id: "opt_c", label: "Tell them you trust their call - adjust the plan to theirs.", archetype: "delegate" },
+      { id: "opt_c", label: "Tell them you trust their judgement. Adjust the plan to theirs.", archetype: "delegate" },
       { id: "opt_d", label: "Invite them to refine the plan with you in the next five minutes.", archetype: "collaborative" },
     ],
   },
@@ -23,7 +23,7 @@ export const MOMENT_BANK: TeamMoment[] = [
     options: [
       { id: "opt_a", label: "Give them your answer so they can act on it.", archetype: "directive" },
       { id: "opt_b", label: "Ask them what they think the risks of each choice are.", archetype: "coaching" },
-      { id: "opt_c", label: "Tell them it's their call and you'll back whichever they pick.", archetype: "delegate" },
+      { id: "opt_c", label: "Tell them the decision is theirs and you'll back whichever way they go.", archetype: "delegate" },
       { id: "opt_d", label: "Offer to think it through with them for ten minutes now.", archetype: "collaborative" },
     ],
   },
@@ -49,7 +49,7 @@ export const MOMENT_BANK: TeamMoment[] = [
     options: [
       { id: "opt_a", label: "Lay out what you can realistically offer and where the constraints sit.", archetype: "directive" },
       { id: "opt_b", label: "Ask her what 'treading water' looks like to her, specifically.", archetype: "coaching" },
-      { id: "opt_c", label: "Tell her you trust her to weigh it up - and that you'll respect her call.", archetype: "delegate" },
+      { id: "opt_c", label: "Tell her you trust her to weigh it up, and that you'll respect whichever way she goes.", archetype: "delegate" },
       { id: "opt_d", label: "Offer to co-design what the next 90 days could look like.", archetype: "collaborative" },
     ],
   },
@@ -86,7 +86,7 @@ export const MOMENT_BANK: TeamMoment[] = [
       "Ben pulls you into the back office looking uncomfortable. \"I've watched the same colleague under-ring discounted items for friends three times this week. I haven't told anyone. I don't want to get it wrong.\"",
     prompt: "Ben is asking you to take the next step. How do you respond?",
     options: [
-      { id: "opt_a", label: "Thank them and tell them you'll take it from here. Loss prevention's call next.", archetype: "directive" },
+      { id: "opt_a", label: "Thank them and tell them you'll take it from here. Loss prevention picks it up next.", archetype: "directive" },
       { id: "opt_b", label: "Ask them what made this the moment they decided to speak up.", archetype: "coaching" },
       { id: "opt_c", label: "Tell them they've done the right thing and ask how they want to see it handled.", archetype: "delegate" },
       { id: "opt_d", label: "Walk through the process with them so they know what happens next and their part in it.", archetype: "collaborative" },

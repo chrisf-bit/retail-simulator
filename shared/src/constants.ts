@@ -10,6 +10,11 @@ import type {
 
 export const ROUND_COUNT = 5;
 export const ROUND_DURATION_MS = 5 * 60 * 1000;
+
+// Number of pre-session weeks in each team's baseline trend. Used by both the
+// server (when seeding the baseline) and the client (when drawing the divider
+// between history and in-session shifts on sparklines).
+export const BASELINE_WEEKS = 16;
 export const BRIEFING_DURATION_MS = 5 * 60 * 1000;
 export const DEBRIEF_DURATION_MS = 10 * 60 * 1000;
 
@@ -69,7 +74,7 @@ export const LEADERSHIP_LABELS: Record<LeadershipStyle, string> = {
   directive: "Directive",
   collaborative: "Collaborative",
   coaching: "Coaching",
-  delegated: "Delegated",
+  delegated: "Delegate",
 };
 
 export const DEFAULT_ALLOCATION = {
@@ -107,9 +112,9 @@ export const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
 };
 
 export const CONFIDENCE_DESCRIPTIONS: Record<ConfidenceLevel, string> = {
-  cautious: "Play it safe - smaller swings, smaller upside",
-  measured: "Standard stake - the plan stands on its merits",
-  confident: "Press the call - bigger wins, bigger losses if wrong",
+  cautious: "Play it safe, smaller swings, smaller upside",
+  measured: "Standard stance, the plan stands on its merits",
+  confident: "Press forward, bigger wins but bigger losses if wrong",
 };
 
 export const CONFIDENCE_MULTIPLIERS: Record<ConfidenceLevel, number> = {

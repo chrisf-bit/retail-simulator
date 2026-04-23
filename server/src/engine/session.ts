@@ -14,6 +14,7 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import {
+  BASELINE_WEEKS,
   CONNECTION_DROPPED_AFTER_MS,
   CONNECTION_STRUGGLING_AFTER_MS,
   CONNECTION_TICK_MS,
@@ -84,8 +85,6 @@ function buildMoment(usedIds: Set<string>) {
   const pool = remaining.length > 0 ? remaining : MOMENT_BANK;
   return pickN(pool, 1)[0];
 }
-
-const BASELINE_WEEKS = 16;
 
 function plausibleSeries(from: number, to: number, weeks: number, noise: number): number[] {
   const out: number[] = [];

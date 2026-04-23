@@ -37,7 +37,7 @@ import type {
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
+import { ARCHETYPE_LABELS, BASELINE_WEEKS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
@@ -416,7 +416,7 @@ function CoachingCard({
               <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} onDark />
             </div>
             <div className="mt-1">
-              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} onDark />
+              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={70} height={16} onDark baselinePoints={BASELINE_WEEKS} />
             </div>
           </div>
         ))}

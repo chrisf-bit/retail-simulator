@@ -44,6 +44,7 @@ import type {
 } from "@sim/shared";
 import {
   ACTION_LABELS,
+  BASELINE_WEEKS,
   CONFIDENCE_DESCRIPTIONS,
   CONFIDENCE_LABELS,
   HIDDEN_INVERTED,
@@ -434,7 +435,7 @@ function KpiStrip({
               {view === "values" ? (
                 <Bar value={i.value} inverted={i.inverted} onDark />
               ) : (
-                <Sparkline values={i.series} inverted={i.inverted} width={90} height={18} onDark />
+                <Sparkline values={i.series} inverted={i.inverted} width={90} height={18} onDark baselinePoints={BASELINE_WEEKS} />
               )}
             </div>
           </div>
@@ -961,14 +962,6 @@ function ConfidenceStep({
               <span className={cn("text-[11px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
                 {CONFIDENCE_DESCRIPTIONS[opt]}
               </span>
-              <span
-                className={cn(
-                  "num rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                  active ? "bg-brand-500 text-white" : "bg-white text-ink-700 ring-1 ring-ink-200",
-                )}
-              >
-                ×{opt === "cautious" ? "0.75" : opt === "confident" ? "1.35" : "1.00"}
-              </span>
             </button>
           );
         })}
@@ -1309,7 +1302,7 @@ function ResultsPanel({
                 <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
               </div>
               <div className="mt-2">
-                <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={100} height={22} />
+                <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} width={100} height={36} baselinePoints={BASELINE_WEEKS} />
               </div>
             </div>
           ))}
@@ -1318,7 +1311,7 @@ function ResultsPanel({
         {team.revealedHidden ? (
           <div className="mt-6">
             <div className="mb-3 flex items-center gap-2">
-              <Pill tone="info">Hidden drivers revealed</Pill>
+              <Pill tone="info">Hidden drivers</Pill>
             </div>
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
@@ -1331,7 +1324,7 @@ function ResultsPanel({
                     <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} />
                   </div>
                   <div className="mt-1.5">
-                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} width={80} height={18} />
+                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} width={80} height={32} baselinePoints={BASELINE_WEEKS} />
                   </div>
                 </div>
               ))}

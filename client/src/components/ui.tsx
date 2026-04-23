@@ -262,32 +262,42 @@ export function Sparkline({
   width = 80,
   height = 26,
   onDark = false,
+  baselinePoints,
 }: {
   values: number[];
   inverted?: boolean;
   width?: number;
   height?: number;
   onDark?: boolean;
+  /**
+   * Number of leading points that represent the pre-session baseline (vs.
+   * in-session shifts). When provided and the data extends past it, a subtle
+   * vertical divider is drawn at that boundary so readers can see where
+   * history ends and the current session begins.
+   */
+  baselinePoints?: number;
 }) {
+  const gridColor = onDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+  const gridStrongColor = onDark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
+  const axisLabel = onDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+
+  // Full 0..100 fixed scale so small movements look small.
+  const min = 0;
+  const max = 100;
+  const span = max - min;
+  const toY = (v: number) => height - ((v - min) / span) * height;
+
   if (values.length < 2) {
     const stroke = onDark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
     return (
-      <svg width={width} height={height}>
-        <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke={stroke} strokeDasharray="3 3" />
+      <svg width={width} height={height} className="overflow-visible">
+        <line x1={0} y1={toY(50)} x2={width} y2={toY(50)} stroke={stroke} strokeDasharray="3 3" />
       </svg>
     );
   }
-  const min = Math.min(...values, 0);
-  const max = Math.max(...values, 100);
-  const span = Math.max(1, max - min);
+
   const stepX = width / Math.max(1, values.length - 1);
-  const points = values
-    .map((v, i) => {
-      const x = i * stepX;
-      const y = height - ((v - min) / span) * height;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const points = values.map((v, i) => `${i * stepX},${toY(v)}`).join(" ");
   const last = values[values.length - 1];
   const first = values[0];
   const goingUp = last > first;
@@ -297,18 +307,43 @@ export function Sparkline({
   const down = onDark ? "#fb7185" : "#d93f5a";
   const stroke = last === first ? neutral : good ? up : down;
   const lastX = (values.length - 1) * stepX;
-  const lastY = height - ((last - min) / span) * height;
+  const lastY = toY(last);
+
+  const showBaselineDivider =
+    typeof baselinePoints === "number" &&
+    baselinePoints > 0 &&
+    baselinePoints < values.length;
+  const dividerX = showBaselineDivider ? (baselinePoints as number) * stepX : 0;
+
+  // Only bother with tick labels when there's room for them.
+  const showLabels = height >= 32;
+
   return (
     <svg width={width} height={height} className="overflow-visible">
+      <line x1={0} y1={toY(50)} x2={width} y2={toY(50)} stroke={gridColor} strokeDasharray="2 3" />
+      <line x1={0} y1={toY(25)} x2={width} y2={toY(25)} stroke={gridColor} strokeDasharray="1 4" />
+      <line x1={0} y1={toY(75)} x2={width} y2={toY(75)} stroke={gridColor} strokeDasharray="1 4" />
+
+      {showBaselineDivider ? (
+        <line x1={dividerX} y1={0} x2={dividerX} y2={height} stroke={gridStrongColor} strokeDasharray="2 2" />
+      ) : null}
+
       <polyline
         fill="none"
         stroke={stroke}
-        strokeWidth={2}
+        strokeWidth={1.75}
         strokeLinecap="round"
         strokeLinejoin="round"
         points={points}
       />
       <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
+
+      {showLabels ? (
+        <>
+          <text x={0} y={toY(100) + 8} fontSize={8} fill={axisLabel}>100</text>
+          <text x={0} y={toY(0)} fontSize={8} fill={axisLabel}>0</text>
+        </>
+      ) : null}
     </svg>
   );
 }
