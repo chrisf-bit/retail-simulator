@@ -5,6 +5,7 @@ import { Server as IOServer } from "socket.io";
 import { CONNECTION_TICK_MS } from "@sim/shared";
 import { SessionStore } from "./engine/session.js";
 import { PERSISTENCE_DIR, writeSessionFileSync } from "./engine/persistence.js";
+import { generateReport } from "./engine/report.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "*";
@@ -13,6 +14,22 @@ const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const app = express();
 app.use(cors({ origin: CLIENT_ORIGIN }));
 app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
+
+app.get("/api/sessions/:sessionId/report.html", (req, res) => {
+  const { sessionId } = req.params;
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const session = store.get(sessionId);
+  if (!session) {
+    res.status(404).type("text/plain").send("Session not found.");
+    return;
+  }
+  if (!token || token !== session.facilitatorToken) {
+    res.status(401).type("text/plain").send("Not authorised.");
+    return;
+  }
+  const html = generateReport(session);
+  res.type("text/html").send(html);
+});
 
 const server = http.createServer(app);
 const io = new IOServer(server, {
