@@ -1,4 +1,4 @@
-# Phase 2: resilience, persistence, and post-session reports
+# Phase 2: resilience, persistence, reports, and anti-cheat
 
 ## Goals
 
@@ -6,6 +6,7 @@
 2. **Connection health visibility**: facilitator sees per-team connection status as a coloured indicator (green = connected, amber = struggling, red = dropped) so they know whether to hold the room or press on.
 3. **Persistent storage**: an accidental server restart mid-session no longer destroys the session. Teams reconnect and find the session exactly as it was.
 4. **Post-session report**: facilitator can download a per-team report at the end of a session highlighting strengths and development areas, suitable for sharing with participants or their manager.
+5. **Anti-cheat / access control**: teams cannot see other teams' decisions or the facilitator's coaching content. The facilitator route cannot be impersonated by a team.
 
 ## Non-goals (out of scope for this phase)
 
@@ -101,6 +102,52 @@
 
 ---
 
+### 4. Anti-cheat / access control
+
+There are two threats here, treated as one piece of work:
+
+#### Threat A: teams seeing other teams' decisions via network inspection
+
+Today the server broadcasts the full `session:state` to every socket in the session room, which includes every team's `lastDecision`, `lastKpiDelta`, `revealedHidden`, `trend`, `history`, `strength`, `risk` and the facilitator's `insights` / `prompts`. A team with DevTools open can read the competitor's intentions and working. The UI happens not to render it, but the data is on the wire.
+
+**Fix**: the server emits a **redacted per-socket payload**:
+
+- **Facilitator sockets**: full `SessionStatePublic` as today.
+- **Team sockets**: redacted shape. Each team sees:
+  - Their own team entry with full fidelity (decisions, deltas, hidden drivers, trend, strength, risk).
+  - Other teams listed only as `{ id, name, score, lastMovement, submitted, connectionStatus }`, enough for the leaderboard and submission counter, nothing else.
+  - `insights` (coaching cues, patterns) stripped entirely. Facilitator-only.
+  - `prompts` stripped entirely. Facilitator-only.
+  - `round`, `phase`, `code`, `expectedTeams`, `serverNow` unchanged (same for everyone).
+
+Implementation:
+- `session.publicState()` stays (facilitator shape).
+- Add `session.teamState(teamId)` returning the redacted shape.
+- `broadcastSession(sessionId)` stops using `io.to(room).emit(...)`. Instead it iterates sockets in the room and emits the appropriate shape per `socket.data.role`.
+- Shared type: add `TeamPublicLite` for other teams in redacted view; keep `TeamPublic` for self.
+
+#### Threat B: teams impersonating the facilitator route
+
+Today anyone who knows the `sessionId` can navigate to `/facilitator/:sessionId` and emit `facilitator:join { sessionId }` to be granted the facilitator role and receive full state. Teams have the `sessionId` in their own URL, so this is trivial to exploit.
+
+**Fix**: a **facilitator token**:
+
+- On `session:create`, server generates a random `facilitatorToken` (nanoid, 24 chars) and returns it alongside `sessionId` and `code`.
+- Client stores it in `sessionStorage` under `facilitator:${sessionId}`.
+- `/facilitator/:sessionId` page reads the token on mount and emits `facilitator:join { sessionId, token }`.
+- Without a matching token the server emits `error: "Not authorised"` and doesn't grant facilitator role.
+- The token also shows up on the landing-page URL after creation (e.g. `/facilitator/:sessionId?t=<token>`) so the facilitator can copy-paste the URL to reopen the dashboard on another device if needed.
+
+Teams cannot get the token (it's only returned to the socket that created the session).
+
+#### Not in scope (revisit if needed)
+
+- Preventing a rogue team from using a second device to join as a "second team" during lobby. Requires facilitator approval on each team join; too much friction for now. The `expectedTeams` cap is already a soft guard.
+- Preventing a team from sharing their own `teamId` cookie with a competitor. This is equivalent to sharing your password; out of scope.
+- End-to-end encryption of socket traffic. TLS from Vercel/Render is sufficient.
+
+---
+
 ## Data model changes
 
 ### Shared types
@@ -109,9 +156,33 @@
 // Connection status
 export type ConnectionStatus = "connected" | "struggling" | "dropped";
 
-// On TeamPublic
+// On TeamPublic (self-view)
 connectionStatus: ConnectionStatus;
 lastSeenAt?: number;
+
+// Redacted shape for other teams in a team's view
+export interface TeamPublicLite {
+  id: string;
+  name: string;
+  score: number;
+  lastMovement: number;
+  submitted: boolean;
+  connectionStatus: ConnectionStatus;
+}
+
+// Team's view of the session
+export interface SessionStateForTeam {
+  id: string;
+  code: string;
+  expectedTeams: number;
+  phase: SessionPhase;
+  round?: RoundState;
+  self: TeamPublic;            // full self-data
+  others: TeamPublicLite[];    // redacted others
+  leaderboard: LeaderboardEntry[];
+  serverNow: number;
+  // no insights, no prompts
+}
 ```
 
 ### Server internal
@@ -144,7 +215,7 @@ Stored at `$DISK_ROOT/sessions/{sessionId}.json`. One file per session. On boot,
 
 ---
 
-## Rollout in four pull requests
+## Rollout in five pull requests
 
 ### PR 1: connection protection
 
@@ -155,24 +226,35 @@ Stored at `$DISK_ROOT/sessions/{sessionId}.json`. One file per session. On boot,
 - Facilitator view: dot in leaderboard and coaching card.
 - Team view: status pill in header when not connected.
 
-### PR 2: persistence
+### PR 2: anti-cheat / access control
+
+- Server: add `teamState(teamId)` that returns the redacted `SessionStateForTeam` shape. Facilitator still gets `publicState()` as today.
+- Server: `broadcastSession(sessionId)` iterates sockets in the room and emits the appropriate shape per `socket.data.role` / `teamId`.
+- Server: `session:create` response includes `facilitatorToken`. `facilitator:join` requires the token and returns `error: "Not authorised"` otherwise.
+- Client: landing page stores `facilitatorToken` in sessionStorage under `facilitator:{sessionId}`. Facilitator page reads and sends it with `facilitator:join`.
+- Client: team page listens for a new event shape (`session:state` still the event name, but the payload's type differs based on role). Update `useSessionState` to be a discriminated union keyed by role.
+- Touches the socket layer so best done alongside PR 1 or immediately after.
+
+### PR 3: persistence
 
 - Server: add file-based session store layer with snapshot + hydrate.
 - Server: debounced write (500ms) on every state change.
-- Server: on boot, hydrate from disk. Clean up sessions older than 24h.
-- Render: attach a 1GB persistent disk, env var `PERSISTENCE_DIR`.
-- Validate: kill-and-restart the server mid-session, verify state returns.
+- Server: on boot, hydrate from disk. Clean up sessions older than 24h. Repeat cleanup every 1h.
+- Render: attach a 1GB persistent disk, env var `PERSISTENCE_DIR` (default `/var/data/sessions` in prod, `./.persistence` in dev).
+- Validate: kill-and-restart the server mid-session, verify teams reconnect to state intact.
 
-### PR 3: report backend
+### PR 4: report backend
 
-- Server: `GET /api/sessions/:id/report.html` endpoint. Validates session exists (by id). Returns a self-contained HTML document with embedded CSS and SVG.
-- Server: extend insights engine to produce report-specific strengths/development sections from history (richer than the in-round coaching).
+- Server: extend insights engine with a `generateReport(session, teamId)` that produces summarised strength / development text per team. Richer than the in-round coaching: looks across all shifts, not just the latest.
+- Server: `GET /api/sessions/:sessionId/report.html?token=...` endpoint. Requires facilitator token. Returns a self-contained HTML document with embedded CSS and inline SVG.
+- Per-team report sections include the team's own 16-week baseline + shifts played.
 
-### PR 4: report UI + polish
+### PR 5: report UI + polish
 
-- Facilitator view: "Download report" button in the debrief phase (and after session closes). Links to the report endpoint, opens in a new tab.
-- Report page: styled with same design tokens. Printable (CSS `@media print`).
-- Small additions: small "Session saved" toast when persistence writes, "Session ended" screen if a team tries to rejoin a dead session.
+- Facilitator view: "Download report" button in debrief and finished phases. Opens report in a new tab.
+- Report page: styled to match the app. Printable via `@media print` with clean page breaks per team.
+- "Session ended" screen if a team tries to rejoin a dead or expired session.
+- Small toast / subtle indicator on facilitator view when persistence is actively saving (belt-and-braces confidence for the facilitator).
 
 ---
 
