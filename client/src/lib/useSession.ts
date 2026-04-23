@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SessionStatePublic } from "@sim/shared";
+import { HEARTBEAT_INTERVAL_MS } from "@sim/shared";
 import { getSocket } from "./socket";
 
 export function useSessionState() {
@@ -43,6 +44,23 @@ export function useSessionState() {
   }, []);
 
   return { state, connected, offsetMs, error, socket: socketRef.current, setError };
+}
+
+/**
+ * Emit a lightweight heartbeat every HEARTBEAT_INTERVAL_MS so the server can
+ * derive this team's connection status. Only runs while connected.
+ */
+export function useTeamHeartbeat(sessionId: string, teamId: string | null, connected: boolean): void {
+  const socketRef = useRef(getSocket());
+
+  useEffect(() => {
+    if (!connected || !teamId) return;
+    const socket = socketRef.current;
+    const emit = () => socket.emit("team:ping", { sessionId, teamId });
+    emit();
+    const id = setInterval(emit, HEARTBEAT_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [sessionId, teamId, connected]);
 }
 
 export function useCountdown(endsAt: number | undefined, offsetMs: number): number {

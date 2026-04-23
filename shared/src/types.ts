@@ -2,6 +2,7 @@ export type Priority = "safety_loss" | "people_team" | "customer" | "commercial"
 export type ActionApproach = "standard" | "adapt_local" | "escalate" | "reallocate";
 export type LeadershipStyle = "directive" | "collaborative" | "coaching" | "delegated";
 export type ConfidenceLevel = "cautious" | "measured" | "confident";
+export type ConnectionStatus = "connected" | "struggling" | "dropped";
 
 export type KpiKey =
   | "sales"
@@ -125,6 +126,7 @@ export interface TeamPublic {
   submitted: boolean;
   strength?: string;
   risk?: string;
+  connectionStatus: ConnectionStatus;
 }
 
 export interface TeamFull {
@@ -139,6 +141,7 @@ export interface TeamFull {
   risk?: string;
   hidden: HiddenDrivers;
   history: RoundHistoryEntry[];
+  lastSeenAt: number;
 }
 
 export interface RoundHistoryEntry {
@@ -244,6 +247,7 @@ export type ClientToServer = {
     teamId: string;
     decision: Omit<Decision, "submittedAt">;
   };
+  "team:ping": { sessionId: string; teamId: string };
 };
 
 export type ServerToClient = {

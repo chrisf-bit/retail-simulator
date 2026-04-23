@@ -13,7 +13,17 @@ import type {
   TeamFull,
   TeamPublic,
 } from "@sim/shared";
-import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS, ROUND_COUNT, ROUND_DURATION_MS } from "@sim/shared";
+import {
+  CONNECTION_DROPPED_AFTER_MS,
+  CONNECTION_STRUGGLING_AFTER_MS,
+  CONNECTION_TICK_MS,
+  DEFAULT_EXPECTED_TEAMS,
+  MAX_TEAMS,
+  MIN_TEAMS,
+  ROUND_COUNT,
+  ROUND_DURATION_MS,
+} from "@sim/shared";
+import type { ConnectionStatus } from "@sim/shared";
 import type { TrendSeries } from "@sim/shared";
 import { ALERT_BANK, DISRUPTION_BANK, ISSUE_BANK } from "./scenarios.js";
 import { MOMENT_BANK } from "./moments.js";
@@ -94,6 +104,13 @@ function buildBaselineTrend(): TrendSeries {
   };
 }
 
+function deriveStatus(lastSeenAt: number): ConnectionStatus {
+  const elapsed = Date.now() - lastSeenAt;
+  if (elapsed > CONNECTION_DROPPED_AFTER_MS) return "dropped";
+  if (elapsed > CONNECTION_STRUGGLING_AFTER_MS) return "struggling";
+  return "connected";
+}
+
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -111,6 +128,7 @@ export class Session {
   usedMomentIds = new Set<string>();
   baselineTrend: TrendSeries = buildBaselineTrend();
   round?: RoundState;
+  private lastBroadcastStatuses?: Map<string, ConnectionStatus>;
   roundTimer?: NodeJS.Timeout;
   disruptionTimer?: NodeJS.Timeout;
   private onUpdate: () => void;
@@ -134,10 +152,34 @@ export class Session {
       hidden: startingHidden(),
       submitted: false,
       history: [],
+      lastSeenAt: Date.now(),
     };
     this.teams.set(team.id, team);
     this.onUpdate();
     return team;
+  }
+
+  touchTeam(teamId: string): void {
+    const team = this.teams.get(teamId);
+    if (!team) return;
+    team.lastSeenAt = Date.now();
+  }
+
+  /** Re-broadcast if any team's derived connectionStatus has changed since last tick. */
+  refreshConnectionStatuses(): void {
+    if (this.lastBroadcastStatuses === undefined) {
+      this.lastBroadcastStatuses = new Map();
+    }
+    let changed = false;
+    for (const team of this.teams.values()) {
+      const next = deriveStatus(team.lastSeenAt);
+      const prev = this.lastBroadcastStatuses.get(team.id);
+      if (prev !== next) {
+        this.lastBroadcastStatuses.set(team.id, next);
+        changed = true;
+      }
+    }
+    if (changed) this.onUpdate();
   }
 
   startBriefing() {
@@ -322,6 +364,7 @@ export class Session {
         submitted: t.submitted,
         strength: t.strength,
         risk: t.risk,
+        connectionStatus: deriveStatus(t.lastSeenAt),
       };
     });
 
@@ -377,5 +420,9 @@ export class SessionStore {
 
   getByCode(code: string): Session | undefined {
     return this.byCode.get(code.toUpperCase());
+  }
+
+  all(): IterableIterator<Session> {
+    return this.byId.values();
   }
 }

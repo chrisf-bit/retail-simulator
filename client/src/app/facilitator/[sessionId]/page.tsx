@@ -37,7 +37,7 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import { ARCHETYPE_LABELS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
-import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
+import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, Sparkline } from "@/components/ui";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
 
@@ -73,7 +73,13 @@ export default function FacilitatorPage() {
   const { state, socket, connected, offsetMs } = useSessionState();
 
   useEffect(() => {
-    socket.emit("facilitator:join", { sessionId });
+    const join = () => socket.emit("facilitator:join", { sessionId });
+    join();
+    // Re-announce on reconnect so we stay in the session room.
+    socket.on("connect", join);
+    return () => {
+      socket.off("connect", join);
+    };
   }, [sessionId, socket]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
@@ -195,6 +201,8 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
       <div className="space-y-1">
         {state.leaderboard.map((row, idx) => {
           const isLead = idx === 0 && state.leaderboard.length > 1;
+          const team = state.teams.find((t) => t.id === row.teamId);
+          const status = team?.connectionStatus ?? "connected";
           return (
             <div
               key={row.teamId}
@@ -207,6 +215,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                 #{row.rank}
               </div>
               <div className="col-span-6 flex items-center gap-2">
+                <ConnectionDot status={status} />
                 <Store className={cn("h-4 w-4", isLead ? "text-white" : "text-white/50")} />
                 <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
                 {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
@@ -347,6 +356,7 @@ function CoachingCard({
     <div className="flex flex-col gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2">
+          <ConnectionDot status={team.connectionStatus} />
           <Store className="h-4 w-4 shrink-0 text-white/50" />
           <span className="truncate text-[15px] font-semibold tracking-tight text-white">{team.name}</span>
         </div>

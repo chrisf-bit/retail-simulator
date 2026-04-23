@@ -54,8 +54,8 @@ import {
   PRIORITY_LABELS,
   ROUND_COUNT,
 } from "@sim/shared";
-import { Bar, Button, Card, cn, Delta, PhaseGuide, Pill, Sparkline } from "@/components/ui";
-import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
+import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, Sparkline } from "@/components/ui";
+import { formatClock, useCountdown, useSessionState, useTeamHeartbeat } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
 
 const PRIORITY_ICONS: Record<Priority, React.ComponentType<{ className?: string }>> = {
@@ -129,12 +129,18 @@ export default function TeamPlayerPage() {
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
-    if (stored) {
-      setTeamId(stored);
-      socket.emit("session:rejoin", { sessionId, teamId: stored });
-    } else {
+    if (!stored) {
       router.replace("/");
+      return;
     }
+    setTeamId(stored);
+    const rejoin = () => socket.emit("session:rejoin", { sessionId, teamId: stored });
+    rejoin();
+    // Re-announce ourselves whenever Socket.IO reconnects after a drop.
+    socket.on("connect", rejoin);
+    return () => {
+      socket.off("connect", rejoin);
+    };
   }, [sessionId, socket, router]);
 
   const team = useMemo<TeamPublic | undefined>(
@@ -156,6 +162,7 @@ export default function TeamPlayerPage() {
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
   const timeLeft = useCountdown(endsAt, offsetMs);
+  useTeamHeartbeat(sessionId, teamId, connected);
 
   if (!connected || !state) return <LoadingScreen label="Connecting" />;
   if (!team) return <LoadingScreen label="Loading" />;
@@ -193,7 +200,8 @@ export default function TeamPlayerPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="relative flex h-full w-full flex-col overflow-hidden">
+      {!connected ? <ReconnectingOverlay /> : null}
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -1363,6 +1371,20 @@ function LoadingScreen({ label }: { label: string }) {
       <div className="flex items-center gap-2 text-white/50">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span className="text-sm">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function ReconnectingOverlay() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-50 flex items-start justify-center pt-20">
+      <div className="pointer-events-auto flex items-center gap-3 rounded-full bg-ink-900/90 px-5 py-3 shadow-panel ring-1 ring-white/10 backdrop-blur">
+        <Loader2 className="h-4 w-4 animate-spin text-brand-400" />
+        <div className="text-sm text-white">
+          <span className="font-semibold">Reconnecting</span>
+          <span className="ml-2 text-white/60">Your progress is safe.</span>
+        </div>
       </div>
     </div>
   );

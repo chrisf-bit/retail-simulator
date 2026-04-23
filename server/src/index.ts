@@ -2,6 +2,7 @@ import http from "node:http";
 import express from "express";
 import cors from "cors";
 import { Server as IOServer } from "socket.io";
+import { CONNECTION_TICK_MS } from "@sim/shared";
 import { SessionStore } from "./engine/session.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -23,6 +24,14 @@ function broadcastSession(sessionId: string) {
   if (!session) return;
   io.to(`session:${sessionId}`).emit("session:state", session.publicState());
 }
+
+// Periodic connection-status refresh. Walks every session and re-broadcasts
+// if any derived status has changed since the last tick.
+setInterval(() => {
+  for (const session of store.all()) {
+    session.refreshConnectionStatuses();
+  }
+}, CONNECTION_TICK_MS);
 
 io.on("connection", (socket) => {
   socket.on("session:create", (payload: { expectedTeams?: number } = {}) => {
@@ -73,6 +82,7 @@ io.on("connection", (socket) => {
     socket.data.role = "team";
     socket.data.sessionId = session.id;
     socket.data.teamId = teamId;
+    session.touchTeam(teamId);
     socket.emit("session:state", session.publicState());
   });
 
@@ -87,9 +97,16 @@ io.on("connection", (socket) => {
     ({ sessionId, teamId, decision }: { sessionId: string; teamId: string; decision: any }) => {
       const session = store.get(sessionId);
       if (!session) return;
+      session.touchTeam(teamId);
       session.submitDecision(teamId, decision);
     },
   );
+
+  socket.on("team:ping", ({ sessionId, teamId }: { sessionId: string; teamId: string }) => {
+    const session = store.get(sessionId);
+    if (!session) return;
+    session.touchTeam(teamId);
+  });
 });
 
 server.listen(PORT, () => {

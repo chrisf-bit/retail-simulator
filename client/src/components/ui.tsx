@@ -321,3 +321,45 @@ export function Field({ label, children }: { label: string; children: ReactNode 
     </label>
   );
 }
+
+export function ConnectionDot({
+  status,
+  size = "md",
+  withPulse = true,
+}: {
+  status: "connected" | "struggling" | "dropped";
+  size?: "sm" | "md";
+  withPulse?: boolean;
+}) {
+  const tones = {
+    connected: "bg-ok",
+    struggling: "bg-amber-400",
+    dropped: "bg-risk",
+  };
+  const sizes = {
+    sm: "h-2 w-2",
+    md: "h-2.5 w-2.5",
+  };
+  const title = {
+    connected: "Connected",
+    struggling: "Connection struggling",
+    dropped: "Disconnected",
+  };
+  return (
+    <span
+      className={cn("relative inline-flex shrink-0 items-center justify-center", sizes[size])}
+      title={title[status]}
+      aria-label={title[status]}
+    >
+      {withPulse && status !== "connected" ? (
+        <span
+          className={cn(
+            "absolute inset-0 animate-ping rounded-full opacity-60",
+            status === "struggling" ? "bg-amber-400" : "bg-risk",
+          )}
+        />
+      ) : null}
+      <span className={cn("relative inline-block rounded-full", sizes[size], tones[status])} />
+    </span>
+  );
+}

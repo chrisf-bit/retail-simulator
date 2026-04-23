@@ -17,6 +17,16 @@ export const MIN_TEAMS = 2;
 export const MAX_TEAMS = 8;
 export const DEFAULT_EXPECTED_TEAMS = 4;
 
+// Connection health thresholds (milliseconds since last seen)
+export const CONNECTION_STRUGGLING_AFTER_MS = 8_000;
+export const CONNECTION_DROPPED_AFTER_MS = 25_000;
+
+// How often the client emits a heartbeat
+export const HEARTBEAT_INTERVAL_MS = 10_000;
+
+// How often the server re-evaluates connection status for all teams
+export const CONNECTION_TICK_MS = 3_000;
+
 export const KPI_LABELS: Record<KpiKey, string> = {
   sales: "Sales Performance",
   shrinkage: "Shrinkage / Loss",
