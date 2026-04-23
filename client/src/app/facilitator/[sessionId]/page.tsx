@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
@@ -70,27 +70,51 @@ function getPrimaryAction(state: SessionStatePublic): PrimaryAction | null {
 export default function FacilitatorPage() {
   const params = useParams<{ sessionId: string }>();
   const sessionId = params.sessionId;
-  const { state, socket, connected, offsetMs } = useSessionState();
+  const searchParams = useSearchParams();
+  const { state, socket, connected, offsetMs, error } = useSessionState();
+  const [notAuthorised, setNotAuthorised] = useState(false);
+
+  const token = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const fromUrl = searchParams?.get("t");
+    const fromStorage = sessionStorage.getItem(`facilitator:${sessionId}`);
+    if (fromUrl && fromUrl !== fromStorage) {
+      sessionStorage.setItem(`facilitator:${sessionId}`, fromUrl);
+    }
+    return fromUrl ?? fromStorage;
+  }, [sessionId, searchParams]);
 
   useEffect(() => {
-    const join = () => socket.emit("facilitator:join", { sessionId });
+    if (!token) {
+      setNotAuthorised(true);
+      return;
+    }
+    const join = () => socket.emit("facilitator:join", { sessionId, token });
     join();
     // Re-announce on reconnect so we stay in the session room.
     socket.on("connect", join);
     return () => {
       socket.off("connect", join);
     };
-  }, [sessionId, socket]);
+  }, [sessionId, socket, token]);
+
+  useEffect(() => {
+    if (error === "Not authorised") setNotAuthorised(true);
+  }, [error]);
 
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
   const timeLeft = useCountdown(endsAt, offsetMs);
 
+  if (notAuthorised) {
+    return <NotAuthorisedScreen />;
+  }
+
   if (!connected || !state) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <div className="flex items-center gap-2 text-ink-600">
+        <div className="flex items-center gap-2 text-white/60">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Connecting…</span>
+          <span className="text-sm">Connecting</span>
         </div>
       </div>
     );
@@ -664,6 +688,25 @@ function StatPill({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg bg-white/5 px-2 py-1.5 text-center">
       <div className="text-[10px] font-medium uppercase tracking-wider text-white/50">{label}</div>
       <div className="mt-0.5 truncate text-xs font-semibold text-white">{value}</div>
+    </div>
+  );
+}
+
+function NotAuthorisedScreen() {
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6">
+      <Card tone="data" className="max-w-md p-8 text-center">
+        <div className="mb-3 flex justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-risk text-white">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+        </div>
+        <h2 className="text-xl font-semibold tracking-tight text-white">Facilitator access required</h2>
+        <p className="mt-2 text-sm text-white/70">
+          This dashboard is only available to the facilitator who created the session. Reopen it from the original
+          link you were given when the session was created.
+        </p>
+      </Card>
     </div>
   );
 }

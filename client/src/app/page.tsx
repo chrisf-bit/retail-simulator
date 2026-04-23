@@ -23,9 +23,13 @@ export default function LandingPage() {
       const key = sessionStorage.key(i);
       if (key && key.startsWith("team:")) sessionStorage.removeItem(key);
     }
-    socket.once("session:created", ({ sessionId }: { sessionId: string }) => {
-      router.push(`/facilitator/${sessionId}`);
-    });
+    socket.once(
+      "session:created",
+      ({ sessionId, facilitatorToken }: { sessionId: string; facilitatorToken: string }) => {
+        sessionStorage.setItem(`facilitator:${sessionId}`, facilitatorToken);
+        router.push(`/facilitator/${sessionId}?t=${facilitatorToken}`);
+      },
+    );
     socket.emit("session:create", { expectedTeams });
   }
 

@@ -121,6 +121,7 @@ function generateCode(): string {
 export class Session {
   id = nanoid(10);
   code = generateCode();
+  facilitatorToken = nanoid(24);
   expectedTeams: number;
   phase: SessionPhase = "lobby";
   teams = new Map<string, TeamFull>();
@@ -394,6 +395,43 @@ export class Session {
       prompts: this.prompts,
       insights,
       serverNow: Date.now(),
+    };
+  }
+
+  /**
+   * Redacted view for a team socket. Same shape as publicState but:
+   * - Other teams keep only scoreboard fields (name, score, movement, submitted,
+   *   connectionStatus). Their decisions, KPIs, trends, deltas, hidden drivers,
+   *   strength and risk are stripped.
+   * - `insights` and `prompts` are blanked. Those are facilitator coaching content.
+   */
+  teamState(viewerTeamId: string): SessionStatePublic {
+    const full = this.publicState();
+    const redactedTeams: TeamPublic[] = full.teams.map((t) => {
+      if (t.id === viewerTeamId) return t;
+      return {
+        id: t.id,
+        name: t.name,
+        score: t.score,
+        lastMovement: t.lastMovement,
+        submitted: t.submitted,
+        connectionStatus: t.connectionStatus,
+        kpis: { sales: 0, shrinkage: 0, customer: 0, engagement: 0, operations: 0 },
+        trend: {
+          sales: [], shrinkage: [], customer: [], engagement: [], operations: [],
+          safety_risk: [], trust: [], capability: [], leadership_consistency: [],
+        },
+      };
+    });
+    return {
+      ...full,
+      teams: redactedTeams,
+      insights: {
+        teams: [],
+        patterns: [],
+        script: { headline: "", talkTrack: [], watchFor: [] },
+      },
+      prompts: [],
     };
   }
 

@@ -19,14 +19,27 @@ const io = new IOServer(server, {
 
 const store = new SessionStore();
 
+// Broadcast session state to every socket in the session room.
+// Each socket gets the shape appropriate to its role:
+// - facilitator sockets get the full publicState (all team data, insights, prompts)
+// - team sockets get a redacted teamState scoped to their own teamId, so they
+//   can never read other teams' decisions, trends or coaching content off the wire.
 function broadcastSession(sessionId: string) {
   const session = store.get(sessionId);
   if (!session) return;
-  io.to(`session:${sessionId}`).emit("session:state", session.publicState());
+  const room = io.sockets.adapter.rooms.get(`session:${sessionId}`);
+  if (!room) return;
+  for (const socketId of room) {
+    const sock = io.sockets.sockets.get(socketId);
+    if (!sock) continue;
+    if (sock.data.role === "facilitator") {
+      sock.emit("session:state", session.publicState());
+    } else if (sock.data.role === "team" && typeof sock.data.teamId === "string") {
+      sock.emit("session:state", session.teamState(sock.data.teamId));
+    }
+  }
 }
 
-// Periodic connection-status refresh. Walks every session and re-broadcasts
-// if any derived status has changed since the last tick.
 setInterval(() => {
   for (const session of store.all()) {
     session.refreshConnectionStatuses();
@@ -39,13 +52,20 @@ io.on("connection", (socket) => {
     socket.join(`session:${session.id}`);
     socket.data.role = "facilitator";
     socket.data.sessionId = session.id;
-    socket.emit("session:created", { sessionId: session.id, code: session.code });
+    socket.emit("session:created", {
+      sessionId: session.id,
+      code: session.code,
+      facilitatorToken: session.facilitatorToken,
+    });
     socket.emit("session:state", session.publicState());
   });
 
-  socket.on("facilitator:join", ({ sessionId }: { sessionId: string }) => {
+  socket.on("facilitator:join", ({ sessionId, token }: { sessionId: string; token?: string }) => {
     const session = store.get(sessionId);
     if (!session) return socket.emit("error", { message: "Session not found" });
+    if (!token || token !== session.facilitatorToken) {
+      return socket.emit("error", { message: "Not authorised" });
+    }
     socket.join(`session:${session.id}`);
     socket.data.role = "facilitator";
     socket.data.sessionId = session.id;
@@ -70,7 +90,7 @@ io.on("connection", (socket) => {
     socket.data.sessionId = session.id;
     socket.data.teamId = team.id;
     socket.emit("session:joined", { sessionId: session.id, teamId: team.id });
-    socket.emit("session:state", session.publicState());
+    socket.emit("session:state", session.teamState(team.id));
   });
 
   socket.on("session:rejoin", ({ sessionId, teamId }: { sessionId: string; teamId: string }) => {
@@ -83,7 +103,7 @@ io.on("connection", (socket) => {
     socket.data.sessionId = session.id;
     socket.data.teamId = teamId;
     session.touchTeam(teamId);
-    socket.emit("session:state", session.publicState());
+    socket.emit("session:state", session.teamState(teamId));
   });
 
   socket.on("facilitator:start_briefing", ({ sessionId }) => store.get(sessionId)?.startBriefing());

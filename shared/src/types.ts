@@ -235,7 +235,7 @@ export type ClientToServer = {
   "session:create": { expectedTeams?: number };
   "session:join": { code: string; teamName: string };
   "session:rejoin": { sessionId: string; teamId: string };
-  "facilitator:join": { sessionId: string };
+  "facilitator:join": { sessionId: string; token: string };
   "facilitator:start_briefing": { sessionId: string };
   "facilitator:start_round": { sessionId: string };
   "facilitator:end_round": { sessionId: string };
@@ -251,7 +251,7 @@ export type ClientToServer = {
 };
 
 export type ServerToClient = {
-  "session:created": { sessionId: string; code: string };
+  "session:created": { sessionId: string; code: string; facilitatorToken: string };
   "session:joined": { sessionId: string; teamId: string };
   "session:state": SessionStatePublic;
   "team:state": TeamPublic & { hidden?: HiddenDrivers };
