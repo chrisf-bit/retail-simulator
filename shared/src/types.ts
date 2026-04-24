@@ -176,6 +176,7 @@ export interface DisruptionEvent {
   message: string;
   impact: string;
   triggeredAt: number;
+  scene?: string;
 }
 
 export interface FacilitatorPrompt {

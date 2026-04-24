@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import type { Socket } from "socket.io-client";
 import type {
+  DisruptionEvent,
   KpiKey,
   SessionStatePublic,
   TeamInsight,
@@ -40,6 +41,7 @@ import { ARCHETYPE_LABELS, BASELINE_WEEKS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_I
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { DisruptionScene } from "@/components/DisruptionScene";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
 
@@ -163,6 +165,7 @@ export default function FacilitatorPage() {
         </div>
 
         <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-5">
+          <DisruptionBanner disruption={state.round?.disruption} />
           <ScriptPanel state={state} />
           <PatternsPanel state={state} />
           <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
@@ -534,6 +537,26 @@ function InsightList({
         ))}
       </ul>
     </div>
+  );
+}
+
+function DisruptionBanner({ disruption }: { disruption?: DisruptionEvent }) {
+  if (!disruption) return null;
+  return (
+    <Card tone="data" className="overflow-hidden p-0 ring-1 ring-risk/60">
+      {disruption.scene ? (
+        <div className="bg-[#1a1b1e]">
+          <DisruptionScene name={disruption.scene} />
+        </div>
+      ) : null}
+      <div className="bg-risk/20 p-3 text-white">
+        <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-rose-200">
+          <AlertTriangle className="h-3.5 w-3.5" /> Disruption live
+        </div>
+        <h4 className="text-sm font-semibold">{disruption.title}</h4>
+        <p className="mt-0.5 text-[11px] leading-snug text-white/80">{disruption.message}</p>
+      </div>
+    </Card>
   );
 }
 

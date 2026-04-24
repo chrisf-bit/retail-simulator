@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Disruption scenes mock</title>
+<style>
+  :root {
+    --brand: #ee6a00;
+    --surface-base: #121316;
+    --surface-panel: #222326;
+    --ink-50: #f7f8fa;
+    --ink-500: #6b6f75;
+    --ink-900: #17181a;
+    --risk: #d93f5a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 32px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--surface-base);
+    color: var(--ink-50);
+  }
+  .intro {
+    max-width: 1080px;
+    margin: 0 auto 32px;
+  }
+  .intro h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .intro p { margin: 0; color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.5; max-width: 720px; }
+
+  .grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  /* A disruption card: scene banner on top, title + message below. Matches the
+     dark data panel treatment used elsewhere. */
+  .dis {
+    background: var(--surface-panel);
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .dis .scene {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #1a1b1e;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dis .body {
+    padding: 14px 18px 16px;
+  }
+  .dis .eyebrow {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--brand);
+    margin-bottom: 4px;
+  }
+  .dis h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .dis p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .note {
+    max-width: 1080px;
+    margin: 32px auto 0;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+  }
+  .note strong { color: var(--ink-50); }
+</style>
+</head>
+<body>
+  <div class="intro">
+    <h1>Disruption scene illustrations</h1>
+    <p>
+      All fourteen disruption scenes, using the same line-art language as the team crests (monochrome stroke,
+      single orange accent, dark panel). Each disruption card gets a scene banner above the existing title and
+      message. Rendered inline SVG so it scales, prints, and works offline.
+    </p>
+  </div>
+
+  <div class="grid">
+
+    <!-- 1. FIRE ALARM -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Wall + floor lines -->
+        <path d="M0 108 L240 108" stroke="rgba(255,255,255,0.15)" />
+        <path d="M0 34 L240 34" stroke="rgba(255,255,255,0.1)" stroke-dasharray="1 5" />
+        <!-- Alarm bell on a mounting -->
+        <g transform="translate(120 60)">
+          <rect x="-3" y="-30" width="6" height="10" fill="#17181a" />
+          <circle cx="0" cy="0" r="18" fill="#17181a" />
+          <circle cx="0" cy="0" r="18" />
+          <path d="M-8 -4 L8 -4" />
+          <path d="M0 10 L0 14" />
+          <circle cx="0" cy="17" r="3" fill="#17181a" />
+          <circle cx="0" cy="17" r="3" />
+          <!-- inner dome highlight -->
+          <circle cx="0" cy="0" r="6" fill="#ee6a00" />
+        </g>
+        <!-- Sound waves -->
+        <g stroke="#ee6a00" stroke-dasharray="2 4" fill="none">
+          <path d="M78 60 C66 60 60 54 58 48" />
+          <path d="M68 60 C52 60 42 52 38 44" />
+          <path d="M58 60 C38 60 26 50 22 40" />
+          <path d="M162 60 C174 60 180 54 182 48" />
+          <path d="M172 60 C188 60 198 52 202 44" />
+          <path d="M182 60 C202 60 214 50 218 40" />
+        </g>
+        <!-- Exit sign -->
+        <g transform="translate(200 82)">
+          <rect x="0" y="0" width="28" height="14" rx="2" fill="#17181a" />
+          <rect x="0" y="0" width="28" height="14" rx="2" />
+          <text x="14" y="10" font-size="8" text-anchor="middle" fill="#f7f8fa" stroke="none" font-family="system-ui" font-weight="600">EXIT</text>
+          <path d="M24 14 L24 20" />
+        </g>
+        <!-- Moving figure silhouette heading toward the exit -->
+        <g transform="translate(38 74)" fill="#f7f8fa" stroke="none">
+          <circle cx="7" cy="5" r="4.5" />
+          <rect x="1" y="11" width="12" height="16" rx="3" />
+          <rect x="2" y="27" width="4" height="8" rx="1.5" />
+          <rect x="8" y="27" width="4" height="8" rx="1.5" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Fire alarm activation</h3>
+        <p>Full evacuation triggered by a faulty smoke detector in backroom.</p>
+      </div>
+    </div>
+
+    <!-- 2. VIRAL CUSTOMER COMPLAINT -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Phone -->
+        <g transform="translate(80 18)">
+          <rect x="0" y="0" width="60" height="104" rx="8" fill="#17181a" />
+          <rect x="0" y="0" width="60" height="104" rx="8" />
+          <rect x="6" y="10" width="48" height="78" rx="2" fill="none" stroke="rgba(255,255,255,0.25)" />
+          <circle cx="30" cy="96" r="2.5" />
+          <!-- Notification cards inside screen -->
+          <g transform="translate(10 16)">
+            <rect x="0" y="0" width="40" height="10" rx="2" fill="rgba(255,255,255,0.08)" stroke="none" />
+            <rect x="0" y="14" width="40" height="10" rx="2" fill="rgba(255,255,255,0.08)" stroke="none" />
+            <rect x="0" y="28" width="40" height="10" rx="2" fill="#ee6a00" stroke="none" />
+            <rect x="0" y="42" width="40" height="10" rx="2" fill="rgba(255,255,255,0.08)" stroke="none" />
+            <rect x="0" y="56" width="40" height="10" rx="2" fill="rgba(255,255,255,0.08)" stroke="none" />
+          </g>
+        </g>
+        <!-- Upward trend arrow suggesting virality -->
+        <g stroke="#ee6a00" stroke-width="2.25">
+          <path d="M160 96 L180 80 L195 88 L215 52" />
+          <path d="M208 52 L215 52 L215 59" />
+        </g>
+        <!-- Dots of engagement rising -->
+        <g fill="#f7f8fa" stroke="none">
+          <circle cx="160" cy="100" r="1.5" />
+          <circle cx="170" cy="88" r="1.5" />
+          <circle cx="184" cy="84" r="1.5" />
+          <circle cx="200" cy="74" r="1.5" />
+          <circle cx="212" cy="58" r="1.5" />
+        </g>
+        <!-- Bubble / alert badge -->
+        <g transform="translate(38 36)">
+          <path d="M0 8 C0 2 4 0 8 0 L20 0 C24 0 28 2 28 8 C28 14 24 16 20 16 L8 16 L2 22 L4 16 C2 16 0 14 0 8 Z" fill="#17181a" />
+          <path d="M0 8 C0 2 4 0 8 0 L20 0 C24 0 28 2 28 8 C28 14 24 16 20 16 L8 16 L2 22 L4 16 C2 16 0 14 0 8 Z" />
+          <circle cx="14" cy="8" r="1.5" fill="#ee6a00" stroke="none" />
+          <circle cx="9" cy="8" r="1.5" fill="#ee6a00" stroke="none" />
+          <circle cx="19" cy="8" r="1.5" fill="#ee6a00" stroke="none" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Viral customer complaint</h3>
+        <p>Social media post about till queues gaining traction.</p>
+      </div>
+    </div>
+
+    <!-- 3. UNANNOUNCED DIRECTOR VISIT -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Floor line continues across the whole scene so the figure clearly stands in the store -->
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- Lift interior shown as dark box on the left -->
+        <rect x="20" y="20" width="90" height="98" rx="2" fill="#0f1013" />
+        <rect x="20" y="20" width="90" height="98" rx="2" />
+        <!-- Doors fully open, shown as vertical jambs at each edge -->
+        <path d="M36 20 L36 118" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+        <path d="M94 20 L94 118" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+        <!-- Ceiling line inside lift -->
+        <path d="M36 30 L94 30" stroke="rgba(255,255,255,0.25)" />
+        <!-- Floor indicator panel above lift -->
+        <g transform="translate(51 4)">
+          <rect x="0" y="0" width="28" height="12" rx="2" fill="#17181a" />
+          <rect x="0" y="0" width="28" height="12" rx="2" />
+          <path d="M8 9 L11 4 L14 9 Z" fill="#ee6a00" stroke="none" />
+          <text x="20" y="9" font-size="8" text-anchor="middle" fill="#f7f8fa" stroke="none" font-family="system-ui" font-weight="600">GF</text>
+        </g>
+        <!-- Figure stepping out of the lift, clearly past the threshold, full-height -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(116 48)">
+          <!-- head -->
+          <circle cx="10" cy="7" r="6" />
+          <!-- torso -->
+          <rect x="2" y="15" width="16" height="26" rx="3" />
+          <!-- legs -->
+          <rect x="3" y="41" width="5" height="28" rx="1.5" />
+          <rect x="12" y="41" width="5" height="28" rx="1.5" />
+          <!-- briefcase in their right hand -->
+          <rect x="20" y="36" width="14" height="10" rx="1.5" fill="#ee6a00" />
+          <path d="M24 36 L24 33 L30 33 L30 36" stroke="#ee6a00" stroke-width="1.5" fill="none" />
+          <!-- arm holding it -->
+          <path d="M18 24 L20 36" stroke="#f7f8fa" stroke-width="3" fill="none" stroke-linecap="round" />
+        </g>
+        <!-- Reception sign on the far wall -->
+        <g transform="translate(180 54)">
+          <rect x="0" y="0" width="48" height="28" rx="2" fill="#17181a" />
+          <rect x="0" y="0" width="48" height="28" rx="2" />
+          <path d="M6 9 L42 9" stroke="rgba(255,255,255,0.4)" />
+          <path d="M6 16 L30 16" stroke="rgba(255,255,255,0.4)" />
+          <path d="M6 22 L36 22" stroke="rgba(255,255,255,0.4)" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Unannounced director visit</h3>
+        <p>A group retail director has arrived unannounced for a walk-round. They're at the lift now.</p>
+      </div>
+    </div>
+
+    <!-- 4. TILL SYSTEM OUTAGE -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Counter line -->
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <path d="M20 118 L20 82 L100 82 L100 118" fill="#17181a" />
+        <path d="M20 118 L20 82 L100 82 L100 118" />
+        <!-- Till screen -->
+        <g transform="translate(40 30)">
+          <rect x="0" y="0" width="50" height="40" rx="3" fill="#17181a" />
+          <rect x="0" y="0" width="50" height="40" rx="3" />
+          <!-- stand -->
+          <path d="M22 40 L22 46 L28 46 L28 40" />
+          <path d="M18 46 L32 46" />
+          <!-- X symbol on screen -->
+          <path d="M16 12 L34 30" stroke="#ee6a00" stroke-width="3" />
+          <path d="M34 12 L16 30" stroke="#ee6a00" stroke-width="3" />
+        </g>
+        <!-- Customer queue silhouettes (cleaner: circle head + rounded torso + two legs) -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(130 80)">
+          <!-- person 1 -->
+          <g>
+            <circle cx="7" cy="5" r="5" />
+            <rect x="1" y="12" width="12" height="18" rx="3" />
+            <rect x="2" y="30" width="4" height="10" rx="1.5" />
+            <rect x="8" y="30" width="4" height="10" rx="1.5" />
+          </g>
+          <!-- person 2 -->
+          <g transform="translate(24 1) scale(0.92)">
+            <circle cx="7" cy="5" r="5" />
+            <rect x="1" y="12" width="12" height="18" rx="3" />
+            <rect x="2" y="30" width="4" height="10" rx="1.5" />
+            <rect x="8" y="30" width="4" height="10" rx="1.5" />
+          </g>
+          <!-- person 3 (further away, dimmer) -->
+          <g transform="translate(48 3) scale(0.82)" opacity="0.6">
+            <circle cx="7" cy="5" r="5" />
+            <rect x="1" y="12" width="12" height="18" rx="3" />
+            <rect x="2" y="30" width="4" height="10" rx="1.5" />
+            <rect x="8" y="30" width="4" height="10" rx="1.5" />
+          </g>
+          <!-- person 4 (furthest away, dimmest) -->
+          <g transform="translate(68 5) scale(0.72)" opacity="0.35">
+            <circle cx="7" cy="5" r="5" />
+            <rect x="1" y="12" width="12" height="18" rx="3" />
+            <rect x="2" y="30" width="4" height="10" rx="1.5" />
+            <rect x="8" y="30" width="4" height="10" rx="1.5" />
+          </g>
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Till system partial outage</h3>
+        <p>Half the till banks are frozen on a card-network issue. Cash still working, queues doubling every minute.</p>
+      </div>
+    </div>
+
+    <!-- 5. COMPETITOR FLASH PROMOTION -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- rival storefront silhouette on the right -->
+        <g transform="translate(152 40)">
+          <rect x="0" y="12" width="72" height="68" rx="2" fill="#17181a" />
+          <rect x="0" y="12" width="72" height="68" rx="2" />
+          <path d="M-4 12 L76 12" />
+          <!-- window mullions -->
+          <path d="M24 12 L24 80" stroke="rgba(255,255,255,0.25)" />
+          <path d="M48 12 L48 80" stroke="rgba(255,255,255,0.25)" />
+          <path d="M0 46 L72 46" stroke="rgba(255,255,255,0.25)" />
+        </g>
+        <!-- large price tag, rectangular with a clipped top-left corner -->
+        <g transform="translate(18 30)">
+          <path d="M2 18 L18 2 L84 2 L84 70 L2 70 Z" fill="#17181a" />
+          <path d="M2 18 L18 2 L84 2 L84 70 L2 70 Z" />
+          <circle cx="70" cy="14" r="3.5" />
+          <text x="43" y="42" text-anchor="middle" fill="#ee6a00" stroke="none"
+                font-family="system-ui, -apple-system, sans-serif" font-weight="700" font-size="20">-25%</text>
+          <text x="43" y="58" text-anchor="middle" fill="#f7f8fa" stroke="none"
+                font-family="system-ui, -apple-system, sans-serif" font-weight="600" font-size="9" letter-spacing="1">TODAY</text>
+        </g>
+        <!-- lightning bolt suggesting 'flash', between tag and storefront -->
+        <path d="M128 44 L116 66 L124 66 L118 86 L138 60 L128 60 L134 44 Z"
+              fill="#ee6a00" stroke="#ee6a00" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Competitor flash promotion</h3>
+        <p>Rival store launched a 25% off promotion within the hour.</p>
+      </div>
+    </div>
+
+    <!-- 6. KEY COLLEAGUE WALKS OUT -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- door frame on the right, door open showing outside -->
+        <rect x="158" y="26" width="66" height="92" rx="1" fill="#0f1013" />
+        <rect x="158" y="26" width="66" height="92" rx="1" />
+        <!-- door swung inward (angled line) -->
+        <path d="M158 26 L140 20 L140 112 L158 118" stroke="rgba(255,255,255,0.5)" />
+        <!-- daylight hatching outside -->
+        <g stroke="rgba(255,255,255,0.2)" stroke-width="1">
+          <path d="M170 40 L218 40" />
+          <path d="M170 52 L218 52" />
+          <path d="M170 64 L218 64" />
+          <path d="M170 76 L218 76" />
+          <path d="M170 88 L218 88" />
+          <path d="M170 100 L218 100" />
+        </g>
+        <!-- figure walking away toward door -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(98 50)">
+          <circle cx="10" cy="6" r="5.5" />
+          <rect x="2" y="14" width="18" height="28" rx="4" />
+          <rect x="3" y="42" width="6" height="26" rx="2" />
+          <rect x="13" y="42" width="6" height="26" rx="2" />
+        </g>
+        <!-- dropped lanyard/ID on the floor behind them -->
+        <g transform="translate(56 104)">
+          <rect x="0" y="0" width="18" height="11" rx="1.5" fill="#ee6a00" stroke="#ee6a00" stroke-width="1" />
+          <path d="M6 0 L4 -10 L10 -16 L14 -10 L12 0" stroke="#ee6a00" stroke-width="1.5" fill="none" />
+          <rect x="3" y="3" width="12" height="2" fill="#17181a" stroke="none" />
+          <rect x="3" y="6.5" width="8" height="1.5" fill="#17181a" stroke="none" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Key colleague walks out</h3>
+        <p>A senior team member left mid-shift citing pressure.</p>
+      </div>
+    </div>
+
+    <!-- 7. POWER OUTAGE IN BACKROOM -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- ceiling line -->
+        <path d="M0 20 L240 20" stroke="rgba(255,255,255,0.2)" />
+        <!-- pendant lightbulb hanging, unlit -->
+        <g transform="translate(82 20)">
+          <path d="M0 0 L0 34" stroke="rgba(255,255,255,0.4)" />
+          <!-- bulb body -->
+          <path d="M-10 44 C-10 36 -6 32 0 32 C6 32 10 36 10 44 C10 52 6 58 4 60 L-4 60 C-6 58 -10 52 -10 44 Z"
+                fill="#17181a" />
+          <path d="M-10 44 C-10 36 -6 32 0 32 C6 32 10 36 10 44 C10 52 6 58 4 60 L-4 60 C-6 58 -10 52 -10 44 Z" />
+          <path d="M-4 60 L-4 66 L4 66 L4 60" />
+          <!-- off indicator (diagonal slash through bulb) -->
+          <path d="M-12 30 L12 62" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" stroke-dasharray="3 2" />
+        </g>
+        <!-- shelves barely visible in the dim -->
+        <g stroke="rgba(255,255,255,0.18)" stroke-width="1.5">
+          <path d="M20 50 L70 50" />
+          <path d="M20 70 L70 70" />
+          <path d="M20 90 L70 90" />
+          <path d="M20 50 L20 110" />
+          <path d="M70 50 L70 110" />
+          <path d="M160 50 L220 50" />
+          <path d="M160 70 L220 70" />
+          <path d="M160 90 L220 90" />
+          <path d="M160 50 L160 110" />
+          <path d="M220 50 L220 110" />
+        </g>
+        <!-- emergency exit sign glowing on the wall (orange accent) -->
+        <g transform="translate(108 70)">
+          <rect x="0" y="0" width="36" height="18" rx="2" fill="#ee6a00" stroke="#ee6a00" />
+          <text x="18" y="13" font-size="10" text-anchor="middle" fill="#17181a" stroke="none" font-family="system-ui" font-weight="700">EXIT</text>
+          <!-- glow -->
+          <rect x="-3" y="-3" width="42" height="24" rx="4" fill="none" stroke="#ee6a00" stroke-width="0.75" stroke-dasharray="2 3" opacity="0.6" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Power outage in backroom</h3>
+        <p>Chilled goods at risk, 30 minute window.</p>
+      </div>
+    </div>
+
+    <!-- 8. MEDICAL INCIDENT IN STORE -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- figure on the floor (lying) -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(52 90)">
+          <circle cx="8" cy="8" r="6" />
+          <rect x="14" y="3" width="34" height="12" rx="3" />
+          <rect x="48" y="5" width="26" height="4" rx="2" />
+          <rect x="48" y="11" width="26" height="4" rx="2" />
+        </g>
+        <!-- kneeling figure beside them -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(110 60)">
+          <circle cx="10" cy="5" r="5.5" />
+          <path d="M2 13 C2 10 6 10 10 10 C14 10 18 10 18 13 L18 30 L12 34 L8 34 L2 30 Z" />
+          <rect x="2" y="34" width="7" height="18" rx="1.5" />
+          <rect x="13" y="34" width="7" height="18" rx="1.5" />
+          <!-- reaching arm -->
+          <path d="M6 14 L-4 30" stroke="#f7f8fa" stroke-width="4" stroke-linecap="round" fill="none" />
+        </g>
+        <!-- ECG pulse line above, orange -->
+        <path d="M10 42 L60 42 L70 42 L78 24 L86 58 L94 32 L102 48 L110 42 L230 42"
+              stroke="#ee6a00" stroke-width="2.25" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+        <!-- small heart icon above pulse -->
+        <g transform="translate(184 22)">
+          <path d="M10 18 C10 12 2 10 2 4 C2 1 5 -1 8 0 C9 0 10 2 10 3 C10 2 11 0 12 0 C15 -1 18 1 18 4 C18 10 10 12 10 18 Z"
+                fill="#ee6a00" stroke="none" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Medical incident in store</h3>
+        <p>A customer has collapsed near customer service. Colleagues are first-aid trained but visibly rattled.</p>
+      </div>
+    </div>
+
+    <!-- 9. PRODUCT RECALL GOES LIVE -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- shelf -->
+        <path d="M20 96 L220 96" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+        <path d="M20 96 L20 118" stroke="rgba(255,255,255,0.2)" />
+        <path d="M220 96 L220 118" stroke="rgba(255,255,255,0.2)" />
+        <!-- row of boxes on shelf -->
+        <g>
+          <rect x="28" y="62" width="26" height="34" fill="#17181a" />
+          <rect x="28" y="62" width="26" height="34" />
+          <path d="M32 66 L50 66" />
+          <path d="M32 72 L46 72" />
+          <rect x="62" y="62" width="26" height="34" fill="#17181a" />
+          <rect x="62" y="62" width="26" height="34" />
+          <path d="M66 66 L84 66" />
+          <path d="M66 72 L80 72" />
+          <rect x="152" y="62" width="26" height="34" fill="#17181a" />
+          <rect x="152" y="62" width="26" height="34" />
+          <rect x="186" y="62" width="26" height="34" fill="#17181a" />
+          <rect x="186" y="62" width="26" height="34" />
+        </g>
+        <!-- featured box being recalled (centre, slightly larger, with stamp) -->
+        <g>
+          <rect x="96" y="48" width="56" height="48" fill="#17181a" />
+          <rect x="96" y="48" width="56" height="48" />
+          <path d="M96 58 L152 58" />
+        </g>
+        <!-- orange RECALL stamp slanted across the central box, sized to fit inside -->
+        <g transform="translate(124 76) rotate(-8)">
+          <rect x="-24" y="-8" width="48" height="16" rx="2" fill="none" stroke="#ee6a00" stroke-width="2" />
+          <rect x="-22" y="-6" width="44" height="12" rx="1" fill="none" stroke="#ee6a00" stroke-width="1" stroke-dasharray="3 2" />
+          <text x="0" y="4" font-size="10" text-anchor="middle" fill="#ee6a00" stroke="none"
+                font-family="system-ui, -apple-system, sans-serif" font-weight="800">RECALL</text>
+        </g>
+        <!-- hand reaching in from the right (simple suggestive shape) -->
+        <path d="M200 74 L170 76 L166 80 L172 84 L200 82"
+              fill="#f7f8fa" stroke="#f7f8fa" stroke-width="1.5" />
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Product recall goes live</h3>
+        <p>Head Office pushed an immediate recall on a bakery line. Product still on sale in 40 stores including yours.</p>
+      </div>
+    </div>
+
+    <!-- 10. MINOR FLOOD FROM OVERHEAD PIPE -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <path d="M0 18 L240 18" stroke="rgba(255,255,255,0.2)" />
+        <!-- ceiling pipe with burst elbow -->
+        <g transform="translate(90 18)">
+          <path d="M-90 10 L10 10" stroke-width="4" />
+          <path d="M10 10 L20 10 L20 30" stroke-width="4" />
+          <!-- burst point spray lines -->
+          <g stroke="#ee6a00" stroke-width="1.5">
+            <path d="M8 14 L2 22" />
+            <path d="M12 14 L18 22" />
+            <path d="M10 16 L10 24" />
+          </g>
+        </g>
+        <!-- droplets falling -->
+        <g fill="#f7f8fa" stroke="none">
+          <ellipse cx="100" cy="54" rx="2" ry="3.5" />
+          <ellipse cx="108" cy="68" rx="2" ry="3.5" />
+          <ellipse cx="100" cy="82" rx="2" ry="3.5" />
+          <ellipse cx="112" cy="92" rx="2" ry="3.5" />
+        </g>
+        <!-- puddle on floor -->
+        <ellipse cx="104" cy="114" rx="36" ry="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" />
+        <ellipse cx="104" cy="114" rx="22" ry="2.5" fill="rgba(255,255,255,0.2)" stroke="none" />
+        <!-- wet floor A-frame sign on the right, with a clear exclamation -->
+        <g transform="translate(168 68)">
+          <path d="M12 0 L-4 46 L28 46 Z" fill="#ee6a00" stroke="#ee6a00" stroke-width="1.5" />
+          <!-- exclamation mark inside the triangle, ink-black on orange, universally legible -->
+          <path d="M12 14 L12 32" stroke="#17181a" stroke-width="3.5" stroke-linecap="round" />
+          <circle cx="12" cy="38" r="1.75" fill="#17181a" stroke="none" />
+          <!-- sign foot -->
+          <rect x="10" y="46" width="4" height="4" fill="#ee6a00" stroke="none" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Minor flood from overhead pipe</h3>
+        <p>Water coming through the ceiling near wines and spirits. Stock exposed, electricals nearby.</p>
+      </div>
+    </div>
+
+    <!-- 11. LOCAL NEWS CREW -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- tripod -->
+        <g stroke="#f7f8fa" stroke-width="2">
+          <path d="M96 56 L70 118" />
+          <path d="M112 56 L134 118" />
+          <path d="M104 56 L104 118" />
+        </g>
+        <!-- camera body -->
+        <g transform="translate(76 28)">
+          <rect x="0" y="0" width="52" height="30" rx="3" fill="#17181a" />
+          <rect x="0" y="0" width="52" height="30" rx="3" />
+          <!-- lens -->
+          <circle cx="16" cy="15" r="10" fill="#0f1013" />
+          <circle cx="16" cy="15" r="10" />
+          <circle cx="16" cy="15" r="5" fill="none" stroke="rgba(255,255,255,0.5)" />
+          <!-- mic mount on top -->
+          <rect x="24" y="-6" width="8" height="6" fill="#17181a" />
+          <rect x="24" y="-6" width="8" height="6" />
+          <!-- viewfinder box on back -->
+          <rect x="36" y="6" width="14" height="10" rx="1" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.4)" />
+          <!-- recording light -->
+          <circle cx="46" cy="4" r="3" fill="#ee6a00" stroke="none" />
+        </g>
+        <!-- REC label on the camera -->
+        <g transform="translate(134 28)">
+          <rect x="0" y="0" width="40" height="14" rx="2" fill="#ee6a00" stroke="#ee6a00" />
+          <text x="20" y="10" font-size="9" text-anchor="middle" fill="#17181a" stroke="none" font-family="system-ui" font-weight="700">LIVE</text>
+        </g>
+        <!-- reporter with mic to the right -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(180 56)">
+          <circle cx="10" cy="6" r="5.5" />
+          <rect x="2" y="14" width="18" height="24" rx="4" />
+          <rect x="3" y="38" width="6" height="24" rx="2" />
+          <rect x="13" y="38" width="6" height="24" rx="2" />
+          <!-- mic in hand -->
+          <rect x="20" y="22" width="5" height="12" rx="2" fill="#17181a" stroke="#f7f8fa" stroke-width="1.25" />
+          <circle cx="22.5" cy="18" r="3" fill="#f7f8fa" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Local news crew on the forecourt</h3>
+        <p>A reporter is asking customers about a national story that mentions your store by name.</p>
+      </div>
+    </div>
+
+    <!-- 12. COLLEAGUE ACCUSED OF THEFT -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- accusing customer on the left -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(32 50)">
+          <circle cx="12" cy="6" r="6" />
+          <rect x="2" y="14" width="20" height="28" rx="4" />
+          <rect x="3" y="42" width="8" height="26" rx="2" />
+          <rect x="13" y="42" width="8" height="26" rx="2" />
+        </g>
+        <!-- pointing arm + finger -->
+        <g stroke="#ee6a00" stroke-width="4" stroke-linecap="round" fill="none">
+          <path d="M60 66 L108 66" />
+          <!-- hand/finger arrow -->
+          <path d="M100 60 L112 66 L100 72" stroke-width="3" />
+        </g>
+        <!-- accused colleague on the right -->
+        <g fill="#f7f8fa" stroke="none" transform="translate(132 50)">
+          <circle cx="12" cy="6" r="6" />
+          <rect x="2" y="14" width="20" height="28" rx="4" />
+          <rect x="3" y="42" width="8" height="26" rx="2" />
+          <rect x="13" y="42" width="8" height="26" rx="2" />
+        </g>
+        <!-- onlookers in the background -->
+        <g fill="rgba(255,255,255,0.35)" stroke="none" transform="translate(172 44)">
+          <g transform="translate(0 0)">
+            <circle cx="8" cy="4" r="4" />
+            <rect x="0" y="10" width="16" height="20" rx="3" />
+          </g>
+          <g transform="translate(22 4)">
+            <circle cx="8" cy="4" r="4" />
+            <rect x="0" y="10" width="16" height="20" rx="3" />
+          </g>
+          <g transform="translate(44 2)" opacity="0.7">
+            <circle cx="8" cy="4" r="4" />
+            <rect x="0" y="10" width="16" height="20" rx="3" />
+          </g>
+        </g>
+        <!-- surprise lines around the accused colleague's head -->
+        <g stroke="#f7f8fa" stroke-width="1.5" stroke-linecap="round">
+          <path d="M140 42 L136 36" />
+          <path d="M146 40 L146 32" />
+          <path d="M152 42 L156 36" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Colleague accused of theft by a customer</h3>
+        <p>Customer publicly accused a colleague of pocketing a returned item. Crowd forming.</p>
+      </div>
+    </div>
+
+    <!-- 13. DELIVERY PARTNER CRASHED IN CAR PARK -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- delivery van on the left -->
+        <g transform="translate(22 60)">
+          <!-- box cargo area -->
+          <rect x="0" y="0" width="78" height="42" fill="#17181a" />
+          <rect x="0" y="0" width="78" height="42" />
+          <!-- cab -->
+          <path d="M78 10 L104 10 L112 20 L112 42 L78 42 Z" fill="#17181a" />
+          <path d="M78 10 L104 10 L112 20 L112 42 L78 42 Z" />
+          <!-- window -->
+          <path d="M84 14 L102 14 L107 22 L84 22 Z" stroke="rgba(255,255,255,0.4)" fill="none" />
+          <!-- wheels -->
+          <circle cx="16" cy="46" r="7" fill="#0f1013" />
+          <circle cx="16" cy="46" r="7" />
+          <circle cx="94" cy="46" r="7" fill="#0f1013" />
+          <circle cx="94" cy="46" r="7" />
+        </g>
+        <!-- parked car on the right -->
+        <g transform="translate(150 76)">
+          <path d="M0 18 L8 4 L40 4 L48 18 L48 26 L0 26 Z" fill="#17181a" />
+          <path d="M0 18 L8 4 L40 4 L48 18 L48 26 L0 26 Z" />
+          <path d="M8 18 L40 18" />
+          <path d="M14 4 L14 18" />
+          <path d="M28 4 L28 18" />
+          <circle cx="10" cy="30" r="5" fill="#0f1013" />
+          <circle cx="10" cy="30" r="5" />
+          <circle cx="38" cy="30" r="5" fill="#0f1013" />
+          <circle cx="38" cy="30" r="5" />
+        </g>
+        <!-- Impact burst at the collision point between van and car -->
+        <g stroke="#ee6a00" stroke-width="2.5" stroke-linecap="round" fill="none">
+          <path d="M142 76 L146 68" />
+          <path d="M148 82 L156 80" />
+          <path d="M144 88 L148 96" />
+          <path d="M138 86 L132 92" />
+          <path d="M136 80 L128 80" />
+          <path d="M138 74 L134 66" />
+        </g>
+        <circle cx="142" cy="82" r="3.5" fill="#ee6a00" stroke="none" />
+        <!-- Warning triangle on the ground to the right of the car, well clear of the vehicles -->
+        <g transform="translate(208 96)">
+          <path d="M12 0 L0 20 L24 20 Z" fill="#ee6a00" stroke="#ee6a00" />
+          <path d="M12 6 L12 14" stroke="#17181a" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12" cy="17" r="1" fill="#17181a" stroke="none" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Delivery partner crashed in car park</h3>
+        <p>A third-party driver reversed into two customer cars. No injuries, insurance chase starting.</p>
+      </div>
+    </div>
+
+    <!-- 14. SERVER ROOM OVERHEATING -->
+    <div class="dis">
+      <svg class="scene" viewBox="0 0 240 140" xmlns="http://www.w3.org/2000/svg" fill="none"
+           stroke="#f7f8fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M0 118 L240 118" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+        <!-- server rack (central) -->
+        <g transform="translate(78 30)">
+          <rect x="0" y="0" width="84" height="80" rx="2" fill="#0f1013" />
+          <rect x="0" y="0" width="84" height="80" rx="2" />
+          <!-- rack units -->
+          <g stroke="rgba(255,255,255,0.4)">
+            <rect x="6" y="8" width="72" height="14" rx="1" fill="none" />
+            <rect x="6" y="26" width="72" height="14" rx="1" fill="none" />
+            <rect x="6" y="44" width="72" height="14" rx="1" fill="none" />
+            <rect x="6" y="62" width="72" height="14" rx="1" fill="none" />
+          </g>
+          <!-- LEDs on each unit: most white, one orange -->
+          <g fill="#f7f8fa" stroke="none">
+            <circle cx="12" cy="15" r="1.5" />
+            <circle cx="18" cy="15" r="1.5" />
+            <circle cx="12" cy="33" r="1.5" />
+            <circle cx="18" cy="33" r="1.5" />
+            <circle cx="12" cy="69" r="1.5" />
+          </g>
+          <!-- warning LED, orange, pulsing -->
+          <circle cx="18" cy="51" r="2.5" fill="#ee6a00" stroke="none" />
+          <circle cx="12" cy="51" r="1.5" fill="#ee6a00" stroke="none" />
+        </g>
+        <!-- heat waves rising above rack -->
+        <g stroke="#ee6a00" stroke-width="1.75" fill="none" stroke-linecap="round">
+          <path d="M96 22 C96 14 104 14 104 6" />
+          <path d="M112 22 C112 12 120 12 120 4" />
+          <path d="M128 22 C128 14 136 14 136 6" />
+          <path d="M144 22 C144 12 152 12 152 4" />
+        </g>
+        <!-- thermometer gauge on the wall beside rack -->
+        <g transform="translate(188 48)">
+          <rect x="2" y="0" width="8" height="36" rx="4" fill="#17181a" />
+          <rect x="2" y="0" width="8" height="36" rx="4" />
+          <circle cx="6" cy="42" r="8" fill="#ee6a00" stroke="#ee6a00" />
+          <rect x="4" y="12" width="4" height="32" fill="#ee6a00" stroke="none" />
+          <!-- tick marks -->
+          <path d="M10 6 L14 6" />
+          <path d="M10 14 L14 14" />
+          <path d="M10 22 L14 22" />
+        </g>
+      </svg>
+      <div class="body">
+        <span class="eyebrow">Disruption</span>
+        <h3>Server room overheating</h3>
+        <p>Air-con unit in the comms room has failed. Systems warning is live, stock ordering at risk.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <strong>What you're looking at.</strong> All fourteen disruptions from the bank, illustrated in a single
+    consistent style. Every scene is pure inline SVG with no external image files, so nothing needs to be
+    hosted, sourced, or licensed. Next step, if the set reads well, is to wire each scene into the disruption
+    banner on both the team and facilitator views (and into the post-session report) so a disruption lands as
+    a visual event rather than a text card turning red.
+  </div>
+
+</body>
+</html>

@@ -62,6 +62,7 @@ import {
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { DisruptionScene } from "@/components/DisruptionScene";
 import { formatClock, useCountdown, useSessionState, useTeamHeartbeat } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
 import { ScenarioIcon } from "@/lib/scenarioIcons";
@@ -487,12 +488,19 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
       </div>
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="rounded-lg bg-risk p-2.5 text-white">
-            <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
-              <AlertTriangle className="h-3.5 w-3.5" /> Disruption
+          <div className="overflow-hidden rounded-lg ring-1 ring-risk/60">
+            {disruption.scene ? (
+              <div className="bg-[#1a1b1e]">
+                <DisruptionScene name={disruption.scene} />
+              </div>
+            ) : null}
+            <div className="bg-risk p-2.5 text-white">
+              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
+                <AlertTriangle className="h-3.5 w-3.5" /> Disruption
+              </div>
+              <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
+              <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
             </div>
-            <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
-            <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
