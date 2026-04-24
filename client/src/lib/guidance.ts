@@ -32,11 +32,12 @@ export function facilitatorGuidance(state: SessionStatePublic): Guidance {
       const subs = state.teams.filter((t) => t.submitted).length;
       const total = state.teams.length;
       const disrupted = state.round?.phase === "disrupted";
-      if (disrupted) {
+      const disruption = state.round?.disruption;
+      if (disrupted && disruption) {
         return {
           tone: "risk",
-          headline: `Shift ${state.round?.number} - disruption active`,
-          body: `${subs} of ${total} teams have submitted. Observe how teams respond.`,
+          headline: `Disruption: ${disruption.title}`,
+          body: `${disruption.message} (${subs} of ${total} teams submitted)`,
         };
       }
       return {
