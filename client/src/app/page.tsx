@@ -18,9 +18,6 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false);
 
   function createFacilitator() {
-    // Must be called during the user gesture (before any async work) so the
-    // browser accepts the fullscreen request.
-    enterFullscreen();
     const socket = getSocket();
     setSubmitting(true);
     for (let i = 0; i < sessionStorage.length; i++) {
@@ -35,11 +32,13 @@ export default function LandingPage() {
       },
     );
     socket.emit("session:create", { expectedTeams });
+    // Fullscreen is fire-and-forget; deferred so any browser refusal can't
+    // interrupt the synchronous emit + navigate flow.
+    setTimeout(() => enterFullscreen(), 0);
   }
 
   function joinTeam(e: React.FormEvent) {
     e.preventDefault();
-    enterFullscreen();
     setError(null);
     const socket = getSocket();
     setSubmitting(true);
@@ -55,6 +54,7 @@ export default function LandingPage() {
     socket.once("session:joined", onJoined);
     socket.once("error", onErr);
     socket.emit("session:join", { code: code.trim().toUpperCase(), teamName: teamName.trim() });
+    setTimeout(() => enterFullscreen(), 0);
   }
 
   function adjustTeams(delta: number) {
