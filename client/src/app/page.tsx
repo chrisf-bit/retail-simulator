@@ -6,6 +6,7 @@ import { Activity, Minus, Monitor, Plus, Users } from "lucide-react";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS } from "@sim/shared";
 import { Button, Card, cn } from "@/components/ui";
 import { getSocket } from "@/lib/socket";
+import { enterFullscreen } from "@/lib/fullscreen";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function LandingPage() {
   const [submitting, setSubmitting] = useState(false);
 
   function createFacilitator() {
+    // Must be called during the user gesture (before any async work) so the
+    // browser accepts the fullscreen request.
+    enterFullscreen();
     const socket = getSocket();
     setSubmitting(true);
     for (let i = 0; i < sessionStorage.length; i++) {
@@ -35,6 +39,7 @@ export default function LandingPage() {
 
   function joinTeam(e: React.FormEvent) {
     e.preventDefault();
+    enterFullscreen();
     setError(null);
     const socket = getSocket();
     setSubmitting(true);

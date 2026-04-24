@@ -63,6 +63,7 @@ import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRib
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { DisruptionScene } from "@/components/DisruptionScene";
+import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState, useTeamHeartbeat } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
 import { ScenarioIcon } from "@/lib/scenarioIcons";
@@ -223,7 +224,7 @@ export default function TeamPlayerPage() {
     activeDisruption && !acknowledgedDisruptions.has(activeDisruption.id) ? activeDisruption : null;
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden">
+    <div className="relative flex min-h-full w-full flex-col xl:h-full xl:overflow-hidden">
       {!connected ? <ReconnectingOverlay /> : null}
       {unacknowledgedDisruption ? (
         <DisruptionModal
@@ -259,19 +260,19 @@ export default function TeamPlayerPage() {
       ) : state.phase === "round_results" ? (
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
-        <main className="grid min-h-0 flex-1 grid-cols-[minmax(340px,1fr)_2fr] gap-4 p-4">
-          <aside className="flex min-h-0 flex-col gap-3 overflow-hidden">
+        <main className="flex flex-col gap-4 p-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(340px,1fr)_2fr]">
+          <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
             <ZoneLabel label="Context" tone="neutral" />
             <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
-            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,auto)] gap-3">
+            <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_minmax(0,auto)]">
               <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
               <AlertsPanel state={state} />
             </div>
           </aside>
 
-          <section className="flex min-w-0 flex-col min-h-0 gap-3">
+          <section className="flex min-w-0 flex-col gap-3 xl:min-h-0">
             <ZoneLabel label="Decide" tone="brand" />
-            <div className="min-h-0 flex-1">
+            <div className="xl:min-h-0 xl:flex-1">
               <DecisionPanel
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -367,6 +368,7 @@ function TeamHeader({
           <div className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Score</div>
           <div className="num text-2xl font-semibold text-white">{team.score}</div>
         </div>
+        <FullscreenToggle />
       </div>
     </header>
   );
@@ -437,10 +439,10 @@ function KpiStrip({
       </div>
       <div className="grid grid-cols-5 gap-1.5">
         {items.map((i) => (
-          <div key={i.key} className="rounded-lg bg-white/5 px-2 py-1.5">
-            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">{i.label}</div>
+          <div key={i.key} className="rounded-lg bg-white/5 px-3 py-2 xl:px-2 xl:py-1.5">
+            <div className="truncate text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[10px]">{i.label}</div>
             <div className="mt-0 flex items-baseline justify-between gap-1">
-              <span className="num text-base font-semibold text-white">{i.value}</span>
+              <span className="num text-xl font-semibold text-white xl:text-base">{i.value}</span>
               <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} onDark />
             </div>
             <div className="mt-1">
@@ -468,13 +470,13 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
         {issues.slice(0, 3).map((i) => {
           const targeted = primaryIssueId === i.id;
           return (
-            <div key={i.id} className="rounded-lg bg-white/5 p-2.5">
+            <div key={i.id} className="rounded-lg bg-white/5 p-3 xl:p-2.5">
               <div className="mb-0.5 flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-start gap-2">
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70">
-                    <ScenarioIcon name={i.icon} className="h-3.5 w-3.5" />
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 xl:h-5 xl:w-5">
+                    <ScenarioIcon name={i.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
                   </div>
-                  <h4 className="text-[13px] font-semibold text-white">{i.title}</h4>
+                  <h4 className="text-sm font-semibold text-white xl:text-[13px]">{i.title}</h4>
                 </div>
                 {targeted ? (
                   <Pill tone="info" strong>
@@ -484,7 +486,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
                   <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
                 )}
               </div>
-              <p className="pl-7 text-[11px] leading-snug text-white/70">{i.description}</p>
+              <p className="pl-8 text-[13px] leading-snug text-white/70 xl:pl-7 xl:text-[11px]">{i.description}</p>
             </div>
           );
         })}
@@ -505,26 +507,26 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
       </div>
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="rounded-lg bg-risk p-2.5 text-white">
-            <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
+          <div className="rounded-lg bg-risk p-3 text-white xl:p-2.5">
+            <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide xl:text-[11px]">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
-            <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
-            <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
+            <h4 className="text-sm font-semibold xl:text-[13px]">{disruption.title}</h4>
+            <p className="mt-0.5 text-[13px] leading-snug opacity-90 xl:text-[11px]">{disruption.message}</p>
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
-          <div key={a.id} className="rounded-lg bg-white/5 p-2.5">
+          <div key={a.id} className="rounded-lg bg-white/5 p-3 xl:p-2.5">
             <div className="mb-0.5 flex items-start gap-2">
-              <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70">
-                <ScenarioIcon name={a.icon} className="h-3.5 w-3.5" />
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 xl:h-5 xl:w-5">
+                <ScenarioIcon name={a.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-medium uppercase tracking-wide text-white/50">
+                <div className="text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[11px]">
                   {a.kind === "head_office" ? "Head office" : "Operational"}
                 </div>
-                <h4 className="text-[13px] font-semibold text-white">{a.title}</h4>
-                <p className="mt-0.5 text-[11px] leading-snug text-white/70">{a.message}</p>
+                <h4 className="text-sm font-semibold text-white xl:text-[13px]">{a.title}</h4>
+                <p className="mt-0.5 text-[13px] leading-snug text-white/70 xl:text-[11px]">{a.message}</p>
               </div>
             </div>
           </div>
@@ -737,11 +739,11 @@ function StepHeader({
   return (
     <div>
       <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold tracking-tight text-ink-900">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight text-ink-900 xl:text-lg">{title}</h2>
         {optional ? <Pill tone="neutral">Optional</Pill> : null}
       </div>
-      <p className="mt-0.5 text-[13px] text-ink-500">{narrative}</p>
-      <p className="mt-1 text-[12px] font-medium text-ink-700">{instruction}</p>
+      <p className="mt-0.5 text-sm text-ink-500 xl:text-[13px]">{narrative}</p>
+      <p className="mt-1 text-sm font-medium text-ink-700 xl:text-[12px]">{instruction}</p>
     </div>
   );
 }
@@ -1021,7 +1023,7 @@ function RadioGrid<T extends string>({
             disabled={disabled}
             onClick={() => onChange(opt)}
             className={cn(
-              "press flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-colors",
+              "press flex items-center gap-3 rounded-xl px-4 py-4 text-left text-base font-medium transition-colors xl:py-3 xl:text-sm",
               active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
               disabled && "cursor-not-allowed opacity-40",
             )}

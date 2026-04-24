@@ -40,6 +40,7 @@ import { ARCHETYPE_LABELS, BASELINE_WEEKS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_I
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
 
@@ -133,7 +134,7 @@ export default function FacilitatorPage() {
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div className="flex min-h-full w-full flex-col xl:h-full xl:overflow-hidden">
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
       <div className="shrink-0 px-5 pt-5">
@@ -156,13 +157,13 @@ export default function FacilitatorPage() {
         />
       </div>
 
-      <main className="grid min-h-0 flex-1 grid-cols-12 gap-5 p-5">
-        <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-7">
+      <main className="grid grid-cols-12 gap-5 p-5 xl:min-h-0 xl:flex-1">
+        <div className="col-span-12 flex flex-col gap-4 xl:col-span-7 xl:min-h-0">
           <Leaderboard state={state} />
           <CoachingGrid state={state} reveal={revealPhase} />
         </div>
 
-        <div className="col-span-12 flex min-h-0 flex-col gap-4 lg:col-span-5">
+        <div className="col-span-12 flex flex-col gap-4 xl:col-span-5 xl:min-h-0">
           <ScriptPanel state={state} />
           <PatternsPanel state={state} />
           <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
@@ -216,6 +217,7 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
           <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-white/60")} />
           <span className={cn("num text-2xl font-semibold text-white")}>{formatClock(timeLeftMs)}</span>
         </div>
+        <FullscreenToggle />
       </div>
     </header>
   );
