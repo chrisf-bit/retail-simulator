@@ -136,6 +136,7 @@ export default function TeamPlayerPage() {
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(1);
   const [kpiView, setKpiView] = useState<"values" | "trends">("values");
+  const [acknowledgedDisruptions, setAcknowledgedDisruptions] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
@@ -217,9 +218,25 @@ export default function TeamPlayerPage() {
     socket.emit("team:submit_decision", { sessionId, teamId, decision });
   }
 
+  const activeDisruption = state.round?.disruption;
+  const unacknowledgedDisruption =
+    activeDisruption && !acknowledgedDisruptions.has(activeDisruption.id) ? activeDisruption : null;
+
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
       {!connected ? <ReconnectingOverlay /> : null}
+      {unacknowledgedDisruption ? (
+        <DisruptionModal
+          disruption={unacknowledgedDisruption}
+          onAcknowledge={() =>
+            setAcknowledgedDisruptions((prev) => {
+              const next = new Set(prev);
+              next.add(unacknowledgedDisruption.id);
+              return next;
+            })
+          }
+        />
+      ) : null}
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -488,19 +505,12 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
       </div>
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="overflow-hidden rounded-lg ring-1 ring-risk/60">
-            {disruption.scene ? (
-              <div className="bg-[#1a1b1e]">
-                <DisruptionScene name={disruption.scene} />
-              </div>
-            ) : null}
-            <div className="bg-risk p-2.5 text-white">
-              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
-                <AlertTriangle className="h-3.5 w-3.5" /> Disruption
-              </div>
-              <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
-              <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
+          <div className="rounded-lg bg-risk p-2.5 text-white">
+            <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
+              <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
+            <h4 className="text-[13px] font-semibold">{disruption.title}</h4>
+            <p className="mt-0.5 text-[11px] leading-snug opacity-90">{disruption.message}</p>
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
@@ -1432,6 +1442,44 @@ function ReconnectingOverlay() {
         <div className="text-sm text-white">
           <span className="font-semibold">Reconnecting</span>
           <span className="ml-2 text-white/60">Your progress is safe.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DisruptionModal({
+  disruption,
+  onAcknowledge,
+}: {
+  disruption: NonNullable<SessionStatePublic["round"]>["disruption"];
+  onAcknowledge: () => void;
+}) {
+  if (!disruption) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="disruption-title"
+    >
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-raised shadow-panel ring-2 ring-risk/70">
+        {disruption.scene ? (
+          <div className="bg-[#1a1b1e]">
+            <DisruptionScene name={disruption.scene} />
+          </div>
+        ) : null}
+        <div className="p-6">
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-risk">
+            <AlertTriangle className="h-4 w-4" /> Disruption
+          </div>
+          <h2 id="disruption-title" className="text-xl font-semibold tracking-tight text-ink-900">
+            {disruption.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-700">{disruption.message}</p>
+          <div className="mt-6 flex justify-end">
+            <Button onClick={onAcknowledge}>Understood</Button>
+          </div>
         </div>
       </div>
     </div>
