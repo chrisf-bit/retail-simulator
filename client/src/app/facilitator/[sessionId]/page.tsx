@@ -238,36 +238,44 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
         <div className="col-span-2 text-right">Movement</div>
       </div>
       <div className="space-y-1">
-        {state.leaderboard.map((row, idx) => {
-          const isLead = idx === 0 && state.leaderboard.length > 1;
-          const team = state.teams.find((t) => t.id === row.teamId);
-          const status = team?.connectionStatus ?? "connected";
-          return (
-            <div
-              key={row.teamId}
-              className={cn(
-                "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
-                isLead ? "bg-brand-500 text-white" : "bg-white/5",
-              )}
-            >
-              <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
-                #{row.rank}
+        {(() => {
+          // Only flag a leader when their score is strictly greater than the
+          // next team's. Otherwise everyone at the top is tied and nobody
+          // should be highlighted as 'Lead'.
+          const topScore = state.leaderboard[0]?.score ?? 0;
+          const secondScore = state.leaderboard[1]?.score ?? 0;
+          const hasClearLeader = state.leaderboard.length > 1 && topScore > secondScore;
+          return state.leaderboard.map((row, idx) => {
+            const isLead = hasClearLeader && idx === 0;
+            const team = state.teams.find((t) => t.id === row.teamId);
+            const status = team?.connectionStatus ?? "connected";
+            return (
+              <div
+                key={row.teamId}
+                className={cn(
+                  "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
+                  isLead ? "bg-brand-500 text-white" : "bg-white/5",
+                )}
+              >
+                <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
+                  #{row.rank}
+                </div>
+                <div className="col-span-6 flex items-center gap-2">
+                  <ConnectionDot status={status} />
+                  <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
+                  <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
+                  {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
+                </div>
+                <div className={cn("col-span-3 text-right num text-base font-semibold text-white")}>
+                  {row.score}
+                </div>
+                <div className="col-span-2 text-right">
+                  <MovementPill value={row.movement} />
+                </div>
               </div>
-              <div className="col-span-6 flex items-center gap-2">
-                <ConnectionDot status={status} />
-                <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
-                <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
-                {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
-              </div>
-              <div className={cn("col-span-3 text-right num text-base font-semibold text-white")}>
-                {row.score}
-              </div>
-              <div className="col-span-2 text-right">
-                <MovementPill value={row.movement} />
-              </div>
-            </div>
-          );
-        })}
+            );
+          });
+        })()}
       </div>
     </Card>
   );
