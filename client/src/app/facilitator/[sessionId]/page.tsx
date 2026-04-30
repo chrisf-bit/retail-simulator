@@ -521,14 +521,14 @@ function InsightList({
     warn: "text-brand-300",
   };
   return (
-    <div className={cn("rounded-xl px-3 py-2.5", tones[tone])}>
-      <div className={cn("mb-1.5 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide", labelTones[tone])}>
+    <div className={cn("rounded-xl px-3.5 py-3", tones[tone])}>
+      <div className={cn("mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide", labelTones[tone])}>
         {icon}
         {label}
       </div>
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {items.map((t, i) => (
-          <li key={i} className={cn("text-[13px] leading-snug text-white/85", italic && "italic")}>
+          <li key={i} className={cn("text-[15px] leading-relaxed text-white/90", italic && "italic")}>
             {italic ? "“" : null}
             {t}
             {italic ? "”" : null}
@@ -554,10 +554,10 @@ function ScriptPanel({ state }: { state: SessionStatePublic }) {
           <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-brand-400">
             <ListChecks className="h-4 w-4" /> Say / do
           </div>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {script.talkTrack.map((t, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm leading-snug text-white/85">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
+              <li key={i} className="flex items-start gap-2.5 text-base leading-relaxed text-white/90">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
                 <span>{t}</span>
               </li>
             ))}
@@ -638,11 +638,11 @@ function PatternCard({
     positive: "text-emerald-300",
   }[tone];
   return (
-    <div className="rounded-xl bg-white/5 px-3.5 py-2.5 ring-1 ring-white/5">
-      <div className={cn("mb-1 text-[10px] font-semibold uppercase tracking-[0.08em]", eyebrowColor)}>
+    <div className="rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/5">
+      <div className={cn("mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]", eyebrowColor)}>
         {teamName ? `${teamName} · ${eyebrowLabel}` : eyebrowLabel}
       </div>
-      <p className="text-sm leading-snug text-white/90">{text}</p>
+      <p className="text-base leading-relaxed text-white/90">{text}</p>
     </div>
   );
 }
