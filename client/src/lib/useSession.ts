@@ -76,7 +76,10 @@ export function useCountdown(endsAt: number | undefined, offsetMs: number): numb
 }
 
 export function formatClock(ms: number): string {
-  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  // Use floor so the timer displays the integer-second floor of the remaining
+  // time. With ceil, any clock skew at round start (state arrives a few ms
+  // after endsAt was set on the server) showed 5:01 for the first tick.
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(totalSeconds / 60)
     .toString()
     .padStart(2, "0");
