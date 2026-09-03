@@ -42,28 +42,34 @@ These are absolute. Do not deviate without an explicit reason.
 
 ### Palette
 
-One accent. Strict. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
+Two accents, all-dark. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
 
-- **Brand**: Plumfield royal violet `#7c3aed` (brand-500), hover `#6d28d9` (brand-600), on-dark tint `#a78bfa` (brand-400). Used for active states, primary CTA, numerical highlights, the metrics HUD accent. That is the only accent hue.
-- **Ink**: monochrome near-black family for text, borders, structure. `#17181a` (ink-900) down to `#f7f8fa` (ink-50).
-- **Surfaces**:
-  - Page background is `#121316` (surface-base), near-black.
-  - Dark data panels use `#222326` (surface-panel). The metrics HUD sits on a deeper `#0c0d10` console field.
-  - White `#ffffff` (surface-raised) is used for the decision panel on team and for landing / lobby / briefing / results cards.
-- **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#d93f5a` (`rose-300/400` on dark). In the HUD, metric health is a three-band scale: ok emerald / mid violet / low rose. No amber. No cream. No beige. No orange.
-- **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon, arrow or shape in addition to colour (e.g. HUD readouts pair the health colour with a status dot and a delta arrow).
+The two accents are **semantic zone signals**, not decoration - keep them mapped:
 
-### Data vs decision
+- **Violet = ACT** (Plumfield brand). Royal violet `#7c3aed` (brand-500), hover `#6d28d9` (brand-600), on-dark tint `#a78bfa`/`#c4b5fd` (brand-400/300). The decision/input zone, active/selected states, primary CTA, the "Decide" eyebrow.
+- **Teal = READ** (data / insight). `#2dd4bf`/`#5eead4` (teal-400/300). Data-panel eyebrows, section labels and data icons (metrics HUD title, Active issues, Alerts, the "Context" eyebrow). Teal never fills an interactive control - it labels information.
+- **Ink**: monochrome family, still used for the standalone light phase screens (lobby / briefing / results / debrief cards).
+- **Surfaces (dark tiers - hierarchy comes from elevation + accent tint, not white)**:
+  - Page `#101116` (surface-base).
+  - READ cards `#141619` (surface-data), teal-tinted ring.
+  - Metrics HUD console `#0b0c0f` (surface-console), deepest.
+  - ACT / decision panel `#181620` (surface-decide), violet-warm, raised, `ring-brand-500/25`.
+  - White `#ffffff` (surface-raised) only on the standalone lobby / briefing / results / debrief screens.
+- **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#d93f5a` (`rose-300/400` on dark). HUD metric health is a three-band scale: ok emerald / mid violet / low rose, with **gradient** bars.
+- **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon, arrow or shape in addition to colour (HUD readouts pair health colour with a status dot and a delta arrow).
 
-Strong visual separation, this is load-bearing:
+### Zones: READ vs ACT (load-bearing)
 
-- **Data / insight panels** (left column on team, most of facilitator): `Card tone="data"`, dark `bg-surface-panel`, white text, inner tiles on `bg-white/5`.
-- **Decision panels** (right column on team, controls on facilitator): `Card` default, white with `shadow-card` and a `ring-1 ring-black/5`.
-- **Zone labels**: small eyebrow text above each zone. "Context" (grey) on the left, "Decide" (violet) on the right.
+The all-dark UI must never read as flat grey. Every surface belongs to one zone, and the zone is legible from accent + elevation alone:
+
+- **READ zone** (metrics HUD, Active issues, Alerts): `DataCard` (`bg-surface-data`, teal ring), teal eyebrow via `DataHeader`, flat (no glow). "Information - look, don't touch."
+- **ACT zone** (the decision panel): `bg-surface-decide`, violet eyebrow, violet ring + faint glow, raised. Selected options fill violet (`bg-brand-500` + violet glow ring); unselected are `bg-white/[0.04]` with `ring-white/10`.
+- **Within ACT, type the controls**: *choice* tiles (priority/action/leadership/issue/confidence/people) vs the *allocation* sliders, which live in their own inset control block (`bg-black/20`) so mixing interaction types stays legible.
+- **Zone labels**: eyebrow above each zone. "Context" (teal) left, "Decide" (violet) right.
 
 ### Metrics HUD
 
-The team round view leads with a full-width console **HUD** band under the header (`MetricsHud` in the team page). Five goal readouts, each with a glowing goal icon, a big tabular value, a delta arrow, a status dot and an animated health bar (values view) or sparkline (trends view). It sits on the `#0c0d10` console field with an ambient violet glow and a slow shimmer. This is the visual centrepiece - keep it bold. Below the HUD the round splits into Context (issues + alerts, left) and Decide (decision panel, right).
+The team round view leads with a full-width console **HUD** band under the header (`MetricsHud` in the team page) - a READ zone, so its title/pulse are teal. Five goal readouts, each with a glowing goal icon, a big tabular value, a delta arrow, a status dot and an animated **gradient** health bar (values view) or sparkline (trends view). It sits on the `#0b0c0f` console field with an ambient teal glow and a slow shimmer. This is the visual centrepiece - keep it bold. Below the HUD the round splits into Context (issues + alerts, left) and Decide (decision panel, right).
 
 ### Typography
 
@@ -104,7 +110,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 - Don't use emojis.
 - Don't use em-dashes in code or copy.
-- Don't use beige, cream, amber, yellow, orange, or any hue other than the Plumfield violet accent (plus the ok/risk status colours).
+- Don't use beige, cream, amber, yellow, orange, or any hue beyond the violet (ACT) and teal (READ) accents plus the ok/risk status colours.
 - Don't use `font-black` or `font-extrabold`.
 - Don't let content scroll at the page level.
 - Don't hand-write drop shadows. Use the tokens in `tailwind.config.ts`.
@@ -211,9 +217,9 @@ Vercel needs `cd .. && npm install` as the install command, because the client w
 
 Global rule. If content doesn't fit, compact, split, or tab it. Don't add overflow-auto to the page. The decision panel is the one permitted exception and only scrolls internally when a tab's content genuinely overflows on small viewports.
 
-### One accent colour
+### Two accents, mapped to zones
 
-The single accent is the Plumfield royal violet. Adding amber, yellow, orange or any secondary hue to a Pill or card background breaks the scheme. Keep soft pills as `bg-ink-100` with brand-violet text. Never use `bg-brand-50` or `bg-brand-100` as a fill (too pale to read as the accent).
+Violet = ACT, teal = READ. That mapping is the whole point - do not use violet to label a data panel, or teal to fill an interactive control. Beyond violet, teal and the ok/risk status pair, add no further hues (no amber, yellow, orange). Never use `bg-brand-50`/`bg-brand-100` as a fill (too pale to read as the accent).
 
 ### Language
 

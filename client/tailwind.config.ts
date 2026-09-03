@@ -33,13 +33,27 @@ const config: Config = {
           800: "#4c1d95",
           900: "#3b0764",
         },
+        // Teal: the secondary "data / insight" accent. Read-zone eyebrows,
+        // labels and data icons. Paired with violet (the action accent) to give
+        // the all-dark UI two distinct zone signals.
+        teal: {
+          300: "#5eead4",
+          400: "#2dd4bf",
+          500: "#14b8a6",
+          600: "#0d9488",
+        },
         surface: {
-          base: "#121316",
+          base: "#101116",
           stage: "#1a1b1e",
           raised: "#ffffff",
           muted: "#f4f5f7",
           panel: "#222326",
           panelElev: "#2a2b2f",
+          // Dark design-system tiers. Hierarchy comes from elevation + accent
+          // tint, not from a white panel.
+          data: "#141619",     // READ zone (metrics / issues / alerts), teal accent
+          console: "#0b0c0f",  // deepest field, the metrics HUD
+          decide: "#181620",   // ACT zone (decision panel), violet-warm, raised
         },
         ok: "#0f9d58",
         warn: "#7c3aed",

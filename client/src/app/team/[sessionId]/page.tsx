@@ -26,6 +26,7 @@ import {
   Shield,
   ShieldCheck,
   ShoppingBag,
+  Shuffle,
   Sparkles,
   Store,
   Target,
@@ -115,19 +116,19 @@ const HUD_TONE: Record<Health, { text: string; dot: string; bar: string; glow: s
   ok: {
     text: "text-emerald-300",
     dot: "bg-emerald-400",
-    bar: "bg-emerald-400",
+    bar: "bg-gradient-to-r from-emerald-500 to-emerald-300",
     glow: "shadow-[0_0_16px_-4px_rgba(52,211,153,0.75)]",
   },
   mid: {
     text: "text-brand-300",
     dot: "bg-brand-400",
-    bar: "bg-brand-400",
+    bar: "bg-gradient-to-r from-brand-600 to-brand-300",
     glow: "shadow-[0_0_16px_-4px_rgba(167,139,250,0.85)]",
   },
   low: {
     text: "text-rose-300",
     dot: "bg-rose-400",
-    bar: "bg-rose-400",
+    bar: "bg-gradient-to-r from-rose-500 to-rose-300",
     glow: "shadow-[0_0_16px_-4px_rgba(251,113,133,0.75)]",
   },
 };
@@ -177,6 +178,10 @@ export default function TeamPlayerPage() {
     problem_resolution: 0,
   });
   const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
+  // The Issue tab is an explicit either/or: target one issue, or deliberately
+  // spread effort. `spreadEffort` records the "stay broad" choice so it reads as
+  // a decision, not a skip. On the wire, spread === no primary issue.
+  const [spreadEffort, setSpreadEffort] = useState(false);
   const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(1);
@@ -211,6 +216,7 @@ export default function TeamPlayerPage() {
     setLeadership(null);
     setAllocation({ shop_floor: 0, backroom: 0, customer_service: 0, problem_resolution: 0 });
     setPrimaryIssueId(null);
+    setSpreadEffort(false);
     setMomentResponseId(null);
     setConfidence(null);
     setActiveTab(1);
@@ -235,15 +241,19 @@ export default function TeamPlayerPage() {
   const allocationTotal =
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
 
+  const hasIssues = (state.round?.issues?.length ?? 0) > 0;
+  // Issue tab is decided when there are no issues to target, or the player has
+  // made an explicit choice (targeted one, or chosen to spread effort).
+  const issueDecided = !hasIssues || spreadEffort || !!primaryIssueId;
   const tabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
     2: !!leadership && allocationTotal === 100,
-    3: !!primaryIssueId,
+    3: issueDecided,
     4: state.round?.moment ? !!momentResponseId : true,
     5: !!confidence,
   };
   const requiredAll =
-    !!priority && !!action && !!leadership && allocationTotal === 100 && !!confidence &&
+    !!priority && !!action && !!leadership && allocationTotal === 100 && !!confidence && issueDecided &&
     (!state.round?.moment || !!momentResponseId);
   const inputsActive = !team.submitted && !roundLocked && state.phase === "round";
   const canSubmit = inputsActive && requiredAll;
@@ -309,7 +319,7 @@ export default function TeamPlayerPage() {
 
           <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
-            <ZoneLabel label="Context" tone="neutral" />
+            <ZoneLabel label="Context" tone="data" />
             <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_minmax(0,auto)]">
               <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
               <AlertsPanel state={state} />
@@ -335,6 +345,8 @@ export default function TeamPlayerPage() {
                 setConfidence={setConfidence}
                 primaryIssueId={primaryIssueId}
                 setPrimaryIssueId={setPrimaryIssueId}
+                spreadEffort={spreadEffort}
+                setSpreadEffort={setSpreadEffort}
                 momentResponseId={momentResponseId}
                 setMomentResponseId={setMomentResponseId}
                 issues={state.round?.issues ?? []}
@@ -353,9 +365,9 @@ export default function TeamPlayerPage() {
   );
 }
 
-function ZoneLabel({ label, tone }: { label: string; tone: "neutral" | "brand" }) {
-  const color = tone === "brand" ? "text-brand-400" : "text-white/40";
-  const dot = tone === "brand" ? "bg-brand-500" : "bg-white/30";
+function ZoneLabel({ label, tone }: { label: string; tone: "data" | "brand" }) {
+  const color = tone === "brand" ? "text-brand-300" : "text-teal-300";
+  const dot = tone === "brand" ? "bg-brand-500" : "bg-teal-400";
   return (
     <div className="flex items-center gap-2 pl-1">
       <span className={cn("h-1 w-1 rounded-full", dot)} />
@@ -458,12 +470,12 @@ function MetricsHud({
   onViewChange: (v: "values" | "trends") => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0c0d10] p-2.5 shadow-panel ring-1 ring-white/10">
+    <div className="relative overflow-hidden rounded-2xl bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/15">
       {/* Ambient violet glow + slow shimmer, purely decorative. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={{ background: "radial-gradient(120% 160% at 0% 0%, rgba(124,58,237,0.20), transparent 55%)" }}
+        style={{ background: "radial-gradient(120% 160% at 0% 0%, rgba(45,212,191,0.16), transparent 55%)" }}
       />
       <div
         aria-hidden
@@ -475,13 +487,13 @@ function MetricsHud({
         <div className="flex w-[128px] shrink-0 flex-col justify-center gap-1 pl-2 pr-1">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-              <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400/70 animate-hudPulse" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-teal-400/70 animate-hudPulse" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-400" />
             </span>
-            <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-white/75">Store HUD</span>
+            <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-teal-300">Store HUD</span>
           </div>
           <div className="flex items-center gap-1.5 text-[12px] text-white/40">
-            <Activity className="h-3.5 w-3.5" /> Live performance
+            <Activity className="h-3.5 w-3.5 text-teal-400/70" /> Live performance
           </div>
           <div className="mt-1.5 flex w-fit rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
             <button
@@ -533,7 +545,7 @@ function GoalReadout({
   const tone = HUD_TONE[healthOf(value)];
   const Icon = GOAL_ICONS[goal];
   return (
-    <div className="relative flex animate-readoutFlash flex-col gap-2 bg-[#0c0d10] px-3 py-2.5">
+    <div className="relative flex animate-readoutFlash flex-col gap-2 bg-surface-console px-3 py-2.5">
       <div className="flex items-center gap-2">
         <span
           className={cn(
@@ -566,13 +578,36 @@ function GoalReadout({
   );
 }
 
+// READ zone (data / insight) surface. Flat dark, teal accent, no glow.
+function DataCard({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/12", className)}>
+      {children}
+    </div>
+  );
+}
+
+function DataHeader({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+}) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-500/12 text-teal-300 ring-1 ring-teal-500/20">
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-teal-300">{title}</h3>
+    </div>
+  );
+}
+
 function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
   return (
-    <Card tone="data" className="flex min-h-0 flex-col p-3">
-      <div className="mb-2 flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 text-white/60" />
-        <h3 className="text-[14px] font-semibold tracking-tight text-white">Active issues</h3>
-      </div>
+    <DataCard className="flex min-h-0 flex-col p-3">
+      <DataHeader icon={AlertTriangle} title="Active issues" />
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {issues.slice(0, 3).map((i) => {
           const targeted = primaryIssueId === i.id;
@@ -597,9 +632,9 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
             </div>
           );
         })}
-        {issues.length === 0 ? <p className="text-xs text-white/50">No active issues.</p> : null}
+        {issues.length === 0 ? <p className="text-[12px] text-white/50">No active issues.</p> : null}
       </div>
-    </Card>
+    </DataCard>
   );
 }
 
@@ -607,11 +642,8 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
   const alerts = state.round?.alerts ?? [];
   const disruption = state.round?.disruption;
   return (
-    <Card tone="data" className="flex min-h-0 flex-col p-3">
-      <div className="mb-2 flex items-center gap-2">
-        <BellRing className="h-4 w-4 text-white/60" />
-        <h3 className="text-[14px] font-semibold tracking-tight text-white">Alerts</h3>
-      </div>
+    <DataCard className="flex min-h-0 flex-col p-3">
+      <DataHeader icon={BellRing} title="Alerts" />
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
           <div className="rounded-lg bg-risk p-3 text-white xl:p-2.5">
@@ -638,9 +670,9 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
             </div>
           </div>
         ))}
-        {!disruption && alerts.length === 0 ? <p className="text-xs text-white/50">No alerts.</p> : null}
+        {!disruption && alerts.length === 0 ? <p className="text-[12px] text-white/50">No alerts.</p> : null}
       </div>
-    </Card>
+    </DataCard>
   );
 }
 
@@ -660,6 +692,8 @@ function DecisionPanel({
   setConfidence,
   primaryIssueId,
   setPrimaryIssueId,
+  spreadEffort,
+  setSpreadEffort,
   momentResponseId,
   setMomentResponseId,
   issues,
@@ -684,6 +718,8 @@ function DecisionPanel({
   setConfidence: (c: ConfidenceLevel) => void;
   primaryIssueId: string | null;
   setPrimaryIssueId: (id: string | null) => void;
+  spreadEffort: boolean;
+  setSpreadEffort: (v: boolean) => void;
   momentResponseId: string | null;
   setMomentResponseId: (id: string) => void;
   issues: Issue[];
@@ -696,11 +732,11 @@ function DecisionPanel({
   const completedTabs = (Object.values(tabComplete) as boolean[]).filter(Boolean).length;
 
   return (
-    <Card className="flex h-full min-h-0 flex-col overflow-hidden p-0">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl bg-surface-decide text-white shadow-panel ring-1 ring-brand-500/25">
       <div className="flex items-center justify-between px-5 pt-4">
         <div>
-          <div className="text-[12px] font-medium uppercase tracking-wide text-ink-500">Your decisions</div>
-          <div className="text-lg font-semibold tracking-tight text-ink-900">
+          <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-brand-300">Your decisions</div>
+          <div className="text-lg font-semibold tracking-tight text-white">
             {submitted ? "Locked in" : `${completedTabs} of ${TAB_DEFS.length} complete`}
           </div>
         </div>
@@ -712,7 +748,7 @@ function DecisionPanel({
       </div>
 
       <div className="px-5 pt-3">
-        <div className="flex items-stretch gap-1 rounded-xl bg-ink-100 p-1">
+        <div className="flex items-stretch gap-1 rounded-xl bg-white/[0.06] p-1 ring-1 ring-white/10">
           {TAB_DEFS.map((t) => (
             <TabButton
               key={t.id}
@@ -726,7 +762,7 @@ function DecisionPanel({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-5">
+      <div className="quiet-scroll flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
         {activeTab === 1 ? (
           <FocusStep
             priority={priority}
@@ -750,6 +786,8 @@ function DecisionPanel({
             issues={issues}
             primaryIssueId={primaryIssueId}
             setPrimaryIssueId={setPrimaryIssueId}
+            spreadEffort={spreadEffort}
+            setSpreadEffort={setSpreadEffort}
             disabled={!inputsActive}
           />
         ) : null}
@@ -770,7 +808,7 @@ function DecisionPanel({
         ) : null}
       </div>
 
-      <div className="shrink-0 border-t border-ink-100 px-5 py-4">
+      <div className="shrink-0 border-t border-white/10 px-5 py-4">
         <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
           {submitted ? (
             <>
@@ -783,7 +821,7 @@ function DecisionPanel({
           )}
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -807,25 +845,30 @@ function TabButton({
       className={cn(
         "press flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all",
         active
-          ? "bg-white text-ink-900 shadow-card"
-          : "text-ink-500 hover:bg-white/50 hover:text-ink-700",
+          ? "bg-brand-500 text-white shadow-[0_0_18px_-6px_rgba(124,58,237,0.9)]"
+          : "text-white/55 hover:bg-white/[0.06] hover:text-white/85",
       )}
     >
       {done ? (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ok text-white">
+        <span
+          className={cn(
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+            active ? "bg-white/20 text-white" : "bg-ok text-white",
+          )}
+        >
           <CheckCircle2 className="h-3.5 w-3.5" />
         </span>
       ) : (
         <span
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold",
-            active ? "bg-brand-500 text-white" : "bg-ink-200 text-ink-600",
+            active ? "bg-white/20 text-white" : "bg-white/10 text-white/60",
           )}
         >
           {step}
         </span>
       )}
-      <span className={cn("truncate text-[13px]", active ? "font-semibold tracking-tight text-ink-900" : "font-medium")}>
+      <span className={cn("truncate text-[13px]", active ? "font-semibold tracking-tight text-white" : "font-medium")}>
         {label}
       </span>
     </button>
@@ -846,11 +889,11 @@ function StepHeader({
   return (
     <div>
       <div className="flex items-center gap-2">
-        <h2 className="text-xl font-semibold tracking-tight text-ink-900 xl:text-lg">{title}</h2>
-        {optional ? <Pill tone="neutral">Optional</Pill> : null}
+        <h2 className="text-xl font-semibold tracking-tight text-white xl:text-lg">{title}</h2>
+        {optional ? <Pill tone="neutral" surface="dark">Optional</Pill> : null}
       </div>
-      <p className="mt-0.5 text-sm text-ink-500 xl:text-[13px]">{narrative}</p>
-      <p className="mt-1 text-sm font-medium text-ink-700 xl:text-[12px]">{instruction}</p>
+      <p className="mt-0.5 text-sm text-white/55 xl:text-[13px]">{narrative}</p>
+      <p className="mt-1 text-sm font-medium text-white/80 xl:text-[12px]">{instruction}</p>
     </div>
   );
 }
@@ -888,7 +931,7 @@ function FocusStep({
         </div>
       </div>
 
-      <div className="border-t border-ink-100 pt-5">
+      <div className="border-t border-white/10 pt-5">
         <StepHeader
           title="Action approach"
           narrative="How will you turn that priority into action?"
@@ -943,21 +986,24 @@ function TeamStep({
         </div>
       </div>
 
-      <div className="border-t border-ink-100 pt-5">
+      <div className="border-t border-white/10 pt-5">
         <StepHeader
           title="Resource allocation"
           narrative="Where does your team's time go across the store?"
           instruction="Distribute 100% across the four areas."
         />
-        <div className="mt-3">
+        <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
           <div className="mb-3 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
               <div
-                className={cn("h-full transition-all", total === 100 ? "bg-ok" : "bg-brand-500")}
+                className={cn(
+                  "h-full transition-all duration-300",
+                  total === 100 ? "bg-gradient-to-r from-emerald-500 to-emerald-300" : "bg-gradient-to-r from-brand-600 to-brand-300",
+                )}
                 style={{ width: `${Math.min(100, total)}%` }}
               />
             </div>
-            <span className={cn("num text-sm font-semibold", total === 100 ? "text-ok" : "text-brand-600")}>
+            <span className={cn("num text-sm font-semibold", total === 100 ? "text-emerald-300" : "text-brand-300")}>
               {total}%
             </span>
           </div>
@@ -966,8 +1012,8 @@ function TeamStep({
               const Icon = a.icon;
               return (
                 <div key={a.key} className="flex items-center gap-3">
-                  <span className="flex w-44 shrink-0 items-center gap-2 text-[13px] font-medium text-ink-800">
-                    <Icon className="h-4 w-4 text-ink-400" /> {a.label}
+                  <span className="flex w-44 shrink-0 items-center gap-2 text-[13px] font-medium text-white/85">
+                    <Icon className="h-4 w-4 text-teal-300" /> {a.label}
                   </span>
                   <input
                     type="range"
@@ -979,7 +1025,7 @@ function TeamStep({
                     onChange={(e) => setAllocation({ ...allocation, [a.key]: Number(e.target.value) })}
                     className="flex-1 accent-brand-500"
                   />
-                  <span className="w-12 text-right num text-sm font-medium text-ink-800">{allocation[a.key]}%</span>
+                  <span className="w-12 text-right num text-sm font-medium text-white/85">{allocation[a.key]}%</span>
                 </div>
               );
             })}
@@ -994,26 +1040,37 @@ function IssueStep({
   issues,
   primaryIssueId,
   setPrimaryIssueId,
+  spreadEffort,
+  setSpreadEffort,
   disabled,
 }: {
   issues: Issue[];
   primaryIssueId: string | null;
   setPrimaryIssueId: (id: string | null) => void;
+  spreadEffort: boolean;
+  setSpreadEffort: (v: boolean) => void;
   disabled: boolean;
 }) {
   return (
     <div>
       <StepHeader
-        title="Primary issue"
-        narrative="Targeting a specific issue sharpens its impact this shift."
-        instruction="Tap one to target it. Optional. Leave unset to spread your effort."
-        optional
+        title="Where's your focus?"
+        narrative="Targeting one issue that matches your priority sharpens its impact. Spreading effort keeps you broad, but a targeted store leads more consistently."
+        instruction="Target one issue, or choose to spread effort. Either is a decision."
       />
       <div className="mt-4">
         <IssuePicker
           issues={issues}
           value={primaryIssueId}
-          onChange={setPrimaryIssueId}
+          spreadEffort={spreadEffort}
+          onTarget={(id) => {
+            setSpreadEffort(false);
+            setPrimaryIssueId(id);
+          }}
+          onSpread={() => {
+            setPrimaryIssueId(null);
+            setSpreadEffort(true);
+          }}
           disabled={disabled}
         />
       </div>
@@ -1084,15 +1141,17 @@ function ConfidenceStep({
               onClick={() => setConfidence(opt)}
               className={cn(
                 "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
-                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+                active
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
             >
               <div className="flex items-center gap-2">
-                <Icon className={cn("h-4 w-4", active ? "text-brand-400" : "text-ink-500")} />
+                <Icon className={cn("h-4 w-4", active ? "text-white" : "text-white/45")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
-              <span className={cn("text-[12px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
+              <span className={cn("text-[12px] leading-snug", active ? "text-white/85" : "text-white/55")}>
                 {CONFIDENCE_DESCRIPTIONS[opt]}
               </span>
             </button>
@@ -1131,11 +1190,13 @@ function RadioGrid<T extends string>({
             onClick={() => onChange(opt)}
             className={cn(
               "press flex items-center gap-3 rounded-xl px-4 py-4 text-left text-base font-medium transition-colors xl:py-3 xl:text-sm",
-              active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+              active
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
               disabled && "cursor-not-allowed opacity-40",
             )}
           >
-            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-brand-400" : "text-ink-500")} /> : null}
+            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-white/45")} /> : null}
             <span className="truncate">{labels[opt]}</span>
           </button>
         );
@@ -1147,14 +1208,21 @@ function RadioGrid<T extends string>({
 function IssuePicker({
   issues,
   value,
-  onChange,
+  spreadEffort,
+  onTarget,
+  onSpread,
   disabled,
 }: {
   issues: Issue[];
   value: string | null;
-  onChange: (id: string | null) => void;
+  spreadEffort: boolean;
+  onTarget: (id: string | null) => void;
+  onSpread: () => void;
   disabled: boolean;
 }) {
+  if (issues.length === 0) {
+    return <p className="text-[12px] text-white/50">No active issues this shift. Nothing to target.</p>;
+  }
   return (
     <div className="space-y-2">
       {issues.map((i) => {
@@ -1164,31 +1232,61 @@ function IssuePicker({
             key={i.id}
             type="button"
             disabled={disabled}
-            onClick={() => onChange(active ? null : i.id)}
+            onClick={() => onTarget(active ? null : i.id)}
             className={cn(
               "press w-full rounded-xl px-4 py-3 text-left transition-colors",
-              active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+              active
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
               disabled && "cursor-not-allowed opacity-40",
             )}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h4 className="text-sm font-semibold">{i.title}</h4>
-                <p className={cn("mt-0.5 text-xs", active ? "text-white/80" : "text-ink-600")}>{i.description}</p>
+                <p className={cn("mt-0.5 text-[12px]", active ? "text-white/85" : "text-white/55")}>{i.description}</p>
               </div>
-              <Pill tone={active ? "info" : SEVERITY_TONES[i.severity]} strong={active}>
+              <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">
                 {i.severity}
               </Pill>
             </div>
             {active ? (
-              <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-brand-400">
-                <Target className="h-3 w-3" /> Targeted · tap again to clear
+              <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-white/90">
+                <Target className="h-3 w-3" /> Targeting this - tap again to clear
               </div>
             ) : null}
           </button>
         );
       })}
-      {issues.length === 0 ? <p className="text-xs text-ink-500">No active issues this shift.</p> : null}
+
+      {/* First-class "stay broad" choice, so not-targeting is a visible decision. */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onSpread}
+        className={cn(
+          "press w-full rounded-xl px-4 py-3 text-left transition-colors",
+          spreadEffort
+            ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+            : "bg-white/[0.04] text-white/80 ring-1 ring-dashed ring-white/20 hover:bg-white/[0.08]",
+          disabled && "cursor-not-allowed opacity-40",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <Shuffle className={cn("mt-0.5 h-4 w-4 shrink-0", spreadEffort ? "text-white" : "text-white/45")} />
+          <div className="min-w-0">
+            <h4 className="text-sm font-semibold">Spread effort evenly</h4>
+            <p className={cn("mt-0.5 text-[12px]", spreadEffort ? "text-white/85" : "text-white/55")}>
+              Stay broad - target no single issue. Simpler, but a small cost to leadership consistency.
+            </p>
+          </div>
+        </div>
+        {spreadEffort ? (
+          <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-white/90">
+            <CheckCircle2 className="h-3 w-3" /> Staying broad this shift
+          </div>
+        ) : null}
+      </button>
     </div>
   );
 }
@@ -1206,19 +1304,19 @@ function MomentBlock({
 }) {
   return (
     <div>
-      <div className="mb-3 flex items-start gap-3 rounded-xl bg-ink-50 p-4 ring-1 ring-ink-200">
-        <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-ink-200">
+      <div className="mb-3 flex items-start gap-3 rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
+        <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/15">
           <PersonaAvatar name={moment.persona.name} size={48} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-ink-900">
+          <div className="text-[13px] font-semibold text-white">
             {moment.persona.name}
-            <span className="ml-2 text-xs font-normal text-ink-500">
+            <span className="ml-2 text-[12px] font-normal text-white/50">
               {moment.persona.role} · {moment.persona.tenure}
             </span>
           </div>
-          <p className="mt-1 text-[13px] leading-snug text-ink-700">{moment.situation}</p>
-          <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-brand-700">
+          <p className="mt-1 text-[13px] leading-snug text-white/70">{moment.situation}</p>
+          <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-brand-300">
             <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
           </p>
         </div>
@@ -1234,7 +1332,9 @@ function MomentBlock({
               onClick={() => onChange(opt.id)}
               className={cn(
                 "press rounded-xl px-4 py-3 text-left text-[13px] leading-snug transition-colors",
-                active ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-900 hover:bg-ink-200",
+                active
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
             >
