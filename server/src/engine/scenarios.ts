@@ -3,6 +3,9 @@ import type { Alert, Issue, DisruptionEvent } from "@sim/shared";
 export const ISSUE_BANK: Issue[] = [
   {
     id: "iss_short_stock",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Short-dated stock build-up",
     description: "Chilled aisle has 180 units within 24h expiry.",
     severity: "medium",
@@ -11,6 +14,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_till_queue",
+    urgency: 4,
+    type: "A",
+    scored: true,
     title: "Till queue exceeding 8 minutes",
     description: "Front-end service levels breaching threshold.",
     severity: "high",
@@ -19,6 +25,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_sickness",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Two team members absent",
     description: "Duty manager short-handed in backroom.",
     severity: "medium",
@@ -27,6 +36,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_theft_pattern",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Repeat shoplifting pattern flagged",
     description: "Security footage shows three incidents this week in spirits aisle.",
     severity: "high",
@@ -35,6 +47,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_delivery_late",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Delivery running 90 minutes late",
     description: "Backroom team blocked, shop floor gaps forming.",
     severity: "medium",
@@ -43,6 +58,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_complaint_escalation",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Customer complaint escalated",
     description: "Refund refused at self-scan, customer demanding manager.",
     severity: "medium",
@@ -51,6 +69,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_team_conflict",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Interpersonal conflict on nights team",
     description: "Supervisor flagged a dispute affecting morale and output.",
     severity: "medium",
@@ -59,6 +80,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_planogram",
+    urgency: 2,
+    type: "A",
+    scored: true,
     title: "Planogram compliance at 62%",
     description: "Head Office flagged compliance shortfall in beers & wines.",
     severity: "low",
@@ -67,6 +91,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_waste",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Waste tracking 14% above target",
     description: "Bakery and produce departments over index this week.",
     severity: "medium",
@@ -75,6 +102,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_wet_floor",
+    urgency: 5,
+    type: "A+B",
+    scored: false,
     title: "Unreported spillage in aisle 7",
     description: "Wet floor sign missing. A customer flagged it, colleague had walked past twice.",
     severity: "high",
@@ -83,6 +113,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_safeguarding",
+    urgency: 5,
+    type: "A+B",
+    scored: false,
     title: "Possible safeguarding concern",
     description: "Colleague raised worry about an unaccompanied child who has been in store for 40 minutes.",
     severity: "high",
@@ -91,6 +124,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_new_starter_overwhelmed",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "New starter visibly struggling",
     description: "Two weeks in, hasn't eaten lunch all week. Peers sensing it but saying nothing.",
     severity: "medium",
@@ -99,6 +135,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_cash_variance",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Till float variance on two desks",
     description: "Same colleague signed both off. Pattern rather than a one-off.",
     severity: "medium",
@@ -107,6 +146,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_bread_outage",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Fresh bread range 40% out",
     description: "In-store bake behind schedule, peak trade in an hour.",
     severity: "medium",
@@ -115,6 +157,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_trolley_return",
+    urgency: 2,
+    type: "A",
+    scored: true,
     title: "Car park trolleys stacked up",
     description: "Colleague rota for retrieval slipped. Complaints starting at customer service.",
     severity: "low",
@@ -123,6 +168,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_fridge_warm",
+    urgency: 5,
+    type: "A+B",
+    scored: false,
     title: "Fridge running 2C above spec",
     description: "Engineer called last week, same unit flagged again. Stock still on sale.",
     severity: "high",
@@ -131,6 +179,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_self_scan_errors",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Self-scan error rate spiking",
     description: "One bank throwing item-not-recognised errors. Supervisor overrides tracking at 40 per hour.",
     severity: "medium",
@@ -139,6 +190,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_lone_working",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Lone working on customer service desk",
     description: "Second colleague pulled away for an escalation, desk covered solo for the last 30 minutes.",
     severity: "medium",
@@ -147,6 +201,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_aggressive_customer",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Customer verbally aggressive to colleague",
     description: "Incident logged but colleague back on shop floor. Wellbeing unclear.",
     severity: "high",
@@ -155,6 +212,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_promo_pricing",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Promotion pricing error",
     description: "Shelf edge shows 2-for-5, till rings up at full price. Complaints building.",
     severity: "medium",
@@ -163,6 +223,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_online_picking",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Online picking behind target",
     description: "Van leaves in 45 minutes. Pickers short two colleagues, trolleys half done.",
     severity: "medium",
@@ -171,6 +234,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_staff_whatsapp",
+    urgency: 2,
+    type: "A",
+    scored: true,
     title: "Store WhatsApp group getting heated",
     description: "Screenshots circulating about a manager's tone. You've not been added to the group.",
     severity: "medium",
@@ -179,6 +245,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_health_visit",
+    urgency: 5,
+    type: "A+B",
+    scored: false,
     title: "EHO visit this afternoon",
     description: "Environmental Health confirmed arrival between 2 and 4pm. Bakery prep area last audit flagged two actions.",
     severity: "high",
@@ -187,6 +256,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_schedule_short",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Weekend rota undersized",
     description: "Saturday shows 11 colleagues against a forecast of 14. Two pending holiday approvals sitting with you.",
     severity: "medium",
@@ -195,6 +267,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_markdown_pattern",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Markdowns concentrated on one aisle",
     description: "Produce hitting 60% markdown rate this week. Buyer emailed asking for a store view by end of day.",
     severity: "medium",
@@ -203,6 +278,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_colleague_photo",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Colleague filmed a customer on their phone",
     description: "Colleague says it was for evidence of aggressive behaviour. Customer saw and is threatening to report.",
     severity: "high",
@@ -211,6 +289,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_returns_trend",
+    urgency: 5,
+    type: "A+B",
+    scored: false,
     title: "Returns spike on a single SKU",
     description: "14 returns of the same baby formula in 48 hours, same batch code. No recall notice yet.",
     severity: "high",
@@ -219,6 +300,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_supplier_demo",
+    urgency: 2,
+    type: "A",
+    scored: true,
     title: "Unplanned supplier in-store demo",
     description: "Supplier rep has set up a sampling stand without booking. Engaging customers, blocking an aisle.",
     severity: "low",
@@ -227,6 +311,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_till_closed_sign",
+    urgency: 3,
+    type: "A",
+    scored: true,
     title: "Handwritten 'closed' signs on tills",
     description: "Three tills hand-labelled closed by a colleague who said they were too tired to run them. No authorisation.",
     severity: "medium",
@@ -235,6 +322,9 @@ export const ISSUE_BANK: Issue[] = [
   },
   {
     id: "iss_stocktake_variance",
+    urgency: 4,
+    type: "A+B",
+    scored: false,
     title: "Overnight stocktake variance",
     description: "High-value category off by 1.8%. Unusual for the store. Loss prevention pinging for a view.",
     severity: "medium",

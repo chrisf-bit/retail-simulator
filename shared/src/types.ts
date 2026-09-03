@@ -66,6 +66,14 @@ export interface Issue {
   description: string;
   severity: Severity;
   tags: Priority[];
+  // Priority weight 1-5 for the ranking mechanic. 5 = must be dealt with first
+  // (safety, food safety, compliance, safeguarding, security); 1 = cosmetic.
+  // Placeholder values seeded from the SME workbook until sign-off.
+  urgency: number;
+  // Governance tag. A+B issues are policy-governed and must not be scored until
+  // a named policy owner confirms the correct response (scored=false until then).
+  type: ScenarioType;
+  scored: boolean;
   icon?: string;
 }
 
