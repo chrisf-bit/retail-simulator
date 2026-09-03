@@ -68,7 +68,9 @@ export default function LandingPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
             <Activity className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-white">Retail Leadership Simulation</span>
+          <span className="text-sm font-semibold tracking-tight text-white">
+            Plumfield Stores <span className="text-white/45">· Leadership Simulation</span>
+          </span>
         </div>
 
         <h1 className="mb-2 text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>

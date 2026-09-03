@@ -42,16 +42,16 @@ These are absolute. Do not deviate without an explicit reason.
 
 ### Palette
 
-One warm accent. Strict.
+One accent. Strict. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
 
-- **Brand**: Sainsbury's orange `#ee6a00` (brand-500). Used for active states, primary CTA, numerical highlights. That is the only warm tone.
+- **Brand**: Plumfield royal violet `#7c3aed` (brand-500), hover `#6d28d9` (brand-600), on-dark tint `#a78bfa` (brand-400). Used for active states, primary CTA, numerical highlights, the metrics HUD accent. That is the only accent hue.
 - **Ink**: monochrome near-black family for text, borders, structure. `#17181a` (ink-900) down to `#f7f8fa` (ink-50).
 - **Surfaces**:
-  - Page background is `#121316` (surface-base), warm near-black.
-  - Dark data panels use `#222326` (surface-panel).
+  - Page background is `#121316` (surface-base), near-black.
+  - Dark data panels use `#222326` (surface-panel). The metrics HUD sits on a deeper `#0c0d10` console field.
   - White `#ffffff` (surface-raised) is used for the decision panel on team and for landing / lobby / briefing / results cards.
-- **Status**: `ok` emerald `#0f9d58`, `risk` rose `#d93f5a`. Rose is used sparingly (disruption banner, delta-down arrows). No amber. No cream. No beige. Anything in the `#ffdfc2` / `#fff3e8` range reads as beige against the orange and is banned.
-- **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon or shape in addition to colour.
+- **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#d93f5a` (`rose-300/400` on dark). In the HUD, metric health is a three-band scale: ok emerald / mid violet / low rose. No amber. No cream. No beige. No orange.
+- **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon, arrow or shape in addition to colour (e.g. HUD readouts pair the health colour with a status dot and a delta arrow).
 
 ### Data vs decision
 
@@ -59,7 +59,11 @@ Strong visual separation, this is load-bearing:
 
 - **Data / insight panels** (left column on team, most of facilitator): `Card tone="data"`, dark `bg-surface-panel`, white text, inner tiles on `bg-white/5`.
 - **Decision panels** (right column on team, controls on facilitator): `Card` default, white with `shadow-card` and a `ring-1 ring-black/5`.
-- **Zone labels**: small eyebrow text above each zone. "Context" (grey) on the left, "Decide" (orange) on the right.
+- **Zone labels**: small eyebrow text above each zone. "Context" (grey) on the left, "Decide" (violet) on the right.
+
+### Metrics HUD
+
+The team round view leads with a full-width console **HUD** band under the header (`MetricsHud` in the team page). Five goal readouts, each with a glowing goal icon, a big tabular value, a delta arrow, a status dot and an animated health bar (values view) or sparkline (trends view). It sits on the `#0c0d10` console field with an ambient violet glow and a slow shimmer. This is the visual centrepiece - keep it bold. Below the HUD the round splits into Context (issues + alerts, left) and Decide (decision panel, right).
 
 ### Typography
 
@@ -67,8 +71,9 @@ Strong visual separation, this is load-bearing:
 - `font-medium` for labels. Normal weight for body.
 - `num` utility class (tabular-nums + tight letter-spacing) for any numeric display (timers, scores, KPI values).
 - `tracking-tight` for headings, normal for body. `tracking-tighter` only for hero-size headings.
+- **12px is the hard minimum font size anywhere.** Never use `text-[9px]`, `text-[10px]`, or `text-[11px]` for content. Accessibility floor.
 - Use `text-[13px]` or `text-sm` for body inside cards. `text-lg` for section titles. `text-xl` or `text-2xl` for hero.
-- Uppercase eyebrows use `text-[11px] font-medium uppercase tracking-wide` and muted colour (`text-ink-500` on light, `text-white/50` on dark).
+- Uppercase eyebrows use `text-[12px] font-medium uppercase tracking-wide` and muted colour (`text-ink-500` on light, `text-white/50` on dark).
 
 ### Layout
 
@@ -99,7 +104,7 @@ Strong visual separation, this is load-bearing:
 
 - Don't use emojis.
 - Don't use em-dashes in code or copy.
-- Don't use beige, cream, amber, yellow, or any warm tone other than Sainsbury's orange.
+- Don't use beige, cream, amber, yellow, orange, or any hue other than the Plumfield violet accent (plus the ok/risk status colours).
 - Don't use `font-black` or `font-extrabold`.
 - Don't let content scroll at the page level.
 - Don't hand-write drop shadows. Use the tokens in `tailwind.config.ts`.
@@ -206,9 +211,9 @@ Vercel needs `cd .. && npm install` as the install command, because the client w
 
 Global rule. If content doesn't fit, compact, split, or tab it. Don't add overflow-auto to the page. The decision panel is the one permitted exception and only scrolls internally when a tab's content genuinely overflows on small viewports.
 
-### One accent colour, one warm tone
+### One accent colour
 
-Adding amber, yellow or any secondary warm tone to a Pill or card background immediately reads as beige against the Sainsbury's orange. Keep soft pills as `bg-ink-100` with brand-orange text. Never use `bg-brand-50` or `bg-brand-100` as a fill.
+The single accent is the Plumfield royal violet. Adding amber, yellow, orange or any secondary hue to a Pill or card background breaks the scheme. Keep soft pills as `bg-ink-100` with brand-violet text. Never use `bg-brand-50` or `bg-brand-100` as a fill (too pale to read as the accent).
 
 ### Language
 

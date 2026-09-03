@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
+  Activity,
   AlertTriangle,
   ArrowDown,
   ArrowUp,
@@ -28,8 +29,10 @@ import {
   Sparkles,
   Store,
   Target,
+  TrendingUp,
   UserCircle2,
   Users2,
+  Wallet,
   Wrench,
 } from "lucide-react";
 import type {
@@ -89,6 +92,44 @@ const CONFIDENCE_ICONS: Record<ConfidenceLevel, React.ComponentType<{ className?
   cautious: ShieldCheck,
   measured: Scale,
   confident: Flame,
+};
+
+const GOAL_ICONS: Record<Goal, React.ComponentType<{ className?: string }>> = {
+  sales: TrendingUp,
+  colleagues: Users2,
+  service: HeartHandshake,
+  costs: Wallet,
+  risk: ShieldCheck,
+};
+
+// Health band for a rolled-up metric value (0-100). Colour is always paired
+// with an icon, a status dot and a delta arrow so it never relies on hue alone
+// (the facilitator/user base includes colour-blind readers).
+type Health = "ok" | "mid" | "low";
+function healthOf(v: number): Health {
+  if (v >= 65) return "ok";
+  if (v >= 40) return "mid";
+  return "low";
+}
+const HUD_TONE: Record<Health, { text: string; dot: string; bar: string; glow: string }> = {
+  ok: {
+    text: "text-emerald-300",
+    dot: "bg-emerald-400",
+    bar: "bg-emerald-400",
+    glow: "shadow-[0_0_16px_-4px_rgba(52,211,153,0.75)]",
+  },
+  mid: {
+    text: "text-brand-300",
+    dot: "bg-brand-400",
+    bar: "bg-brand-400",
+    glow: "shadow-[0_0_16px_-4px_rgba(167,139,250,0.85)]",
+  },
+  low: {
+    text: "text-rose-300",
+    dot: "bg-rose-400",
+    bar: "bg-rose-400",
+    glow: "shadow-[0_0_16px_-4px_rgba(251,113,133,0.75)]",
+  },
 };
 
 const ALLOCATION_LABELS: Array<{
@@ -263,10 +304,12 @@ export default function TeamPlayerPage() {
       ) : state.phase === "round_results" ? (
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
-        <main className="flex flex-col gap-4 p-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(340px,1fr)_2fr]">
+        <main className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-3">
+          <MetricsHud team={team} view={kpiView} onViewChange={setKpiView} />
+
+          <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
             <ZoneLabel label="Context" tone="neutral" />
-            <KpiStrip team={team} view={kpiView} onViewChange={setKpiView} />
             <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_minmax(0,auto)]">
               <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
               <AlertsPanel state={state} />
@@ -303,6 +346,7 @@ export default function TeamPlayerPage() {
               />
             </div>
           </section>
+          </div>
         </main>
       )}
     </div>
@@ -315,7 +359,7 @@ function ZoneLabel({ label, tone }: { label: string; tone: "neutral" | "brand" }
   return (
     <div className="flex items-center gap-2 pl-1">
       <span className={cn("h-1 w-1 rounded-full", dot)} />
-      <span className={cn("text-[10px] font-semibold uppercase tracking-[0.18em]", color)}>{label}</span>
+      <span className={cn("text-[12px] font-semibold uppercase tracking-[0.18em]", color)}>{label}</span>
     </div>
   );
 }
@@ -368,7 +412,7 @@ function TeamHeader({
           <span className={cn("num text-2xl font-semibold")}>{clock}</span>
         </div>
         <div className="rounded-full bg-surface-panel px-4 py-1.5 ring-1 ring-white/10">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Score</div>
+          <div className="text-[12px] font-semibold uppercase tracking-wider text-white/50">Score</div>
           <div className="num text-2xl font-semibold text-white">{team.score}</div>
         </div>
         <FullscreenToggle />
@@ -402,7 +446,9 @@ function goalRollup(team: TeamPublic, goal: Goal): { value: number; delta: numbe
   return { value, delta, series };
 }
 
-function KpiStrip({
+// Full-width console band: the store's live performance HUD. Five goal
+// readouts with glowing iconography, health-driven colour and animated bars.
+function MetricsHud({
   team,
   view,
   onViewChange,
@@ -412,72 +458,111 @@ function KpiStrip({
   onViewChange: (v: "values" | "trends") => void;
 }) {
   return (
-    <Card tone="data" className="shrink-0 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Gauge className="h-4 w-4 text-white/60" />
-          <h3 className="text-[14px] font-semibold tracking-tight text-white">Store performance</h3>
-        </div>
-        <div className="flex rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
-          <button
-            type="button"
-            onClick={() => onViewChange("values")}
-            className={cn(
-              "press rounded-full px-2.5 py-1 transition-colors",
-              view === "values" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
-            )}
-            aria-label="Values"
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewChange("trends")}
-            className={cn(
-              "press rounded-full px-2.5 py-1 transition-colors",
-              view === "trends" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
-            )}
-            aria-label="Trends"
-          >
-            <LineChart className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-      <div className="space-y-1">
-        {GOAL_KEYS.map((g) => {
-          const { value, delta, series } = goalRollup(team, g);
-          const ms = METRICS_OF_GOAL[g];
-          return (
-            <div key={g} className="rounded-lg bg-white/5 px-3 py-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-[11px] font-medium uppercase tracking-wide text-white/50">
-                  {GOAL_SHORT[g]}
-                </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="num text-lg font-semibold text-white xl:text-base">{value}</span>
-                  <Delta value={delta} onDark />
-                </div>
-              </div>
-              {view === "values" ? (
-                ms.length > 1 ? (
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/45">
-                    {ms.map((m) => (
-                      <span key={m} className="num whitespace-nowrap">
-                        {METRIC_SHORT[m]} <span className="font-semibold text-white/75">{team.metrics?.[m] ?? 0}</span>
-                      </span>
-                    ))}
-                  </div>
-                ) : null
-              ) : (
-                <div className="mt-1">
-                  <Sparkline values={series} height={22} onDark baselinePoints={BASELINE_WEEKS} />
-                </div>
+    <div className="relative overflow-hidden rounded-2xl bg-[#0c0d10] p-2.5 shadow-panel ring-1 ring-white/10">
+      {/* Ambient violet glow + slow shimmer, purely decorative. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(120% 160% at 0% 0%, rgba(124,58,237,0.20), transparent 55%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-white/[0.04] blur-2xl animate-hudScan"
+      />
+
+      <div className="relative flex items-stretch gap-3">
+        {/* Console title / status */}
+        <div className="flex w-[128px] shrink-0 flex-col justify-center gap-1 pl-2 pr-1">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+              <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400/70 animate-hudPulse" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            </span>
+            <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-white/75">Store HUD</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[12px] text-white/40">
+            <Activity className="h-3.5 w-3.5" /> Live performance
+          </div>
+          <div className="mt-1.5 flex w-fit rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
+            <button
+              type="button"
+              onClick={() => onViewChange("values")}
+              className={cn(
+                "press flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition-colors",
+                view === "values" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
               )}
-            </div>
-          );
-        })}
+              aria-label="Values"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewChange("trends")}
+              className={cn(
+                "press flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition-colors",
+                view === "trends" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
+              )}
+              aria-label="Trends"
+            >
+              <LineChart className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Readouts: hairline-divided cells */}
+        <div className="grid flex-1 grid-cols-5 gap-px overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10">
+          {GOAL_KEYS.map((g) => (
+            <GoalReadout key={g} team={team} goal={g} view={view} />
+          ))}
+        </div>
       </div>
-    </Card>
+    </div>
+  );
+}
+
+function GoalReadout({
+  team,
+  goal,
+  view,
+}: {
+  team: TeamPublic;
+  goal: Goal;
+  view: "values" | "trends";
+}) {
+  const { value, delta, series } = goalRollup(team, goal);
+  const tone = HUD_TONE[healthOf(value)];
+  const Icon = GOAL_ICONS[goal];
+  return (
+    <div className="relative flex animate-readoutFlash flex-col gap-2 bg-[#0c0d10] px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10",
+            tone.glow,
+          )}
+        >
+          <Icon className={cn("h-4 w-4", tone.text)} />
+        </span>
+        <span className="min-w-0 truncate text-[12px] font-medium uppercase tracking-wide text-white/55">
+          {GOAL_SHORT[goal]}
+        </span>
+        <span className={cn("ml-auto h-2.5 w-2.5 shrink-0 rounded-full", tone.dot)} />
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="num text-3xl font-semibold leading-none text-white">{value}</span>
+        <Delta value={delta} onDark />
+      </div>
+      {view === "values" ? (
+        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className={cn("h-full rounded-full transition-all duration-700 ease-out", tone.bar)}
+            style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+          />
+        </div>
+      ) : (
+        <Sparkline values={series} height={30} onDark baselinePoints={BASELINE_WEEKS} />
+      )}
+    </div>
   );
 }
 
@@ -508,7 +593,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
                   <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
                 )}
               </div>
-              <p className="pl-8 text-[13px] leading-snug text-white/70 xl:pl-7 xl:text-[11px]">{i.description}</p>
+              <p className="pl-8 text-[13px] leading-snug text-white/70 xl:pl-7 xl:text-[12px]">{i.description}</p>
             </div>
           );
         })}
@@ -530,11 +615,11 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
           <div className="rounded-lg bg-risk p-3 text-white xl:p-2.5">
-            <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide xl:text-[11px]">
+            <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide xl:text-[12px]">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
             <h4 className="text-sm font-semibold xl:text-[13px]">{disruption.title}</h4>
-            <p className="mt-0.5 text-[13px] leading-snug opacity-90 xl:text-[11px]">{disruption.message}</p>
+            <p className="mt-0.5 text-[13px] leading-snug opacity-90 xl:text-[12px]">{disruption.message}</p>
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
@@ -544,11 +629,11 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
                 <ScenarioIcon name={a.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[11px]">
+                <div className="text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[12px]">
                   {a.kind === "head_office" ? "Head office" : "Operational"}
                 </div>
                 <h4 className="text-sm font-semibold text-white xl:text-[13px]">{a.title}</h4>
-                <p className="mt-0.5 text-[13px] leading-snug text-white/70 xl:text-[11px]">{a.message}</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-white/70 xl:text-[12px]">{a.message}</p>
               </div>
             </div>
           </div>
@@ -614,7 +699,7 @@ function DecisionPanel({
     <Card className="flex h-full min-h-0 flex-col overflow-hidden p-0">
       <div className="flex items-center justify-between px-5 pt-4">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Your decisions</div>
+          <div className="text-[12px] font-medium uppercase tracking-wide text-ink-500">Your decisions</div>
           <div className="text-lg font-semibold tracking-tight text-ink-900">
             {submitted ? "Locked in" : `${completedTabs} of ${TAB_DEFS.length} complete`}
           </div>
@@ -733,7 +818,7 @@ function TabButton({
       ) : (
         <span
           className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold",
             active ? "bg-brand-500 text-white" : "bg-ink-200 text-ink-600",
           )}
         >
@@ -1007,7 +1092,7 @@ function ConfidenceStep({
                 <Icon className={cn("h-4 w-4", active ? "text-brand-400" : "text-ink-500")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
-              <span className={cn("text-[11px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
+              <span className={cn("text-[12px] leading-snug", active ? "text-white/80" : "text-ink-600")}>
                 {CONFIDENCE_DESCRIPTIONS[opt]}
               </span>
             </button>
@@ -1096,7 +1181,7 @@ function IssuePicker({
               </Pill>
             </div>
             {active ? (
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-400">
+              <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-brand-400">
                 <Target className="h-3 w-3" /> Targeted · tap again to clear
               </div>
             ) : null}
@@ -1174,7 +1259,7 @@ function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
           You're checked in as <span className="font-semibold text-ink-900">{teamName}</span>. The briefing will start shortly.
         </p>
         <div className="mt-5 rounded-2xl bg-ink-900 px-4 py-4 text-center text-white">
-          <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Session code</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Session code</div>
           <div className="num mt-0.5 text-3xl font-semibold tracking-[0.3em]">{code}</div>
         </div>
       </Card>
@@ -1191,10 +1276,10 @@ function BriefingPanel() {
             <Store className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-brand-600">Today you are</div>
-            <div className="text-2xl font-semibold tracking-tighter text-ink-900">The store manager</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-brand-600">Today you are</div>
+            <div className="text-2xl font-semibold tracking-tighter text-ink-900">A Plumfield store manager</div>
             <p className="mt-1 text-sm text-ink-600">
-              {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves live KPIs and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
+              {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves your live store metrics and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
             </p>
           </div>
         </div>
@@ -1203,7 +1288,7 @@ function BriefingPanel() {
       <Card className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Here's what you'll see</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Here's what you'll see</div>
             <div className="text-lg font-semibold tracking-tight text-ink-900">Where every step lives</div>
           </div>
           <Pill tone="info" strong>
@@ -1234,7 +1319,7 @@ function ScreenMap() {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-white/40" />
-            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/50">Context</span>
+            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-white/50">Context</span>
           </div>
           <MapZone label="Store KPIs" hint="Live numbers + trends" />
           <MapZone label="Active issues" hint="3 live pressures" />
@@ -1244,7 +1329,7 @@ function ScreenMap() {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-brand-500" />
-            <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-brand-400">Decide</span>
+            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-brand-400">Decide</span>
           </div>
           <div className="rounded-lg bg-white p-3 ring-1 ring-ink-200">
             <div className="mb-2 flex items-center gap-1 rounded-lg bg-ink-100 p-1">
@@ -1253,13 +1338,13 @@ function ScreenMap() {
               <TabPreview n={3} label="Respond" />
               <TabPreview n={4} label="Confidence" />
             </div>
-            <div className="space-y-1 text-[11px]">
+            <div className="space-y-1 text-[12px]">
               <MiniStep tab="Step 1 · Focus" items={["Priority focus", "Action approach"]} />
               <MiniStep tab="Step 2 · Team" items={["Leadership style", "Resource allocation"]} />
               <MiniStep tab="Step 3 · Respond" items={["Primary issue (optional)", "People moment"]} />
               <MiniStep tab="Step 4 · Confidence" items={["Confidence level"]} />
             </div>
-            <div className="mt-2 h-7 rounded-md bg-brand-500 text-center text-[10px] font-semibold leading-7 text-white">
+            <div className="mt-2 h-7 rounded-md bg-brand-500 text-center text-[12px] font-semibold leading-7 text-white">
               Submit decision
             </div>
           </div>
@@ -1275,7 +1360,7 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
       <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
       <div className="min-w-0 flex-1">
         <div className="text-[12px] font-semibold text-white">{label}</div>
-        <div className="text-[11px] text-white/50">{hint}</div>
+        <div className="text-[12px] text-white/50">{hint}</div>
       </div>
     </div>
   );
@@ -1283,7 +1368,7 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
 
 function TabPreview({ n, label }: { n: number; label: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white px-2 py-1 text-[10px] font-semibold text-ink-800 shadow-card">
+    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white px-2 py-1 text-[12px] font-semibold text-ink-800 shadow-card">
       <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-500 text-[8px] font-semibold text-white">
         {n}
       </span>
@@ -1295,8 +1380,8 @@ function TabPreview({ n, label }: { n: number; label: string }) {
 function MiniStep({ tab, items }: { tab: string; items: string[] }) {
   return (
     <div className="rounded-md bg-ink-50 px-2 py-1.5 ring-1 ring-ink-100">
-      <div className="text-[9px] font-semibold uppercase tracking-wider text-brand-600">{tab}</div>
-      <div className="text-[11px] text-ink-700">{items.join(" · ")}</div>
+      <div className="text-[12px] font-semibold uppercase tracking-wider text-brand-600">{tab}</div>
+      <div className="text-[12px] text-ink-700">{items.join(" · ")}</div>
     </div>
   );
 }
@@ -1321,7 +1406,7 @@ function ResultsPanel({
         <div className="flex items-center gap-4 border-b border-ink-100 bg-ink-50 px-6 py-4">
           <TeamCrest name={team.name} size={44} tone="dark" />
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">
               Shift {shiftN} scorecard
             </div>
             <div className="truncate text-lg font-semibold tracking-tight text-ink-900">{team.name}</div>
@@ -1332,7 +1417,7 @@ function ResultsPanel({
         {/* Hero: score movement + rank */}
         <div className="grid grid-cols-[1fr_auto] items-center gap-6 border-b border-ink-100 px-6 py-5">
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Shift score movement</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Shift score movement</div>
             <div className="mt-1 flex items-baseline gap-3">
               <span
                 className={cn(
@@ -1354,7 +1439,7 @@ function ResultsPanel({
             </div>
           </div>
           <div className="flex flex-col items-center rounded-2xl bg-ink-900 px-5 py-2 text-center text-white">
-            <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Rank</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Rank</div>
             <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
           </div>
         </div>
@@ -1362,12 +1447,12 @@ function ResultsPanel({
         {/* KPIs */}
         <div className="px-6 pt-5">
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Store indicators</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Store indicators</div>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {METRIC_KEYS.map((k) => (
               <div key={k} className="rounded-xl bg-ink-50 p-2.5">
-                <div className="truncate text-[10px] font-medium uppercase tracking-wide text-ink-500">{METRIC_SHORT[k]}</div>
+                <div className="truncate text-[12px] font-medium uppercase tracking-wide text-ink-500">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between">
                   <span className="num text-lg font-semibold text-ink-900">{team.metrics?.[k] ?? 0}</span>
                   <Delta value={team.lastMetricDelta?.[k]} />
@@ -1383,11 +1468,11 @@ function ResultsPanel({
         {/* Hidden drivers */}
         {team.revealedHidden ? (
           <div className="px-6 pt-4">
-            <div className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-500">Hidden drivers</div>
+            <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-ink-500">Hidden drivers</div>
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
                 <div key={h} className="rounded-xl bg-ink-50 p-3">
-                  <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                  <div className="truncate text-[12px] font-medium uppercase tracking-wide text-ink-500">
                     {HIDDEN_LABELS[h]}
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
@@ -1406,17 +1491,17 @@ function ResultsPanel({
         {/* Strength / risk */}
         <div className="grid grid-cols-2 gap-3 px-6 py-5 text-sm">
           <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
-            <span className="text-[11px] font-medium uppercase tracking-wide">Strength</span>
+            <span className="text-[12px] font-medium uppercase tracking-wide">Strength</span>
             <div className="text-base font-semibold">{team.strength ?? "-"}</div>
           </div>
           <div className="rounded-xl bg-rose-50 px-4 py-3 text-rose-900">
-            <span className="text-[11px] font-medium uppercase tracking-wide">Risk</span>
+            <span className="text-[12px] font-medium uppercase tracking-wide">Risk</span>
             <div className="text-base font-semibold">{team.risk ?? "-"}</div>
           </div>
         </div>
 
         {/* Footer: filed-away chrome */}
-        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50 px-6 py-2 text-[10px] font-medium uppercase tracking-wider text-ink-500">
+        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-ink-500">
           <span>Shift {shiftN} of {totalRounds}</span>
           <span>Your facilitator will move on when the room is ready</span>
         </div>
@@ -1433,11 +1518,11 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
         <p className="mt-2 text-sm text-ink-500">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-ink-900 p-5 text-white">
-            <div className="text-[10px] font-medium uppercase tracking-wider opacity-70">Final rank</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Final rank</div>
             <div className="num text-5xl font-semibold">#{rank}</div>
           </div>
           <div className="rounded-2xl bg-ink-100 p-5">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-ink-500">Final score</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Final score</div>
             <div className="num text-5xl font-semibold text-ink-900">{team.score}</div>
           </div>
         </div>
@@ -1493,7 +1578,7 @@ function DisruptionModal({
           </div>
         ) : null}
         <div className="p-6">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-risk">
+          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-risk">
             <AlertTriangle className="h-4 w-4" /> Disruption
           </div>
           <h2 id="disruption-title" className="text-xl font-semibold tracking-tight text-ink-900">
