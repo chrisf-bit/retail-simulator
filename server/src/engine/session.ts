@@ -220,6 +220,15 @@ export class Session {
     session.facilitatorToken = data.facilitatorToken;
     session.phase = data.phase;
     session.teams = new Map(data.teams.map((t) => [t.id, t]));
+    // Backfill sessions persisted before the goals/metrics migration: old team
+    // snapshots carry `kpis` and history with `kpisAfter`, not the new metrics
+    // shape. Seed fresh metrics/hidden and drop incompatible history so we never
+    // serialise undefined metrics to clients.
+    for (const team of session.teams.values()) {
+      if (!team.metrics) team.metrics = startingMetrics();
+      if (!team.hidden) team.hidden = startingHidden();
+      team.history = (team.history ?? []).filter((h) => h && h.metricsAfter && h.hiddenAfter);
+    }
     session.prompts = data.prompts ?? [];
     session.usedMomentIds = new Set(data.usedMomentIds ?? []);
     session.usedIssueIds = new Set(data.usedIssueIds ?? []);

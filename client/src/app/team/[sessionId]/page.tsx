@@ -393,11 +393,11 @@ function phaseLabel(p: string): string {
 // trend series. Single-metric goals pass straight through.
 function goalRollup(team: TeamPublic, goal: Goal): { value: number; delta: number; series: number[] } {
   const ms = METRICS_OF_GOAL[goal];
-  const value = Math.round(ms.reduce((a, m) => a + team.metrics[m], 0) / ms.length);
+  const value = Math.round(ms.reduce((a, m) => a + (team.metrics?.[m] ?? 0), 0) / ms.length);
   const delta = ms.reduce((a, m) => a + (team.lastMetricDelta?.[m] ?? 0), 0);
-  const len = team.trend[ms[0]]?.length ?? 0;
+  const len = team.trend?.[ms[0]]?.length ?? 0;
   const series = Array.from({ length: len }, (_, i) =>
-    Math.round(ms.reduce((a, m) => a + (team.trend[m]?.[i] ?? 0), 0) / ms.length),
+    Math.round(ms.reduce((a, m) => a + (team.trend?.[m]?.[i] ?? 0), 0) / ms.length),
   );
   return { value, delta, series };
 }
@@ -463,7 +463,7 @@ function KpiStrip({
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/45">
                     {ms.map((m) => (
                       <span key={m} className="num whitespace-nowrap">
-                        {METRIC_SHORT[m]} <span className="font-semibold text-white/75">{team.metrics[m]}</span>
+                        {METRIC_SHORT[m]} <span className="font-semibold text-white/75">{team.metrics?.[m] ?? 0}</span>
                       </span>
                     ))}
                   </div>
@@ -1369,11 +1369,11 @@ function ResultsPanel({
               <div key={k} className="rounded-xl bg-ink-50 p-2.5">
                 <div className="truncate text-[10px] font-medium uppercase tracking-wide text-ink-500">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between">
-                  <span className="num text-lg font-semibold text-ink-900">{team.metrics[k]}</span>
+                  <span className="num text-lg font-semibold text-ink-900">{team.metrics?.[k] ?? 0}</span>
                   <Delta value={team.lastMetricDelta?.[k]} />
                 </div>
                 <div className="mt-1.5">
-                  <Bar value={team.metrics[k]} />
+                  <Bar value={team.metrics?.[k] ?? 0} />
                 </div>
               </div>
             ))}

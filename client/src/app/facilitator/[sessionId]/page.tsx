@@ -423,11 +423,11 @@ function CoachingCard({
       <div className="grid grid-cols-5 gap-2">
         {GOAL_KEYS.map((g) => {
           const ms = METRICS_OF_GOAL[g];
-          const value = Math.round(ms.reduce((a, m) => a + team.metrics[m], 0) / ms.length);
+          const value = Math.round(ms.reduce((a, m) => a + (team.metrics?.[m] ?? 0), 0) / ms.length);
           const delta = ms.reduce((a, m) => a + (team.lastMetricDelta?.[m] ?? 0), 0);
-          const len = team.trend[ms[0]]?.length ?? 0;
+          const len = team.trend?.[ms[0]]?.length ?? 0;
           const series = Array.from({ length: len }, (_, i) =>
-            Math.round(ms.reduce((a, m) => a + (team.trend[m]?.[i] ?? 0), 0) / ms.length),
+            Math.round(ms.reduce((a, m) => a + (team.trend?.[m]?.[i] ?? 0), 0) / ms.length),
           );
           return (
             <div key={g} className="min-w-0">
