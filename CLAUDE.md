@@ -52,9 +52,10 @@ Three accents. Magenta and cyan are **semantic zone signals** (not decoration); 
 - **Ink**: monochrome family, kept for the rare white surface only.
 - **Surfaces (dark tiers - hierarchy comes from stepped elevation + a per-zone accent tint + a 1px accent top-border, not from white)**:
   - Page `#0b0a12` (surface-base), deep violet-black with a faint magenta/cyan corner wash.
-  - READ cards `#16121f` (surface-data), cyan-tinted ring + `border-t border-teal-400/20-25`.
-  - Metrics HUD console `#0d0a15` (surface-console), deepest, cyan top-border + cyan ambient glow.
-  - ACT / decision panel `#1e1428` (surface-decide), magenta-warm, raised, `ring-brand-500/30` + magenta top-border + magenta top wash.
+  - READ cards `#16121f` (surface-data), cyan-tinted ring.
+  - Metrics HUD console `#0d0a15` (surface-console), deepest, cyan ring + cyan ambient glow.
+  - ACT / decision panel `#1e1428` (surface-decide), magenta-warm, raised, `ring-brand-500/30` + a soft magenta radial top wash (NOT a hard top-border).
+  - **No accent top-border lines on panels.** A 1px accent border on the top edge reads as an "AI design handle" - the user explicitly rejected these. Differentiate zones with surface colour + ring colour + coloured eyebrows (+ the decision panel's soft radial wash) instead.
   - White `#ffffff` (surface-raised) only if a genuine light surface is ever needed.
 - **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#f43f6b` (`rose-300/400` on dark). HUD metric health is a three-band scale: ok **lime** / mid **magenta** / low **rose**, with **gradient** bars.
 - **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon, arrow or shape in addition to colour (HUD readouts pair health colour with a status dot and a delta arrow).
