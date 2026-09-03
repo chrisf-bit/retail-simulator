@@ -315,13 +315,13 @@ export default function TeamPlayerPage() {
       ) : state.phase === "round_results" ? (
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
-        <main className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-3">
+        <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
           <MetricsHud team={team} view={kpiView} onViewChange={setKpiView} />
 
           <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
             <ZoneLabel label="Context" tone="data" />
-            <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,1fr)_minmax(0,auto)]">
+            <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
               <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
               <AlertsPanel state={state} />
             </div>
@@ -491,7 +491,7 @@ function MetricsHud({
   onViewChange: (v: "values" | "trends") => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border-t border-teal-400/30 bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/20">
+    <div className="relative overflow-hidden rounded-2xl bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/20">
       {/* Ambient violet glow + slow shimmer, purely decorative. */}
       <div
         aria-hidden
@@ -599,14 +599,12 @@ function GoalReadout({
   );
 }
 
-// READ zone (data / insight) surface. Solid dark card, cyan accent, cyan-tinted
-// top edge so it reads as a labelled panel rather than a thin floating outline.
+// READ zone (data / insight) surface. Solid dark card, cyan-tinted ring.
 function DataCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div
       className={cn(
         "overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/20",
-        "border-t border-teal-400/25",
         className,
       )}
     >
@@ -760,7 +758,7 @@ function DecisionPanel({
   const completedTabs = (Object.values(tabComplete) as boolean[]).filter(Boolean).length;
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-t border-brand-400/40 bg-surface-decide text-white shadow-panel ring-1 ring-brand-500/30">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl bg-surface-decide text-white shadow-panel ring-1 ring-brand-500/30">
       {/* Warm magenta wash at the top so the ACT zone reads distinct from READ. */}
       <div
         aria-hidden
@@ -796,7 +794,7 @@ function DecisionPanel({
         </div>
       </div>
 
-      <div className="quiet-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
+      <div className="quiet-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4">
         {activeTab === 1 ? (
           <FocusStep
             priority={priority}
@@ -843,7 +841,7 @@ function DecisionPanel({
       </div>
 
       <div className="relative shrink-0 border-t border-white/10 px-5 py-4">
-        <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
+        <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full !rounded-xl">
           {submitted ? (
             <>
               <CheckCircle2 className="h-4 w-4" /> Decision locked in
@@ -946,7 +944,7 @@ function FocusStep({
   disabled: boolean;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <StepHeader
           title="Priority focus"
@@ -965,7 +963,7 @@ function FocusStep({
         </div>
       </div>
 
-      <div className="border-t border-white/10 pt-5">
+      <div className="border-t border-white/10 pt-4">
         <StepHeader
           title="Action approach"
           narrative="How will you turn that priority into action?"
@@ -1002,7 +1000,7 @@ function TeamStep({
   const total =
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <StepHeader
           title="Leadership style"
@@ -1020,7 +1018,7 @@ function TeamStep({
         </div>
       </div>
 
-      <div className="border-t border-white/10 pt-5">
+      <div className="border-t border-white/10 pt-4">
         <StepHeader
           title="Resource allocation"
           narrative="Where does your team's time go across the store?"
@@ -1212,7 +1210,7 @@ function RadioGrid<T extends string>({
   disabled: boolean;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5">
+    <div className="grid grid-cols-2 gap-2">
       {options.map((opt) => {
         const active = value === opt;
         const Icon: React.ComponentType<{ className?: string }> | undefined = icons?.[opt];
@@ -1223,7 +1221,7 @@ function RadioGrid<T extends string>({
             disabled={disabled}
             onClick={() => onChange(opt)}
             className={cn(
-              "press flex items-center gap-3 rounded-xl px-4 py-4 text-left text-base font-medium transition-colors xl:py-3 xl:text-sm",
+              "press flex items-center gap-3 rounded-xl px-4 py-3.5 text-left text-base font-medium transition-colors xl:py-2.5 xl:text-sm",
               active
                 ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",

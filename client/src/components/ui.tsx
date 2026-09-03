@@ -19,8 +19,8 @@ export function Card({
   const tones = {
     // Standalone light surfaces (rare now the app is all-dark)
     default: "bg-surface-raised text-ink-900 shadow-card ring-1 ring-black/5",
-    // READ zone: data / insight surface, cyan-tinted ring + top accent
-    data: "bg-surface-data text-white shadow-panel ring-1 ring-teal-500/15 border-t border-teal-400/20",
+    // READ zone: data / insight surface, cyan-tinted ring
+    data: "bg-surface-data text-white shadow-panel ring-1 ring-teal-500/15",
     // Heavy dark
     dark: "bg-surface-console text-white shadow-panel ring-1 ring-white/8",
   };

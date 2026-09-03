@@ -81,7 +81,7 @@ export default function LandingPage() {
 
         {mode === "choose" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border-t border-brand-400/40 p-8 ring-brand-500/20">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8 ring-brand-500/20">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Monitor className="h-5 w-5 text-brand-300" />
@@ -133,7 +133,7 @@ export default function LandingPage() {
               </Button>
             </Card>
 
-            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border-t border-teal-400/30 p-8">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Users className="h-5 w-5 text-teal-300" />
@@ -158,7 +158,7 @@ export default function LandingPage() {
             </Card>
           </div>
         ) : (
-          <Card tone="data" className="mx-auto max-w-lg border-t border-teal-400/30 p-6">
+          <Card tone="data" className="mx-auto max-w-lg p-6">
             <div className="mb-4 flex items-center gap-2">
               <Users className="h-5 w-5 text-teal-300" />
               <h2 className="text-lg font-semibold tracking-tight text-white">Join as a team</h2>
