@@ -17,12 +17,12 @@ export function Card({
   tone?: "default" | "data" | "dark";
 }) {
   const tones = {
-    // Decision / action surfaces: white
+    // Standalone light surfaces (rare now the app is all-dark)
     default: "bg-surface-raised text-ink-900 shadow-card ring-1 ring-black/5",
-    // Data / insight surfaces: dark elevated panel
-    data: "bg-surface-panel text-white shadow-panel ring-1 ring-white/5",
+    // READ zone: data / insight surface, cyan-tinted ring + top accent
+    data: "bg-surface-data text-white shadow-panel ring-1 ring-teal-500/15 border-t border-teal-400/20",
     // Heavy dark
-    dark: "bg-ink-900 text-white shadow-panel ring-1 ring-white/5",
+    dark: "bg-surface-console text-white shadow-panel ring-1 ring-white/8",
   };
   return <div className={cn("rounded-2xl", tones[tone], className)}>{children}</div>;
 }
@@ -182,12 +182,13 @@ export function Pill({
 export function Bar({ value, inverted = false, onDark = false }: { value: number; inverted?: boolean; onDark?: boolean }) {
   const normal = Math.max(0, Math.min(100, value));
   const score = inverted ? 100 - normal : normal;
-  let tone = "bg-ok";
-  if (score < 40) tone = "bg-risk";
-  else if (score < 65) tone = "bg-brand-500";
+  // Healthy reads lime (the Under Pressure metric-bar look), mid magenta, low rose.
+  let tone = "bg-gradient-to-r from-lime-500 to-lime-300";
+  if (score < 40) tone = "bg-gradient-to-r from-risk to-brand-300";
+  else if (score < 65) tone = "bg-gradient-to-r from-brand-600 to-brand-300";
   return (
     <div className={cn("h-1.5 w-full overflow-hidden rounded-full", onDark ? "bg-white/10" : "bg-ink-100")}>
-      <div className={cn("h-full transition-all duration-500", tone)} style={{ width: `${normal}%` }} />
+      <div className={cn("h-full rounded-full transition-all duration-500", tone)} style={{ width: `${normal}%` }} />
     </div>
   );
 }
@@ -243,13 +244,13 @@ export function PhaseGuide({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-between gap-4 overflow-hidden rounded-2xl px-5 py-3.5 shadow-panel",
+        "relative flex items-center justify-between gap-4 overflow-hidden rounded-2xl px-5 py-2.5 shadow-panel",
         tones[tone],
       )}
     >
-      <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold tracking-tight">{headline}</div>
-        {body ? <div className="mt-0.5 text-[13px] opacity-90">{body}</div> : null}
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="text-[15px] font-semibold tracking-tight">{headline}</span>
+        {body ? <span className="text-[13px] opacity-90">{body}</span> : null}
       </div>
       {action}
     </div>

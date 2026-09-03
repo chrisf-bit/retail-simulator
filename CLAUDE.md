@@ -42,21 +42,26 @@ These are absolute. Do not deviate without an explicit reason.
 
 ### Palette
 
-Two accents, all-dark. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
+All-dark, Under-Pressure-inspired. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
 
-The two accents are **semantic zone signals**, not decoration - keep them mapped:
+Three accents. Magenta and cyan are **semantic zone signals** (not decoration); lime is a reserved data-fill accent. Keep them mapped:
 
-- **Violet = ACT** (Plumfield brand). Royal violet `#7c3aed` (brand-500), hover `#6d28d9` (brand-600), on-dark tint `#a78bfa`/`#c4b5fd` (brand-400/300). The decision/input zone, active/selected states, primary CTA, the "Decide" eyebrow.
-- **Teal = READ** (data / insight). `#2dd4bf`/`#5eead4` (teal-400/300). Data-panel eyebrows, section labels and data icons (metrics HUD title, Active issues, Alerts, the "Context" eyebrow). Teal never fills an interactive control - it labels information.
-- **Ink**: monochrome family, still used for the standalone light phase screens (lobby / briefing / results / debrief cards).
-- **Surfaces (dark tiers - hierarchy comes from elevation + accent tint, not white)**:
-  - Page `#101116` (surface-base).
-  - READ cards `#141619` (surface-data), teal-tinted ring.
-  - Metrics HUD console `#0b0c0f` (surface-console), deepest.
-  - ACT / decision panel `#181620` (surface-decide), violet-warm, raised, `ring-brand-500/25`.
-  - White `#ffffff` (surface-raised) only on the standalone lobby / briefing / results / debrief screens.
-- **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#d93f5a` (`rose-300/400` on dark). HUD metric health is a three-band scale: ok emerald / mid violet / low rose, with **gradient** bars.
+- **Magenta = ACT** (Plumfield brand). `#d033e0` (brand-500), hover `#b31cc4` (brand-600), on-dark tint `#e879f9`/`#f0abfc` (brand-400/300). The decision/input zone, active/selected states, primary CTA, the "Decide" eyebrow, mid-band HUD health.
+- **Cyan = READ** (data / insight). `#22d3ee`/`#67e8f9` (teal-400/300 - the token is still named `teal`). Data-panel eyebrows, section labels and data icons (HUD title, Active issues, Alerts, the "Context" eyebrow). Cyan never fills an interactive control - it labels information.
+- **Lime = live/healthy data fill.** `#c8e83a`/`#e2f56b` (lime-400/300). Reserved for metric fill bars and healthy HUD readouts (the bright Under Pressure bar look). Never an interactive control, never text-only meaning.
+- **Ink**: monochrome family, kept for the rare white surface only.
+- **Surfaces (dark tiers - hierarchy comes from stepped elevation + a per-zone accent tint + a 1px accent top-border, not from white)**:
+  - Page `#0b0a12` (surface-base), deep violet-black with a faint magenta/cyan corner wash.
+  - READ cards `#16121f` (surface-data), cyan-tinted ring + `border-t border-teal-400/20-25`.
+  - Metrics HUD console `#0d0a15` (surface-console), deepest, cyan top-border + cyan ambient glow.
+  - ACT / decision panel `#1e1428` (surface-decide), magenta-warm, raised, `ring-brand-500/30` + magenta top-border + magenta top wash.
+  - White `#ffffff` (surface-raised) only if a genuine light surface is ever needed.
+- **Status**: `ok` emerald `#0f9d58` (`emerald-300/400` on dark), `risk` rose `#f43f6b` (`rose-300/400` on dark). HUD metric health is a three-band scale: ok **lime** / mid **magenta** / low **rose**, with **gradient** bars.
 - **Colour-blind consideration**: user is colour blind. Avoid dark reds. Keep contrast high. Status is always conveyed with an icon, arrow or shape in addition to colour (HUD readouts pair health colour with a status dot and a delta arrow).
+
+### Radius scale (consistent curves - load-bearing)
+
+One rhythm, applied everywhere: top-level panels `rounded-2xl`; nested content tiles / inputs `rounded-xl`; small icon/label chips (<=28px) `rounded-lg`; buttons, pills and dots `rounded-full`. Do not mix `rounded-md`/`rounded-lg` on sibling content tiles - it reads as inconsistent.
 
 ### Zones: READ vs ACT (load-bearing)
 
@@ -92,7 +97,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 ### Buttons
 
-- `primary`: brand orange fill, white text. This is the single most important CTA.
+- `primary`: brand magenta fill, white text. This is the single most important CTA.
 - `secondary`: `ink-900` fill, white text.
 - `quiet`: `ink-100` fill, dark text. For inline controls (disrupt now, end shift early).
 - `ghost`: transparent. For back buttons and cancels.
@@ -110,7 +115,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 - Don't use emojis.
 - Don't use em-dashes in code or copy.
-- Don't use beige, cream, amber, yellow, orange, or any hue beyond the violet (ACT) and teal (READ) accents plus the ok/risk status colours.
+- Don't use beige, cream, amber, orange, or any hue beyond the magenta (ACT), cyan (READ) and lime (data-fill) accents plus the ok/risk status colours.
 - Don't use `font-black` or `font-extrabold`.
 - Don't let content scroll at the page level.
 - Don't hand-write drop shadows. Use the tokens in `tailwind.config.ts`.
@@ -217,9 +222,9 @@ Vercel needs `cd .. && npm install` as the install command, because the client w
 
 Global rule. If content doesn't fit, compact, split, or tab it. Don't add overflow-auto to the page. The decision panel is the one permitted exception and only scrolls internally when a tab's content genuinely overflows on small viewports.
 
-### Two accents, mapped to zones
+### Accents, mapped to zones
 
-Violet = ACT, teal = READ. That mapping is the whole point - do not use violet to label a data panel, or teal to fill an interactive control. Beyond violet, teal and the ok/risk status pair, add no further hues (no amber, yellow, orange). Never use `bg-brand-50`/`bg-brand-100` as a fill (too pale to read as the accent).
+Magenta = ACT, cyan = READ, lime = live data-fill. That mapping is the whole point - do not use magenta to label a data panel, or cyan/lime to fill an interactive control. Beyond magenta, cyan, lime and the ok/risk status pair, add no further hues (no amber, orange). Never use `bg-brand-50`/`bg-brand-100` as a fill (too pale to read as the accent).
 
 ### Language
 

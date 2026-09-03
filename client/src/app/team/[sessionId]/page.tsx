@@ -31,6 +31,7 @@ import {
   Store,
   Target,
   TrendingUp,
+  Trophy,
   UserCircle2,
   Users2,
   Wallet,
@@ -114,22 +115,22 @@ function healthOf(v: number): Health {
 }
 const HUD_TONE: Record<Health, { text: string; dot: string; bar: string; glow: string }> = {
   ok: {
-    text: "text-emerald-300",
-    dot: "bg-emerald-400",
-    bar: "bg-gradient-to-r from-emerald-500 to-emerald-300",
-    glow: "shadow-[0_0_16px_-4px_rgba(52,211,153,0.75)]",
+    text: "text-lime-300",
+    dot: "bg-lime-400",
+    bar: "bg-gradient-to-r from-lime-500 to-lime-300",
+    glow: "shadow-[0_0_16px_-4px_rgba(200,232,58,0.7)]",
   },
   mid: {
     text: "text-brand-300",
     dot: "bg-brand-400",
     bar: "bg-gradient-to-r from-brand-600 to-brand-300",
-    glow: "shadow-[0_0_16px_-4px_rgba(167,139,250,0.85)]",
+    glow: "shadow-[0_0_16px_-4px_rgba(208,51,224,0.85)]",
   },
   low: {
     text: "text-rose-300",
     dot: "bg-rose-400",
     bar: "bg-gradient-to-r from-rose-500 to-rose-300",
-    glow: "shadow-[0_0_16px_-4px_rgba(251,113,133,0.75)]",
+    glow: "shadow-[0_0_16px_-4px_rgba(244,63,107,0.75)]",
   },
 };
 
@@ -408,28 +409,48 @@ function TeamHeader({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {roundPhase === "disrupted" ? (
-          <Pill tone="risk" strong>
-            <AlertTriangle className="h-3.5 w-3.5" /> Disruption
-          </Pill>
+          <HeaderStat icon={AlertTriangle} tone="risk" title="Disruption in effect">
+            <span className="text-base font-semibold tracking-tight">Disruption</span>
+          </HeaderStat>
         ) : null}
-        <div
-          className={cn(
-            "flex items-center gap-2.5 rounded-full px-4 py-1.5",
-            urgent ? "bg-risk text-white" : "bg-surface-panel text-white ring-1 ring-white/10",
-          )}
-        >
-          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-white/60")} />
-          <span className={cn("num text-2xl font-semibold")}>{clock}</span>
-        </div>
-        <div className="rounded-full bg-surface-panel px-4 py-1.5 ring-1 ring-white/10">
-          <div className="text-[12px] font-semibold uppercase tracking-wider text-white/50">Score</div>
-          <div className="num text-2xl font-semibold text-white">{team.score}</div>
-        </div>
-        <FullscreenToggle />
+        <HeaderStat icon={Clock} tone={urgent ? "risk" : "default"} title="Time remaining">
+          <span className="num text-2xl font-semibold">{clock}</span>
+        </HeaderStat>
+        <HeaderStat icon={Trophy} title="Score">
+          <span className="num text-2xl font-semibold">{team.score}</span>
+        </HeaderStat>
+        <FullscreenToggle size="lg" />
       </div>
     </header>
+  );
+}
+
+// A single header module. Disruption / Clock / Score all render through this so
+// they share one identical footprint - same height, radius, padding and layout.
+function HeaderStat({
+  icon: Icon,
+  children,
+  tone = "default",
+  title,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: ReactNode;
+  tone?: "default" | "risk";
+  title?: string;
+}) {
+  return (
+    <div
+      title={title}
+      className={cn(
+        "flex h-12 items-center gap-2.5 rounded-full px-5",
+        tone === "risk" ? "bg-risk text-white" : "bg-surface-panel text-white ring-1 ring-white/10",
+      )}
+    >
+      <Icon className={cn("h-4 w-4 shrink-0", tone === "risk" ? "text-white" : "text-white/55")} />
+      {children}
+    </div>
   );
 }
 
@@ -470,7 +491,7 @@ function MetricsHud({
   onViewChange: (v: "values" | "trends") => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/15">
+    <div className="relative overflow-hidden rounded-2xl border-t border-teal-400/30 bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/20">
       {/* Ambient violet glow + slow shimmer, purely decorative. */}
       <div
         aria-hidden
@@ -578,10 +599,17 @@ function GoalReadout({
   );
 }
 
-// READ zone (data / insight) surface. Flat dark, teal accent, no glow.
+// READ zone (data / insight) surface. Solid dark card, cyan accent, cyan-tinted
+// top edge so it reads as a labelled panel rather than a thin floating outline.
 function DataCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/12", className)}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/20",
+        "border-t border-teal-400/25",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -595,8 +623,8 @@ function DataHeader({
   title: string;
 }) {
   return (
-    <div className="mb-2 flex items-center gap-2">
-      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-teal-500/12 text-teal-300 ring-1 ring-teal-500/20">
+    <div className="mb-2.5 flex items-center gap-2 border-b border-white/[0.06] pb-2.5">
+      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
         <Icon className="h-3.5 w-3.5" />
       </span>
       <h3 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-teal-300">{title}</h3>
@@ -612,10 +640,10 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
         {issues.slice(0, 3).map((i) => {
           const targeted = primaryIssueId === i.id;
           return (
-            <div key={i.id} className="rounded-lg bg-white/5 p-3 xl:p-2.5">
+            <div key={i.id} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5 xl:p-2.5">
               <div className="mb-0.5 flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-start gap-2">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 xl:h-5 xl:w-5">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 xl:h-5 xl:w-5">
                     <ScenarioIcon name={i.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
                   </div>
                   <h4 className="text-sm font-semibold text-white xl:text-[13px]">{i.title}</h4>
@@ -646,7 +674,7 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
       <DataHeader icon={BellRing} title="Alerts" />
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="rounded-lg bg-risk p-3 text-white xl:p-2.5">
+          <div className="rounded-xl bg-risk p-3 text-white shadow-[0_0_18px_-6px_rgba(244,63,107,0.8)] xl:p-2.5">
             <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide xl:text-[12px]">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
@@ -655,9 +683,9 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
-          <div key={a.id} className="rounded-lg bg-white/5 p-3 xl:p-2.5">
+          <div key={a.id} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5 xl:p-2.5">
             <div className="mb-0.5 flex items-start gap-2">
-              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/10 text-white/70 xl:h-5 xl:w-5">
+              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 xl:h-5 xl:w-5">
                 <ScenarioIcon name={a.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -732,8 +760,14 @@ function DecisionPanel({
   const completedTabs = (Object.values(tabComplete) as boolean[]).filter(Boolean).length;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl bg-surface-decide text-white shadow-panel ring-1 ring-brand-500/25">
-      <div className="flex items-center justify-between px-5 pt-4">
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border-t border-brand-400/40 bg-surface-decide text-white shadow-panel ring-1 ring-brand-500/30">
+      {/* Warm magenta wash at the top so the ACT zone reads distinct from READ. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-32"
+        style={{ background: "radial-gradient(120% 100% at 50% 0%, rgba(208,51,224,0.12), transparent 70%)" }}
+      />
+      <div className="relative flex items-center justify-between px-5 pt-4">
         <div>
           <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-brand-300">Your decisions</div>
           <div className="text-lg font-semibold tracking-tight text-white">
@@ -747,7 +781,7 @@ function DecisionPanel({
         ) : null}
       </div>
 
-      <div className="px-5 pt-3">
+      <div className="relative px-5 pt-3">
         <div className="flex items-stretch gap-1 rounded-xl bg-white/[0.06] p-1 ring-1 ring-white/10">
           {TAB_DEFS.map((t) => (
             <TabButton
@@ -762,7 +796,7 @@ function DecisionPanel({
         </div>
       </div>
 
-      <div className="quiet-scroll flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
+      <div className="quiet-scroll relative flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5">
         {activeTab === 1 ? (
           <FocusStep
             priority={priority}
@@ -808,7 +842,7 @@ function DecisionPanel({
         ) : null}
       </div>
 
-      <div className="shrink-0 border-t border-white/10 px-5 py-4">
+      <div className="relative shrink-0 border-t border-white/10 px-5 py-4">
         <Button size="xl" onClick={onSubmit} disabled={!canSubmit} className="w-full">
           {submitted ? (
             <>
@@ -845,7 +879,7 @@ function TabButton({
       className={cn(
         "press flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all",
         active
-          ? "bg-brand-500 text-white shadow-[0_0_18px_-6px_rgba(124,58,237,0.9)]"
+          ? "bg-brand-500 text-white shadow-[0_0_18px_-6px_rgba(208,51,224,0.9)]"
           : "text-white/55 hover:bg-white/[0.06] hover:text-white/85",
       )}
     >
@@ -1142,7 +1176,7 @@ function ConfidenceStep({
               className={cn(
                 "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
                 active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
@@ -1191,7 +1225,7 @@ function RadioGrid<T extends string>({
             className={cn(
               "press flex items-center gap-3 rounded-xl px-4 py-4 text-left text-base font-medium transition-colors xl:py-3 xl:text-sm",
               active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
               disabled && "cursor-not-allowed opacity-40",
             )}
@@ -1236,7 +1270,7 @@ function IssuePicker({
             className={cn(
               "press w-full rounded-xl px-4 py-3 text-left transition-colors",
               active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
               disabled && "cursor-not-allowed opacity-40",
             )}
@@ -1267,7 +1301,7 @@ function IssuePicker({
         className={cn(
           "press w-full rounded-xl px-4 py-3 text-left transition-colors",
           spreadEffort
-            ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+            ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
             : "bg-white/[0.04] text-white/80 ring-1 ring-dashed ring-white/20 hover:bg-white/[0.08]",
           disabled && "cursor-not-allowed opacity-40",
         )}
@@ -1333,7 +1367,7 @@ function MomentBlock({
               className={cn(
                 "press rounded-xl px-4 py-3 text-left text-[13px] leading-snug transition-colors",
                 active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(124,58,237,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
@@ -1372,7 +1406,7 @@ function BriefingPanel() {
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5">
       <DataCard className="p-5">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
             <Store className="h-6 w-6" />
           </div>
           <div className="flex-1">
@@ -1538,7 +1572,7 @@ function ResultsPanel({
               <span className="text-sm text-white/55">total {team.score}</span>
             </div>
           </div>
-          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
+          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
             <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Rank</div>
             <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
           </div>
@@ -1617,7 +1651,7 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
         <h2 className="text-3xl font-semibold tracking-tighter text-white">Session complete</h2>
         <p className="mt-2 text-sm text-white/55">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-brand-500 p-5 text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
+          <div className="rounded-2xl bg-brand-500 p-5 text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
             <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Final rank</div>
             <div className="num text-5xl font-semibold">#{rank}</div>
           </div>

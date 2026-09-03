@@ -8,7 +8,7 @@ import { enterFullscreen, exitFullscreen, isFullscreen } from "@/lib/fullscreen"
  * Small round icon button that toggles fullscreen. Styled for dark headers.
  * Auto-updates when the user exits via Esc.
  */
-export function FullscreenToggle({ className }: { className?: string }) {
+export function FullscreenToggle({ className, size = "sm" }: { className?: string; size?: "sm" | "lg" }) {
   const [full, setFull] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,8 @@ export function FullscreenToggle({ className }: { className?: string }) {
       title={label}
       onClick={() => (full ? exitFullscreen() : enterFullscreen())}
       className={
-        "press flex h-9 w-9 items-center justify-center rounded-full bg-surface-panel text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white " +
+        "press flex items-center justify-center rounded-full bg-surface-panel text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white " +
+        (size === "lg" ? "h-12 w-12 " : "h-9 w-9 ") +
         (className ?? "")
       }
     >

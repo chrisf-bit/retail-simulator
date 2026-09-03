@@ -345,13 +345,13 @@ function MovementPill({ value }: { value: number }) {
   }
   if (value > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-xs font-semibold text-emerald-300">
+      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-1.5 py-0.5 text-xs font-semibold text-emerald-300">
         <ArrowUp className="h-3 w-3" />+{value}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/20 px-1.5 py-0.5 text-xs font-semibold text-rose-300">
+    <span className="inline-flex items-center gap-1 rounded-lg bg-rose-500/20 px-1.5 py-0.5 text-xs font-semibold text-rose-300">
       <ArrowDown className="h-3 w-3" />
       {value}
     </span>

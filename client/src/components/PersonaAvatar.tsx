@@ -1,17 +1,33 @@
 /**
- * Deterministic avatar for a named persona. Uses DiceBear's free, MIT-licensed
- * HTTP API with the `notionists-neutral` style - abstract, warm-line, no race-
- * or age-specific features, which suits people-moment scenarios without
- * committing to a particular visual identity for each direct report.
+ * Deterministic monogram avatar for a named persona. Self-contained (no external
+ * image service): a dark chip with an on-brand accent glow and the persona's
+ * initials. The same name always yields the same accent, so a direct report
+ * looks identical across the team view and the facilitator coaching cards.
  *
- * The same name always produces the same avatar. SVG URL means it scales
- * cleanly and prints fine.
+ * Reads as a clean, professional identity marker that sits in the magenta/cyan
+ * design system, rather than a generic illustrated cartoon.
  */
 
-const STYLE = "notionists-neutral";
+import { cn } from "@/components/ui";
 
-function seed(name: string): string {
-  return encodeURIComponent(name.trim().toLowerCase());
+// Kept within the brand + data accent family so a roster reads as one system,
+// not a random rainbow.
+const ACCENTS = ["#d033e0", "#a855f7", "#818cf8", "#22d3ee", "#e879f9"];
+
+function hash(name: string): number {
+  let h = 0;
+  const s = name.trim().toLowerCase();
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export function PersonaAvatar({
@@ -23,15 +39,24 @@ export function PersonaAvatar({
   size?: number;
   className?: string;
 }) {
-  const src = `https://api.dicebear.com/9.x/${STYLE}/svg?seed=${seed(name)}&backgroundColor=222326&radius=50`;
+  const accent = ACCENTS[hash(name) % ACCENTS.length];
   return (
-    <img
-      src={src}
-      width={size}
-      height={size}
-      alt=""
-      className={className}
-      style={{ width: size, height: size, borderRadius: "50%", display: "block" }}
-    />
+    <div
+      className={cn("relative flex shrink-0 items-center justify-center overflow-hidden rounded-full", className)}
+      style={{
+        width: size,
+        height: size,
+        background: `radial-gradient(125% 125% at 28% 18%, ${accent}59, transparent 62%), #211a2c`,
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.10)",
+      }}
+      aria-hidden
+    >
+      <span
+        className="font-semibold leading-none text-white"
+        style={{ fontSize: Math.round(size * 0.38), letterSpacing: "-0.02em" }}
+      >
+        {initials(name)}
+      </span>
+    </div>
   );
 }

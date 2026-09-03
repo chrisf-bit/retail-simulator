@@ -18,46 +18,54 @@ const config: Config = {
           100: "#f0f1f3",
           50: "#f7f8fa",
         },
-        // Plumfield Stores brand: royal violet. Single accent, strict.
-        // brand-500 is the primary accent, brand-600 the hover, brand-400 the
-        // on-dark tint used for icons/text on data panels.
+        // Plumfield Stores brand: vivid magenta (the "ACT" accent).
+        // brand-500 is the primary accent, brand-600 the hover, brand-300/400
+        // the on-dark tints used for icons/text/eyebrows.
         brand: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#7c3aed",
-          600: "#6d28d9",
-          700: "#5b21b6",
-          800: "#4c1d95",
-          900: "#3b0764",
+          50: "#fdf4ff",
+          100: "#fae8ff",
+          200: "#f5d0fe",
+          300: "#f0abfc",
+          400: "#e879f9",
+          500: "#d033e0",
+          600: "#b31cc4",
+          700: "#86198f",
+          800: "#701a75",
+          900: "#4a044e",
         },
-        // Teal: the secondary "data / insight" accent. Read-zone eyebrows,
-        // labels and data icons. Paired with violet (the action accent) to give
-        // the all-dark UI two distinct zone signals.
+        // Cyan: the "data / insight" (READ) accent. Read-zone eyebrows, labels,
+        // data icons and structural bars. Paired with magenta (ACT) so the dark
+        // UI reads as two distinct zones.
         teal: {
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
+          300: "#67e8f9",
+          400: "#22d3ee",
+          500: "#06b6d4",
+          600: "#0891b2",
+        },
+        // Lime: the third accent, reserved for live metric fills / healthy
+        // readouts (the bright bars on the HUD). Never an interactive control.
+        lime: {
+          300: "#e2f56b",
+          400: "#c8e83a",
+          500: "#a3cf18",
+          600: "#84a80f",
         },
         surface: {
-          base: "#101116",
-          stage: "#1a1b1e",
+          base: "#0b0a12",     // page, deep violet-black
+          stage: "#141019",
           raised: "#ffffff",
           muted: "#f4f5f7",
-          panel: "#222326",
-          panelElev: "#2a2b2f",
-          // Dark design-system tiers. Hierarchy comes from elevation + accent
-          // tint, not from a white panel.
-          data: "#141619",     // READ zone (metrics / issues / alerts), teal accent
-          console: "#0b0c0f",  // deepest field, the metrics HUD
-          decide: "#181620",   // ACT zone (decision panel), violet-warm, raised
+          panel: "#1a1622",    // default elevated dark card
+          panelElev: "#241d31",// inner raised tiles
+          // Design-system tiers. Hierarchy comes from stepped elevation + a
+          // per-zone accent tint - not from being flat grey.
+          data: "#16121f",     // READ zone (issues / alerts / leaderboard), cyan accent
+          console: "#0d0a15",  // deepest field, the metrics HUD
+          decide: "#1e1428",   // ACT zone (decision panel), magenta-warm, raised
         },
         ok: "#0f9d58",
-        warn: "#7c3aed",
-        risk: "#d93f5a",
+        warn: "#d033e0",
+        risk: "#f43f6b",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
@@ -70,8 +78,13 @@ const config: Config = {
         card: "0 1px 2px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12)",
         panel: "0 8px 24px -10px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.18)",
         lifted: "0 20px 40px -20px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.12)",
-        // HUD readout glow (violet)
-        hud: "0 0 0 1px rgba(124,58,237,0.35), 0 0 22px -6px rgba(124,58,237,0.55)",
+        // HUD readout glow (magenta)
+        hud: "0 0 0 1px rgba(208,51,224,0.35), 0 0 22px -6px rgba(208,51,224,0.55)",
+        // Reusable magenta action glow for selected/active ACT controls.
+        glow: "0 0 20px -6px rgba(208,51,224,0.9)",
+        glowSoft: "0 0 16px -4px rgba(208,51,224,0.55)",
+        // Cyan data glow for the READ / HUD console field.
+        glowData: "0 0 22px -6px rgba(34,211,238,0.5)",
       },
       keyframes: {
         // Soft breathing glow for the HUD "live" indicator.
@@ -81,9 +94,9 @@ const config: Config = {
         },
         // Brief flash when a metric readout updates.
         readoutFlash: {
-          "0%": { boxShadow: "0 0 0 0 rgba(124,58,237,0.0)" },
-          "35%": { boxShadow: "0 0 18px -2px rgba(124,58,237,0.65)" },
-          "100%": { boxShadow: "0 0 0 0 rgba(124,58,237,0.0)" },
+          "0%": { boxShadow: "0 0 0 0 rgba(208,51,224,0.0)" },
+          "35%": { boxShadow: "0 0 18px -2px rgba(208,51,224,0.65)" },
+          "100%": { boxShadow: "0 0 0 0 rgba(208,51,224,0.0)" },
         },
         // Slow horizontal shimmer across the HUD backdrop.
         hudScan: {

@@ -81,48 +81,48 @@ export default function LandingPage() {
 
         {mode === "choose" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Card className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border-t border-brand-400/40 p-8 ring-brand-500/20">
               <div>
                 <div className="mb-2 flex items-center gap-2">
-                  <Monitor className="h-5 w-5 text-ink-500" />
-                  <h2 className="text-lg font-semibold tracking-tight text-ink-900">Facilitator</h2>
+                  <Monitor className="h-5 w-5 text-brand-300" />
+                  <h2 className="text-lg font-semibold tracking-tight text-white">Facilitator</h2>
                 </div>
-                <p className="text-sm text-ink-600">
+                <p className="text-sm text-white/60">
                   Create a session, share the code with teams, and control shift flow and disruptions.
                 </p>
 
                 <div className="mt-6">
-                  <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                  <label className="mb-2 block text-[12px] font-medium uppercase tracking-wide text-white/50">
                     Number of teams
                   </label>
-                  <div className="flex items-stretch gap-1 rounded-xl bg-ink-100 p-1">
+                  <div className="flex items-stretch gap-1 rounded-xl bg-black/30 p-1 ring-1 ring-white/10">
                     <button
                       type="button"
                       onClick={() => adjustTeams(-1)}
                       disabled={expectedTeams <= MIN_TEAMS}
-                      className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white text-ink-800 shadow-card transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                      className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label="Decrease team count"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
 
                     <div className="flex flex-1 items-center justify-center gap-2">
-                      <Users className="h-4 w-4 text-brand-500" />
-                      <span className="num text-xl font-semibold text-ink-900">{expectedTeams}</span>
-                      <span className="text-sm text-ink-600">teams</span>
+                      <Users className="h-4 w-4 text-brand-400" />
+                      <span className="num text-xl font-semibold text-white">{expectedTeams}</span>
+                      <span className="text-sm text-white/60">teams</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => adjustTeams(+1)}
                       disabled={expectedTeams >= MAX_TEAMS}
-                      className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white text-ink-800 shadow-card transition-colors hover:bg-ink-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                      className="press flex h-10 w-12 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white transition-colors hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label="Increase team count"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="mt-2 text-[11px] text-ink-500">
+                  <p className="mt-2 text-[12px] text-white/50">
                     Between {MIN_TEAMS} and {MAX_TEAMS}. You can still start the session before all teams have joined.
                   </p>
                 </div>
@@ -133,34 +133,39 @@ export default function LandingPage() {
               </Button>
             </Card>
 
-            <Card className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border-t border-teal-400/30 p-8">
               <div>
                 <div className="mb-2 flex items-center gap-2">
-                  <Users className="h-5 w-5 text-ink-500" />
-                  <h2 className="text-lg font-semibold tracking-tight text-ink-900">Team</h2>
+                  <Users className="h-5 w-5 text-teal-300" />
+                  <h2 className="text-lg font-semibold tracking-tight text-white">Team</h2>
                 </div>
-                <p className="text-sm text-ink-600">
+                <p className="text-sm text-white/60">
                   Join an active session using the code your facilitator shared.
                 </p>
-                <div className="mt-6 rounded-xl bg-ink-100 px-4 py-3 text-xs leading-relaxed text-ink-600">
+                <div className="mt-6 rounded-xl bg-black/30 px-4 py-3 text-xs leading-relaxed text-white/60 ring-1 ring-white/10">
                   You&apos;ll need the 5-character session code from your facilitator, plus a team name like &ldquo;North Store&rdquo;.
                 </div>
               </div>
 
-              <Button size="lg" variant="secondary" onClick={() => setMode("team")} className="justify-self-start self-end">
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => setMode("team")}
+                className="justify-self-start self-end !bg-white/10 !text-white ring-1 ring-white/15 hover:!bg-white/20"
+              >
                 Join a session
               </Button>
             </Card>
           </div>
         ) : (
-          <Card className="mx-auto max-w-lg p-6">
+          <Card tone="data" className="mx-auto max-w-lg border-t border-teal-400/30 p-6">
             <div className="mb-4 flex items-center gap-2">
-              <Users className="h-5 w-5 text-ink-500" />
-              <h2 className="text-lg font-semibold tracking-tight text-ink-900">Join as a team</h2>
+              <Users className="h-5 w-5 text-teal-300" />
+              <h2 className="text-lg font-semibold tracking-tight text-white">Join as a team</h2>
             </div>
             <form onSubmit={joinTeam} className="space-y-4">
               <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/50">
                   Session code
                 </label>
                 <input
@@ -168,12 +173,12 @@ export default function LandingPage() {
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="e.g. A7K2N"
                   maxLength={5}
-                  className="w-full rounded-xl bg-ink-100 px-3 py-2.5 text-lg font-mono uppercase tracking-widest text-ink-900 placeholder:text-ink-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-xl bg-black/30 px-3 py-2.5 text-lg font-mono uppercase tracking-widest text-white ring-1 ring-white/10 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
+                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/50">
                   Team name
                 </label>
                 <input
@@ -181,18 +186,22 @@ export default function LandingPage() {
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g. North Store"
                   maxLength={32}
-                  className="w-full rounded-xl bg-ink-100 px-3 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-xl bg-black/30 px-3 py-2.5 text-sm text-white ring-1 ring-white/10 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   required
                 />
               </div>
               {error ? (
-                <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">{error}</p>
+                <p className="rounded-xl bg-rose-500/15 px-3 py-2 text-sm font-medium text-rose-200 ring-1 ring-rose-500/25">{error}</p>
               ) : null}
               <div className="flex items-center gap-2">
                 <Button type="submit" disabled={submitting || !code || !teamName}>
                   Join session
                 </Button>
-                <Button variant="ghost" onClick={() => setMode("choose")}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setMode("choose")}
+                  className="!text-white/70 hover:!bg-white/10"
+                >
                   Back
                 </Button>
               </div>
