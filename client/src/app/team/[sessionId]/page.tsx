@@ -1350,19 +1350,19 @@ function MomentBlock({
 function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="max-w-md p-8 text-center">
-        <div className="mb-3 flex justify-center text-brand-500">
+      <DataCard className="max-w-md p-8 text-center">
+        <div className="mb-3 flex justify-center text-brand-400">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
-        <h2 className="text-xl font-semibold tracking-tighter text-ink-900">Waiting for the facilitator</h2>
-        <p className="mt-2 text-sm text-ink-600">
-          You're checked in as <span className="font-semibold text-ink-900">{teamName}</span>. The briefing will start shortly.
+        <h2 className="text-xl font-semibold tracking-tighter text-white">Waiting for the facilitator</h2>
+        <p className="mt-2 text-sm text-white/60">
+          You're checked in as <span className="font-semibold text-white">{teamName}</span>. The briefing will start shortly.
         </p>
-        <div className="mt-5 rounded-2xl bg-ink-900 px-4 py-4 text-center text-white">
-          <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Session code</div>
-          <div className="num mt-0.5 text-3xl font-semibold tracking-[0.3em]">{code}</div>
+        <div className="mt-5 rounded-2xl bg-black/30 px-4 py-4 text-center ring-1 ring-white/10">
+          <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Session code</div>
+          <div className="num mt-0.5 text-3xl font-semibold tracking-[0.3em] text-white">{code}</div>
         </div>
-      </Card>
+      </DataCard>
     </div>
   );
 }
@@ -1370,33 +1370,33 @@ function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
 function BriefingPanel() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5">
-      <Card className="p-5">
+      <DataCard className="p-5">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
             <Store className="h-6 w-6" />
           </div>
           <div className="flex-1">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-brand-600">Today you are</div>
-            <div className="text-2xl font-semibold tracking-tighter text-ink-900">A Plumfield store manager</div>
-            <p className="mt-1 text-sm text-ink-600">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-brand-300">Today you are</div>
+            <div className="text-2xl font-semibold tracking-tighter text-white">A Plumfield store manager</div>
+            <p className="mt-1 text-sm text-white/60">
               {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves your live store metrics and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
             </p>
           </div>
         </div>
-      </Card>
+      </DataCard>
 
-      <Card className="p-5">
+      <DataCard className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Here's what you'll see</div>
-            <div className="text-lg font-semibold tracking-tight text-ink-900">Where every step lives</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Here's what you'll see</div>
+            <div className="text-lg font-semibold tracking-tight text-white">Where every step lives</div>
           </div>
           <Pill tone="info" strong>
             <Clock className="h-3 w-3" /> 5 min per shift
           </Pill>
         </div>
         <ScreenMap />
-      </Card>
+      </DataCard>
     </div>
   );
 }
@@ -1418,8 +1418,8 @@ function ScreenMap() {
       <div className="mt-2 grid grid-cols-[minmax(180px,1fr)_2fr] gap-2">
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-white/50">Context</span>
+            <span className="h-1 w-1 rounded-full bg-teal-400" />
+            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-teal-300">Context</span>
           </div>
           <MapZone label="Store KPIs" hint="Live numbers + trends" />
           <MapZone label="Active issues" hint="3 live pressures" />
@@ -1429,10 +1429,10 @@ function ScreenMap() {
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 px-1">
             <span className="h-1 w-1 rounded-full bg-brand-500" />
-            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-brand-400">Decide</span>
+            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-brand-300">Decide</span>
           </div>
-          <div className="rounded-lg bg-white p-3 ring-1 ring-ink-200">
-            <div className="mb-2 flex items-center gap-1 rounded-lg bg-ink-100 p-1">
+          <div className="rounded-lg bg-surface-decide p-3 ring-1 ring-brand-500/25">
+            <div className="mb-2 flex items-center gap-1 rounded-lg bg-white/[0.06] p-1 ring-1 ring-white/10">
               <TabPreview n={1} label="Focus" />
               <TabPreview n={2} label="Team" />
               <TabPreview n={3} label="Respond" />
@@ -1468,8 +1468,8 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
 
 function TabPreview({ n, label }: { n: number; label: string }) {
   return (
-    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white px-2 py-1 text-[12px] font-semibold text-ink-800 shadow-card">
-      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-500 text-[8px] font-semibold text-white">
+    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[12px] font-semibold text-white/85">
+      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[10px] font-semibold text-white">
         {n}
       </span>
       {label}
@@ -1479,9 +1479,9 @@ function TabPreview({ n, label }: { n: number; label: string }) {
 
 function MiniStep({ tab, items }: { tab: string; items: string[] }) {
   return (
-    <div className="rounded-md bg-ink-50 px-2 py-1.5 ring-1 ring-ink-100">
-      <div className="text-[12px] font-semibold uppercase tracking-wider text-brand-600">{tab}</div>
-      <div className="text-[12px] text-ink-700">{items.join(" · ")}</div>
+    <div className="rounded-md bg-white/[0.04] px-2 py-1.5 ring-1 ring-white/10">
+      <div className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">{tab}</div>
+      <div className="text-[12px] text-white/70">{items.join(" · ")}</div>
     </div>
   );
 }
@@ -1501,28 +1501,28 @@ function ResultsPanel({
   const MovementArrow = movement > 0 ? ArrowUp : movement < 0 ? ArrowDown : Minus;
   return (
     <div className="flex flex-1 items-center justify-center overflow-hidden p-5">
-      <Card className="w-full max-w-4xl overflow-hidden p-0">
+      <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/12">
         {/* Scorecard banner */}
-        <div className="flex items-center gap-4 border-b border-ink-100 bg-ink-50 px-6 py-4">
-          <TeamCrest name={team.name} size={44} tone="dark" />
+        <div className="flex items-center gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+          <TeamCrest name={team.name} size={44} tone="light" />
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">
               Shift {shiftN} scorecard
             </div>
-            <div className="truncate text-lg font-semibold tracking-tight text-ink-900">{team.name}</div>
+            <div className="truncate text-lg font-semibold tracking-tight text-white">{team.name}</div>
           </div>
-          <ShiftRibbon current={shiftN} total={totalRounds} size="sm" />
+          <ShiftRibbon current={shiftN} total={totalRounds} size="sm" onDark />
         </div>
 
         {/* Hero: score movement + rank */}
-        <div className="grid grid-cols-[1fr_auto] items-center gap-6 border-b border-ink-100 px-6 py-5">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-6 border-b border-white/10 px-6 py-5">
           <div>
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Shift score movement</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Shift score movement</div>
             <div className="mt-1 flex items-baseline gap-3">
               <span
                 className={cn(
                   "num text-5xl font-semibold tracking-tight",
-                  movement > 0 ? "text-ok" : movement < 0 ? "text-risk" : "text-ink-900",
+                  movement > 0 ? "text-emerald-300" : movement < 0 ? "text-rose-300" : "text-white",
                 )}
               >
                 {movement > 0 ? "+" : ""}{movement}
@@ -1530,16 +1530,16 @@ function ResultsPanel({
               <span
                 className={cn(
                   "inline-flex h-8 w-8 items-center justify-center rounded-full",
-                  movement > 0 ? "bg-emerald-100 text-ok" : movement < 0 ? "bg-rose-100 text-risk" : "bg-ink-100 text-ink-500",
+                  movement > 0 ? "bg-emerald-500/20 text-emerald-300" : movement < 0 ? "bg-rose-500/20 text-rose-300" : "bg-white/10 text-white/55",
                 )}
               >
                 <MovementArrow className="h-4 w-4" />
               </span>
-              <span className="text-sm text-ink-500">total {team.score}</span>
+              <span className="text-sm text-white/55">total {team.score}</span>
             </div>
           </div>
-          <div className="flex flex-col items-center rounded-2xl bg-ink-900 px-5 py-2 text-center text-white">
-            <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Rank</div>
+          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Rank</div>
             <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
           </div>
         </div>
@@ -1547,18 +1547,18 @@ function ResultsPanel({
         {/* KPIs */}
         <div className="px-6 pt-5">
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Store indicators</div>
+            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Store indicators</div>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {METRIC_KEYS.map((k) => (
-              <div key={k} className="rounded-xl bg-ink-50 p-2.5">
-                <div className="truncate text-[12px] font-medium uppercase tracking-wide text-ink-500">{METRIC_SHORT[k]}</div>
+              <div key={k} className="rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/10">
+                <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/55">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between">
-                  <span className="num text-lg font-semibold text-ink-900">{team.metrics?.[k] ?? 0}</span>
-                  <Delta value={team.lastMetricDelta?.[k]} />
+                  <span className="num text-lg font-semibold text-white">{team.metrics?.[k] ?? 0}</span>
+                  <Delta value={team.lastMetricDelta?.[k]} onDark />
                 </div>
                 <div className="mt-1.5">
-                  <Bar value={team.metrics?.[k] ?? 0} />
+                  <Bar value={team.metrics?.[k] ?? 0} onDark />
                 </div>
               </div>
             ))}
@@ -1568,19 +1568,19 @@ function ResultsPanel({
         {/* Hidden drivers */}
         {team.revealedHidden ? (
           <div className="px-6 pt-4">
-            <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-ink-500">Hidden drivers</div>
+            <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-teal-300">Hidden drivers</div>
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
-                <div key={h} className="rounded-xl bg-ink-50 p-3">
-                  <div className="truncate text-[12px] font-medium uppercase tracking-wide text-ink-500">
+                <div key={h} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+                  <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/55">
                     {HIDDEN_LABELS[h]}
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <span className="num text-xl font-semibold text-ink-900">{team.revealedHidden![h]}</span>
-                    <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} />
+                    <span className="num text-xl font-semibold text-white">{team.revealedHidden![h]}</span>
+                    <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} onDark />
                   </div>
                   <div className="mt-1.5">
-                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} height={36} baselinePoints={BASELINE_WEEKS} />
+                    <Sparkline values={team.trend[h]} inverted={HIDDEN_INVERTED[h]} height={36} onDark baselinePoints={BASELINE_WEEKS} />
                   </div>
                 </div>
               ))}
@@ -1590,22 +1590,22 @@ function ResultsPanel({
 
         {/* Strength / risk */}
         <div className="grid grid-cols-2 gap-3 px-6 py-5 text-sm">
-          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
-            <span className="text-[12px] font-medium uppercase tracking-wide">Strength</span>
-            <div className="text-base font-semibold">{team.strength ?? "-"}</div>
+          <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-emerald-200 ring-1 ring-emerald-500/20">
+            <span className="text-[12px] font-medium uppercase tracking-wide text-emerald-300">Strength</span>
+            <div className="text-base font-semibold text-white">{team.strength ?? "-"}</div>
           </div>
-          <div className="rounded-xl bg-rose-50 px-4 py-3 text-rose-900">
-            <span className="text-[12px] font-medium uppercase tracking-wide">Risk</span>
-            <div className="text-base font-semibold">{team.risk ?? "-"}</div>
+          <div className="rounded-xl bg-rose-500/10 px-4 py-3 text-rose-200 ring-1 ring-rose-500/20">
+            <span className="text-[12px] font-medium uppercase tracking-wide text-rose-300">Risk</span>
+            <div className="text-base font-semibold text-white">{team.risk ?? "-"}</div>
           </div>
         </div>
 
         {/* Footer: filed-away chrome */}
-        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-ink-500">
+        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-white/45">
           <span>Shift {shiftN} of {totalRounds}</span>
           <span>Your facilitator will move on when the room is ready</span>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -1613,20 +1613,20 @@ function ResultsPanel({
 function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="max-w-xl p-10 text-center">
-        <h2 className="text-3xl font-semibold tracking-tighter text-ink-900">Session complete</h2>
-        <p className="mt-2 text-sm text-ink-500">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
+      <DataCard className="max-w-xl p-10 text-center">
+        <h2 className="text-3xl font-semibold tracking-tighter text-white">Session complete</h2>
+        <p className="mt-2 text-sm text-white/55">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-ink-900 p-5 text-white">
-            <div className="text-[12px] font-medium uppercase tracking-wider opacity-70">Final rank</div>
+          <div className="rounded-2xl bg-brand-500 p-5 text-white shadow-[0_0_22px_-6px_rgba(124,58,237,0.9)]">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Final rank</div>
             <div className="num text-5xl font-semibold">#{rank}</div>
           </div>
-          <div className="rounded-2xl bg-ink-100 p-5">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-ink-500">Final score</div>
-            <div className="num text-5xl font-semibold text-ink-900">{team.score}</div>
+          <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Final score</div>
+            <div className="num text-5xl font-semibold text-white">{team.score}</div>
           </div>
         </div>
-      </Card>
+      </DataCard>
     </div>
   );
 }
@@ -1671,20 +1671,20 @@ function DisruptionModal({
       aria-modal="true"
       aria-labelledby="disruption-title"
     >
-      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-raised shadow-panel ring-2 ring-risk/70">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-2 ring-risk/70">
         {disruption.scene ? (
-          <div className="bg-[#1a1b1e]">
+          <div className="bg-surface-console">
             <DisruptionScene name={disruption.scene} />
           </div>
         ) : null}
         <div className="p-6">
-          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-risk">
+          <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-rose-300">
             <AlertTriangle className="h-4 w-4" /> Disruption
           </div>
-          <h2 id="disruption-title" className="text-xl font-semibold tracking-tight text-ink-900">
+          <h2 id="disruption-title" className="text-xl font-semibold tracking-tight text-white">
             {disruption.title}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-ink-700">{disruption.message}</p>
+          <p className="mt-2 text-sm leading-relaxed text-white/70">{disruption.message}</p>
           <div className="mt-6 flex justify-end">
             <Button onClick={onAcknowledge}>Understood</Button>
           </div>

@@ -170,7 +170,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold",
         palette[tone],
       )}
     >
@@ -204,7 +204,7 @@ export function Delta({
   if (value === undefined) return null;
   if (value === 0) {
     return (
-      <span className={cn("inline-flex items-center gap-0.5 text-[11px]", onDark ? "text-white/50" : "text-ink-500")}>
+      <span className={cn("inline-flex items-center gap-0.5 text-[12px]", onDark ? "text-white/50" : "text-ink-500")}>
         <Minus className="h-3 w-3" />
         0
       </span>
@@ -215,7 +215,7 @@ export function Delta({
   if (!onDark) tone = good ? "text-ok" : "text-risk";
   const Icon = value > 0 ? ArrowUp : ArrowDown;
   return (
-    <span className={cn("inline-flex items-center gap-0.5 text-[11px] font-semibold num", tone)}>
+    <span className={cn("inline-flex items-center gap-0.5 text-[12px] font-semibold num", tone)}>
       <Icon className="h-3 w-3" />
       {value > 0 ? "+" : ""}
       {value}
@@ -396,7 +396,7 @@ export function Sparkline({
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
+      <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">{label}</span>
       {children}
     </label>
   );
@@ -426,8 +426,8 @@ export function ShiftRibbon({
   const futureBg = onDark ? "bg-white/10" : "bg-ink-100";
   const futureText = onDark ? "text-white/50" : "text-ink-400";
   const sizes = size === "sm"
-    ? { pill: "h-5 min-w-5 px-1.5", text: "text-[10px]", gap: "gap-1" }
-    : { pill: "h-6 min-w-6 px-2", text: "text-[11px]", gap: "gap-1.5" };
+    ? { pill: "h-5 min-w-5 px-1.5", text: "text-[12px]", gap: "gap-1" }
+    : { pill: "h-6 min-w-6 px-2", text: "text-[12px]", gap: "gap-1.5" };
   return (
     <div className={cn("flex items-center", sizes.gap)} aria-label={`Shift ${cur || 0} of ${total}`}>
       {items.map((n) => {
