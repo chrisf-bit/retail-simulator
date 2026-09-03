@@ -3,6 +3,7 @@ import type {
   ConfidenceLevel,
   FacilitatorScript,
   LeadershipStyle,
+  MetricKey,
   MomentArchetype,
   Priority,
   SessionInsights,
@@ -11,7 +12,7 @@ import type {
   TeamFull,
   TeamInsight,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, PRIORITY_LABELS } from "@sim/shared";
+import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, METRIC_SHORT, PRIORITY_LABELS } from "@sim/shared";
 
 export function generateInsights(
   teams: TeamFull[],
@@ -100,12 +101,12 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     if (!d.primaryIssueId) {
       observations.push("Did not pick a primary issue to target.");
     }
-    const bigMover = Object.entries(latest.kpiDelta)
+    const bigMover = Object.entries(latest.metricDelta)
       .map(([k, v]) => [k, v ?? 0] as const)
       .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
     if (bigMover && Math.abs(bigMover[1]) >= 5) {
       const dir = bigMover[1] > 0 ? "up" : "down";
-      observations.push(`Biggest move was ${bigMover[0]} (${dir} ${Math.abs(bigMover[1])}).`);
+      observations.push(`Biggest move was ${METRIC_SHORT[bigMover[0] as MetricKey]} (${dir} ${Math.abs(bigMover[1])}).`);
     }
 
     // --- Varied questions: each trigger has a pool, picked by team+round seed ---
@@ -203,9 +204,9 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     }
 
     if (bigMover && bigMover[1] <= -5) {
-      pushed.push(`What do you think pulled ${bigMover[0]} down that shift?`);
+      pushed.push(`What do you think pulled ${METRIC_SHORT[bigMover[0] as MetricKey]} down that shift?`);
     } else if (bigMover && bigMover[1] >= 8) {
-      pushed.push(`What do you think lifted ${bigMover[0]} that sharply?`);
+      pushed.push(`What do you think lifted ${METRIC_SHORT[bigMover[0] as MetricKey]} that sharply?`);
     }
 
     // Fallback closers, rotated so all teams don't land on the same one.
@@ -308,11 +309,11 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     );
   }
 
-  const salesDelta = latest.kpiDelta.sales ?? 0;
+  const salesDelta = latest.metricDelta.sales_vs_budget ?? 0;
   if (salesDelta >= 8) observations.push(`Sales moved up sharply (+${salesDelta}) in shift ${latest.round}.`);
   if (salesDelta <= -6) observations.push(`Sales slipped by ${salesDelta} in shift ${latest.round}.`);
 
-  if (team.kpis.customer < 45) {
+  if (team.metrics.csat < 45) {
     questions.push(
       pick(
         [
@@ -323,8 +324,8 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
         seed + ":cust-low",
       ),
     );
-  } else if (team.kpis.customer > 75) {
-    observations.push(`Customer experience is holding high (${team.kpis.customer}).`);
+  } else if (team.metrics.csat > 75) {
+    observations.push(`Customer experience is holding high (${team.metrics.csat}).`);
   }
 
   if (team.hidden.trust < 40) {
@@ -517,7 +518,7 @@ function sessionPatterns(teams: TeamFull[], roundNumber: number): SessionPattern
     }
   }
 
-  const avgCustomer = teams.reduce((a, t) => a + t.kpis.customer, 0) / teams.length;
+  const avgCustomer = teams.reduce((a, t) => a + t.metrics.csat, 0) / teams.length;
   if (avgCustomer < 50 && teams.length >= 2) {
     patterns.push({
       id: nanoid(6),

@@ -31,12 +31,12 @@ import {
 } from "lucide-react";
 import type { Socket } from "socket.io-client";
 import type {
-  KpiKey,
+  Goal,
   SessionStatePublic,
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, BASELINE_WEEKS, HIDDEN_INVERTED, HIDDEN_LABELS, KPI_INVERTED, KPI_SHORT, ROUND_COUNT } from "@sim/shared";
+import { ARCHETYPE_LABELS, BASELINE_WEEKS, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
@@ -396,7 +396,6 @@ function CoachingCard({
   reveal: boolean;
   moment?: import("@sim/shared").TeamMoment;
 }) {
-  const kpis: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
   const momentResponseId = team.lastDecision?.momentResponseId;
   const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
   return (
@@ -422,20 +421,29 @@ function CoachingCard({
       </div>
 
       <div className="grid grid-cols-5 gap-2">
-        {kpis.map((k) => (
-          <div key={k} className="min-w-0">
-            <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">
-              {KPI_SHORT[k]}
+        {GOAL_KEYS.map((g) => {
+          const ms = METRICS_OF_GOAL[g];
+          const value = Math.round(ms.reduce((a, m) => a + team.metrics[m], 0) / ms.length);
+          const delta = ms.reduce((a, m) => a + (team.lastMetricDelta?.[m] ?? 0), 0);
+          const len = team.trend[ms[0]]?.length ?? 0;
+          const series = Array.from({ length: len }, (_, i) =>
+            Math.round(ms.reduce((a, m) => a + (team.trend[m]?.[i] ?? 0), 0) / ms.length),
+          );
+          return (
+            <div key={g} className="min-w-0">
+              <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">
+                {GOAL_SHORT[g]}
+              </div>
+              <div className="mt-0.5 flex items-baseline justify-between gap-1">
+                <span className="num text-sm font-semibold text-white">{value}</span>
+                <Delta value={delta} onDark />
+              </div>
+              <div className="mt-1">
+                <Sparkline values={series} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+              </div>
             </div>
-            <div className="mt-0.5 flex items-baseline justify-between gap-1">
-              <span className="num text-sm font-semibold text-white">{team.kpis[k]}</span>
-              <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} onDark />
-            </div>
-            <div className="mt-1">
-              <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} height={28} onDark baselinePoints={BASELINE_WEEKS} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {moment ? (

@@ -1,9 +1,10 @@
-import type { HiddenDrivers, Kpis, TeamFull, TrendSeries } from "@sim/shared";
+import type { HiddenDrivers, MetricKey, TeamFull, TrendSeries } from "@sim/shared";
 import {
   ACTION_LABELS,
   CONFIDENCE_LABELS,
   HIDDEN_LABELS,
-  KPI_SHORT,
+  METRIC_KEYS,
+  METRIC_SHORT,
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
   crestFor,
@@ -13,15 +14,12 @@ import {
 } from "@sim/shared";
 import type { Session } from "./session.js";
 
-type KpiKey = keyof Kpis;
 type HiddenKey = keyof HiddenDrivers;
 
-const KPI_KEYS: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
 const HIDDEN_KEYS: HiddenKey[] = ["trust", "capability", "safety_risk", "leadership_consistency"];
 
-// Shrinkage and safety_risk are "lower is better", everyone else "higher is better".
+// All ten metrics are higher-is-better; only safety_risk (a hidden driver) inverts.
 const LOWER_IS_BETTER: Record<string, boolean> = {
-  shrinkage: true,
   safety_risk: true,
 };
 
@@ -130,22 +128,22 @@ function analyseTeam(team: TeamFull): { strengths: string[]; development: string
     };
   }
 
-  // --- KPI movement across the session ---
-  const firstKpis = h[0].kpisAfter;
-  const lastKpis = h[rounds - 1].kpisAfter;
-  for (const k of KPI_KEYS) {
+  // --- Metric movement across the session ---
+  const firstMetrics = h[0].metricsAfter;
+  const lastMetrics = h[rounds - 1].metricsAfter;
+  for (const k of METRIC_KEYS) {
     const inverted = !!LOWER_IS_BETTER[k];
-    const before = firstKpis[k];
-    const after = lastKpis[k];
+    const before = firstMetrics[k];
+    const after = lastMetrics[k];
     const improved = inverted ? after < before - 3 : after > before + 3;
     const worsened = inverted ? after > before + 3 : after < before - 3;
     if (improved) {
       strengths.push(
-        `${KPI_SHORT[k]} moved from ${before} to ${after} across the session, a genuine shift.`,
+        `${METRIC_SHORT[k]} moved from ${before} to ${after} across the session, a genuine shift.`,
       );
     } else if (worsened) {
       development.push(
-        `${KPI_SHORT[k]} drifted from ${before} to ${after} across the session. Worth unpacking what was traded for that.`,
+        `${METRIC_SHORT[k]} drifted from ${before} to ${after} across the session. Worth unpacking what was traded for that.`,
       );
     }
   }
@@ -270,13 +268,13 @@ function kpiRow(
 
 function teamKpiTable(team: TeamFull, baseline: TrendSeries): string {
   if (team.history.length === 0) return "<p>No shifts played.</p>";
-  const start = team.history[0].kpisAfter;
-  const rows = KPI_KEYS.map((k) =>
+  const start = team.history[0].metricsAfter;
+  const rows = METRIC_KEYS.map((k: MetricKey) =>
     kpiRow(
-      KPI_SHORT[k],
+      METRIC_SHORT[k],
       baseline[k][0] ?? 0,
       start[k],
-      team.kpis[k],
+      team.metrics[k],
       !!LOWER_IS_BETTER[k],
     ),
   ).join("\n");
@@ -371,7 +369,7 @@ function teamSection(team: TeamFull, rank: number, baseline: TrendSeries): strin
         </div>
       </div>
 
-      <h3>KPI trajectory</h3>
+      <h3>Metric trajectory</h3>
       ${teamKpiTable(team, baseline)}
 
       <h3>Hidden drivers</h3>

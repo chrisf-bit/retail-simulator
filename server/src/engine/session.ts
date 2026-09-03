@@ -6,12 +6,13 @@ import type {
   FacilitatorPrompt,
   HiddenDrivers,
   Issue,
-  Kpis,
+  Metrics,
   RoundState,
   SessionPhase,
   SessionStatePublic,
   TeamFull,
   TeamPublic,
+  TrendKey,
 } from "@sim/shared";
 import {
   BASELINE_WEEKS,
@@ -20,6 +21,8 @@ import {
   CONNECTION_TICK_MS,
   DEFAULT_EXPECTED_TEAMS,
   MAX_TEAMS,
+  METRIC_KEYS,
+  HIDDEN_KEYS,
   MIN_TEAMS,
   ROUND_COUNT,
   ROUND_DURATION_MS,
@@ -33,12 +36,51 @@ import { generatePrompts } from "./prompts.js";
 import { generateInsights } from "./insights.js";
 import { deleteSessionFile, readAllSessionFiles, SESSION_TTL_MS, writeSessionFile } from "./persistence.js";
 
-function startingKpis(): Kpis {
-  return { sales: 60, shrinkage: 35, customer: 62, engagement: 65, operations: 60 };
+// Starting (week-0) values per metric and hidden driver. All 0-100.
+const START_METRICS: Metrics = {
+  sales_vs_budget: 60,
+  availability: 62,
+  volume_lfl: 55,
+  esat: 65,
+  csat: 62,
+  labour: 58,
+  shrink: 60,
+  waste: 58,
+  scc: 57,
+  audits: 63,
+};
+
+const START_HIDDEN: HiddenDrivers = {
+  safety_risk: 30,
+  trust: 60,
+  capability: 55,
+  leadership_consistency: 50,
+};
+
+// Where each series sat 16 weeks before the session, drifting to its START value.
+const BASELINE_FROM: Record<TrendKey, number> = {
+  sales_vs_budget: 74,
+  availability: 63,
+  volume_lfl: 50,
+  esat: 56,
+  csat: 66,
+  labour: 62,
+  shrink: 52,
+  waste: 50,
+  scc: 60,
+  audits: 68,
+  safety_risk: 18,
+  trust: 52,
+  capability: 44,
+  leadership_consistency: 60,
+};
+
+function startingMetrics(): Metrics {
+  return { ...START_METRICS };
 }
 
 function startingHidden(): HiddenDrivers {
-  return { safety_risk: 30, trust: 60, capability: 55, leadership_consistency: 50 };
+  return { ...START_HIDDEN };
 }
 
 function pickN<T>(source: T[], n: number): T[] {
@@ -99,17 +141,12 @@ function plausibleSeries(from: number, to: number, weeks: number, noise: number)
 }
 
 function buildBaselineTrend(): TrendSeries {
-  return {
-    sales: plausibleSeries(74, 60, BASELINE_WEEKS, 3),
-    shrinkage: plausibleSeries(24, 35, BASELINE_WEEKS, 2),
-    customer: plausibleSeries(66, 62, BASELINE_WEEKS, 4),
-    engagement: plausibleSeries(56, 65, BASELINE_WEEKS, 3),
-    operations: plausibleSeries(63, 60, BASELINE_WEEKS, 2),
-    safety_risk: plausibleSeries(18, 30, BASELINE_WEEKS, 2),
-    trust: plausibleSeries(52, 60, BASELINE_WEEKS, 3),
-    capability: plausibleSeries(44, 55, BASELINE_WEEKS, 3),
-    leadership_consistency: plausibleSeries(60, 50, BASELINE_WEEKS, 2),
-  };
+  const to: Record<TrendKey, number> = { ...START_METRICS, ...START_HIDDEN };
+  const trend = {} as TrendSeries;
+  for (const key of [...METRIC_KEYS, ...HIDDEN_KEYS] as TrendKey[]) {
+    trend[key] = plausibleSeries(BASELINE_FROM[key], to[key], BASELINE_WEEKS, 3);
+  }
+  return trend;
 }
 
 function deriveStatus(lastSeenAt: number): ConnectionStatus {
@@ -285,7 +322,7 @@ export class Session {
       name,
       score: 0,
       lastMovement: 0,
-      kpis: startingKpis(),
+      metrics: startingMetrics(),
       hidden: startingHidden(),
       submitted: false,
       history: [],
@@ -415,7 +452,7 @@ export class Session {
       };
 
       const result = applyDecision({
-        kpis: team.kpis,
+        metrics: team.metrics,
         hidden: team.hidden,
         decision,
         issues: this.round.issues,
@@ -424,12 +461,12 @@ export class Session {
       });
 
       const previousScore = team.score;
-      team.kpis = result.nextKpis;
+      team.metrics = result.nextMetrics;
       team.hidden = result.nextHidden;
       team.score += result.roundScore;
       team.lastMovement = team.score - previousScore;
-      team.strength = summariseStrength(team.kpis);
-      team.risk = summariseRisk(team.kpis, team.hidden);
+      team.strength = summariseStrength(team.metrics);
+      team.risk = summariseRisk(team.metrics, team.hidden);
       const responseArchetype = this.round.moment && decision.momentResponseId
         ? this.round.moment.options.find((o) => o.id === decision.momentResponseId)?.archetype
         : undefined;
@@ -439,9 +476,9 @@ export class Session {
         decision,
         momentArchetype: responseArchetype,
         momentPersonaName: this.round.moment?.persona.name,
-        kpiDelta: result.kpiDelta,
+        metricDelta: result.metricDelta,
         hiddenDelta: result.hiddenDelta,
-        kpisAfter: result.nextKpis,
+        metricsAfter: result.nextMetrics,
         hiddenAfter: result.nextHidden,
         roundScore: result.roundScore,
       });
@@ -481,28 +518,21 @@ export class Session {
     const teams: TeamPublic[] = Array.from(this.teams.values()).map((t) => {
       const lastHistory = t.history[t.history.length - 1];
       const base = this.baselineTrend;
-      const trend: TrendSeries = {
-        sales: [...base.sales, ...t.history.map((h) => h.kpisAfter.sales)],
-        shrinkage: [...base.shrinkage, ...t.history.map((h) => h.kpisAfter.shrinkage)],
-        customer: [...base.customer, ...t.history.map((h) => h.kpisAfter.customer)],
-        engagement: [...base.engagement, ...t.history.map((h) => h.kpisAfter.engagement)],
-        operations: [...base.operations, ...t.history.map((h) => h.kpisAfter.operations)],
-        safety_risk: [...base.safety_risk, ...t.history.map((h) => h.hiddenAfter.safety_risk)],
-        trust: [...base.trust, ...t.history.map((h) => h.hiddenAfter.trust)],
-        capability: [...base.capability, ...t.history.map((h) => h.hiddenAfter.capability)],
-        leadership_consistency: [
-          ...base.leadership_consistency,
-          ...t.history.map((h) => h.hiddenAfter.leadership_consistency),
-        ],
-      };
+      const trend = {} as TrendSeries;
+      for (const key of METRIC_KEYS) {
+        trend[key] = [...base[key], ...t.history.map((h) => h.metricsAfter[key])];
+      }
+      for (const key of HIDDEN_KEYS) {
+        trend[key] = [...base[key], ...t.history.map((h) => h.hiddenAfter[key])];
+      }
       return {
         id: t.id,
         name: t.name,
         score: t.score,
         lastMovement: t.lastMovement,
-        kpis: t.kpis,
+        metrics: t.metrics,
         lastDecision: t.lastDecision,
-        lastKpiDelta: revealPhase ? lastHistory?.kpiDelta : undefined,
+        lastMetricDelta: revealPhase ? lastHistory?.metricDelta : undefined,
         lastHiddenDelta: revealPhase ? lastHistory?.hiddenDelta : undefined,
         revealedHidden: revealPhase ? t.hidden : undefined,
         trend,
@@ -553,6 +583,10 @@ export class Session {
     const full = this.publicState();
     const redactedTeams: TeamPublic[] = full.teams.map((t) => {
       if (t.id === viewerTeamId) return t;
+      const zeroMetrics = {} as Metrics;
+      for (const key of METRIC_KEYS) zeroMetrics[key] = 0;
+      const emptyTrend = {} as TrendSeries;
+      for (const key of [...METRIC_KEYS, ...HIDDEN_KEYS] as TrendKey[]) emptyTrend[key] = [];
       return {
         id: t.id,
         name: t.name,
@@ -560,11 +594,8 @@ export class Session {
         lastMovement: t.lastMovement,
         submitted: t.submitted,
         connectionStatus: t.connectionStatus,
-        kpis: { sales: 0, shrinkage: 0, customer: 0, engagement: 0, operations: 0 },
-        trend: {
-          sales: [], shrinkage: [], customer: [], engagement: [], operations: [],
-          safety_risk: [], trust: [], capability: [], leadership_consistency: [],
-        },
+        metrics: zeroMetrics,
+        trend: emptyTrend,
       };
     });
     return {

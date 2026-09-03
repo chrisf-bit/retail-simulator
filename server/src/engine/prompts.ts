@@ -16,7 +16,7 @@ export function generatePrompts(teams: TeamFull[]): FacilitatorPrompt[] {
       });
     }
 
-    if (t.kpis.customer < 45) {
+    if (t.metrics.csat < 45) {
       prompts.push({
         id: nanoid(6),
         teamId: t.id,
@@ -47,7 +47,7 @@ export function generatePrompts(teams: TeamFull[]): FacilitatorPrompt[] {
       });
     }
 
-    if (t.kpis.engagement > 75 && t.kpis.sales > 65) {
+    if (t.metrics.esat > 75 && t.metrics.sales_vs_budget > 65) {
       prompts.push({
         id: nanoid(6),
         teamId: t.id,

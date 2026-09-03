@@ -4,12 +4,34 @@ export type LeadershipStyle = "directive" | "collaborative" | "coaching" | "dele
 export type ConfidenceLevel = "cautious" | "measured" | "confident";
 export type ConnectionStatus = "connected" | "struggling" | "dropped";
 
-export type KpiKey =
+// The five retail goals (from the Sainsbury's frame). Each goal carries one or
+// more metrics; see METRICS_OF_GOAL in constants.ts.
+export type Goal =
   | "sales"
-  | "shrinkage"
-  | "customer"
-  | "engagement"
-  | "operations";
+  | "colleagues"
+  | "service"
+  | "costs"
+  | "risk";
+
+// The ten metrics that sit beneath the five goals. All are modelled as
+// higher-is-better performance scores (0-100), including the cost lines which
+// are framed as control/efficiency scores. Placeholder scale until calibration.
+export type MetricKey =
+  // Sales
+  | "sales_vs_budget"
+  | "availability"
+  | "volume_lfl"
+  // Engaged Colleagues
+  | "esat"
+  // Brilliant Service
+  | "csat"
+  // Deliver our Retail Costs
+  | "labour"
+  | "shrink"
+  | "waste"
+  | "scc"
+  // Defined Risk Appetite
+  | "audits";
 
 export type HiddenDriverKey =
   | "safety_risk"
@@ -17,22 +39,19 @@ export type HiddenDriverKey =
   | "capability"
   | "leadership_consistency";
 
+// A single number per metric / driver / trend key. Record shape lets the
+// engine and UI iterate over keys generically rather than naming each field.
+export type Metrics = Record<MetricKey, number>;
+export type HiddenDrivers = Record<HiddenDriverKey, number>;
+
+export type TrendKey = MetricKey | HiddenDriverKey;
+export type TrendSeries = Record<TrendKey, number[]>;
+
 export type Severity = "low" | "medium" | "high";
 
-export interface Kpis {
-  sales: number;
-  shrinkage: number;
-  customer: number;
-  engagement: number;
-  operations: number;
-}
-
-export interface HiddenDrivers {
-  safety_risk: number;
-  trust: number;
-  capability: number;
-  leadership_consistency: number;
-}
+// Scenario governance tag. "A" is realism-only; "A+B" is governed by a
+// Sainsbury's policy and cannot be scored until a policy owner signs off.
+export type ScenarioType = "A" | "A+B";
 
 export interface ResourceAllocation {
   shop_floor: number;
@@ -102,26 +121,14 @@ export type SessionPhase =
 
 export type RoundPhase = "active" | "disrupted" | "locked" | "reveal";
 
-export interface TrendSeries {
-  sales: number[];
-  shrinkage: number[];
-  customer: number[];
-  engagement: number[];
-  operations: number[];
-  safety_risk: number[];
-  trust: number[];
-  capability: number[];
-  leadership_consistency: number[];
-}
-
 export interface TeamPublic {
   id: string;
   name: string;
   score: number;
   lastMovement: number;
-  kpis: Kpis;
+  metrics: Metrics;
   lastDecision?: Decision;
-  lastKpiDelta?: Partial<Kpis>;
+  lastMetricDelta?: Partial<Metrics>;
   lastHiddenDelta?: Partial<HiddenDrivers>;
   revealedHidden?: HiddenDrivers;
   trend: TrendSeries;
@@ -136,7 +143,7 @@ export interface TeamFull {
   name: string;
   score: number;
   lastMovement: number;
-  kpis: Kpis;
+  metrics: Metrics;
   lastDecision?: Decision;
   submitted: boolean;
   strength?: string;
@@ -151,9 +158,9 @@ export interface RoundHistoryEntry {
   decision: Decision;
   momentArchetype?: MomentArchetype;
   momentPersonaName?: string;
-  kpiDelta: Partial<Kpis>;
+  metricDelta: Partial<Metrics>;
   hiddenDelta: Partial<HiddenDrivers>;
-  kpisAfter: Kpis;
+  metricsAfter: Metrics;
   hiddenAfter: HiddenDrivers;
   roundScore: number;
 }

@@ -36,8 +36,9 @@ import type {
   ActionApproach,
   ConfidenceLevel,
   Decision,
+  Goal,
   Issue,
-  KpiKey,
+  MetricKey,
   LeadershipStyle,
   Priority,
   ResourceAllocation,
@@ -50,11 +51,13 @@ import {
   BASELINE_WEEKS,
   CONFIDENCE_DESCRIPTIONS,
   CONFIDENCE_LABELS,
+  GOAL_KEYS,
+  GOAL_SHORT,
   HIDDEN_INVERTED,
   HIDDEN_LABELS,
-  KPI_INVERTED,
-  KPI_LABELS,
-  KPI_SHORT,
+  METRICS_OF_GOAL,
+  METRIC_KEYS,
+  METRIC_SHORT,
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
   ROUND_COUNT,
@@ -386,6 +389,19 @@ function phaseLabel(p: string): string {
   }
 }
 
+// Roll a goal's metrics up to a single value, delta and (element-wise averaged)
+// trend series. Single-metric goals pass straight through.
+function goalRollup(team: TeamPublic, goal: Goal): { value: number; delta: number; series: number[] } {
+  const ms = METRICS_OF_GOAL[goal];
+  const value = Math.round(ms.reduce((a, m) => a + team.metrics[m], 0) / ms.length);
+  const delta = ms.reduce((a, m) => a + (team.lastMetricDelta?.[m] ?? 0), 0);
+  const len = team.trend[ms[0]]?.length ?? 0;
+  const series = Array.from({ length: len }, (_, i) =>
+    Math.round(ms.reduce((a, m) => a + (team.trend[m]?.[i] ?? 0), 0) / ms.length),
+  );
+  return { value, delta, series };
+}
+
 function KpiStrip({
   team,
   view,
@@ -395,16 +411,6 @@ function KpiStrip({
   view: "values" | "trends";
   onViewChange: (v: "values" | "trends") => void;
 }) {
-  const items: Array<{ key: KpiKey; label: string; value: number; inverted: boolean; series: number[] }> = (
-    Object.keys(KPI_LABELS) as KpiKey[]
-  ).map((k) => ({
-    key: k,
-    label: KPI_SHORT[k],
-    value: team.kpis[k],
-    inverted: KPI_INVERTED[k],
-    series: team.trend[k],
-  }));
-
   return (
     <Card tone="data" className="shrink-0 p-3">
       <div className="mb-2 flex items-center justify-between">
@@ -437,23 +443,39 @@ function KpiStrip({
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-5 gap-1.5">
-        {items.map((i) => (
-          <div key={i.key} className="rounded-lg bg-white/5 px-3 py-2 xl:px-2 xl:py-1.5">
-            <div className="truncate text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[10px]">{i.label}</div>
-            <div className="mt-0 flex items-baseline justify-between gap-1">
-              <span className="num text-xl font-semibold text-white xl:text-base">{i.value}</span>
-              <Delta value={team.lastKpiDelta?.[i.key]} invertedMeaning={i.inverted} onDark />
-            </div>
-            <div className="mt-1">
+      <div className="space-y-1">
+        {GOAL_KEYS.map((g) => {
+          const { value, delta, series } = goalRollup(team, g);
+          const ms = METRICS_OF_GOAL[g];
+          return (
+            <div key={g} className="rounded-lg bg-white/5 px-3 py-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[11px] font-medium uppercase tracking-wide text-white/50">
+                  {GOAL_SHORT[g]}
+                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="num text-lg font-semibold text-white xl:text-base">{value}</span>
+                  <Delta value={delta} onDark />
+                </div>
+              </div>
               {view === "values" ? (
-                <Bar value={i.value} inverted={i.inverted} onDark />
+                ms.length > 1 ? (
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/45">
+                    {ms.map((m) => (
+                      <span key={m} className="num whitespace-nowrap">
+                        {METRIC_SHORT[m]} <span className="font-semibold text-white/75">{team.metrics[m]}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : null
               ) : (
-                <Sparkline values={i.series} inverted={i.inverted} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+                <div className="mt-1">
+                  <Sparkline values={series} height={22} onDark baselinePoints={BASELINE_WEEKS} />
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
@@ -1289,7 +1311,6 @@ function ResultsPanel({
   totalRounds: number;
 }) {
   const rank = state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0;
-  const kpis: KpiKey[] = ["sales", "shrinkage", "customer", "engagement", "operations"];
   const shiftN = state.round?.number ?? 0;
   const movement = team.lastMovement;
   const MovementArrow = movement > 0 ? ArrowUp : movement < 0 ? ArrowDown : Minus;
@@ -1343,16 +1364,16 @@ function ResultsPanel({
           <div className="mb-3 flex items-center justify-between">
             <div className="text-[11px] font-medium uppercase tracking-wider text-ink-500">Store indicators</div>
           </div>
-          <div className="grid grid-cols-5 gap-3">
-            {kpis.map((k) => (
-              <div key={k} className="rounded-xl bg-ink-50 p-3">
-                <div className="truncate text-[11px] font-medium uppercase tracking-wide text-ink-500">{KPI_SHORT[k]}</div>
+          <div className="grid grid-cols-5 gap-2">
+            {METRIC_KEYS.map((k) => (
+              <div key={k} className="rounded-xl bg-ink-50 p-2.5">
+                <div className="truncate text-[10px] font-medium uppercase tracking-wide text-ink-500">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between">
-                  <span className="num text-2xl font-semibold text-ink-900">{team.kpis[k]}</span>
-                  <Delta value={team.lastKpiDelta?.[k]} invertedMeaning={KPI_INVERTED[k]} />
+                  <span className="num text-lg font-semibold text-ink-900">{team.metrics[k]}</span>
+                  <Delta value={team.lastMetricDelta?.[k]} />
                 </div>
-                <div className="mt-2">
-                  <Sparkline values={team.trend[k]} inverted={KPI_INVERTED[k]} height={42} baselinePoints={BASELINE_WEEKS} />
+                <div className="mt-1.5">
+                  <Bar value={team.metrics[k]} />
                 </div>
               </div>
             ))}

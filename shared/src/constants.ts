@@ -1,5 +1,6 @@
 import type {
-  KpiKey,
+  Goal,
+  MetricKey,
   Priority,
   ActionApproach,
   LeadershipStyle,
@@ -32,28 +33,109 @@ export const HEARTBEAT_INTERVAL_MS = 10_000;
 // How often the server re-evaluates connection status for all teams
 export const CONNECTION_TICK_MS = 3_000;
 
-export const KPI_LABELS: Record<KpiKey, string> = {
-  sales: "Sales Performance",
-  shrinkage: "Shrinkage / Loss",
-  customer: "Customer Experience",
-  engagement: "Team Engagement",
-  operations: "Operational Execution",
-};
+// ---------------------------------------------------------------------------
+// The frame: five goals, ten metrics
+// ---------------------------------------------------------------------------
 
-export const KPI_SHORT: Record<KpiKey, string> = {
+export const GOAL_KEYS: Goal[] = ["sales", "colleagues", "service", "costs", "risk"];
+
+export const METRIC_KEYS: MetricKey[] = [
+  "sales_vs_budget",
+  "availability",
+  "volume_lfl",
+  "esat",
+  "csat",
+  "labour",
+  "shrink",
+  "waste",
+  "scc",
+  "audits",
+];
+
+export const HIDDEN_KEYS: HiddenDriverKey[] = [
+  "safety_risk",
+  "trust",
+  "capability",
+  "leadership_consistency",
+];
+
+export const GOAL_LABELS: Record<Goal, string> = {
   sales: "Sales",
-  shrinkage: "Shrinkage",
-  customer: "Customer",
-  engagement: "Engagement",
-  operations: "Operations",
+  colleagues: "Engaged Colleagues",
+  service: "Brilliant Service",
+  costs: "Deliver our Retail Costs",
+  risk: "Defined Risk Appetite",
 };
 
-export const KPI_INVERTED: Record<KpiKey, boolean> = {
-  sales: false,
-  shrinkage: true,
-  customer: false,
-  engagement: false,
-  operations: false,
+export const GOAL_SHORT: Record<Goal, string> = {
+  sales: "Sales",
+  colleagues: "Colleagues",
+  service: "Service",
+  costs: "Costs",
+  risk: "Risk",
+};
+
+export const METRICS_OF_GOAL: Record<Goal, MetricKey[]> = {
+  sales: ["sales_vs_budget", "availability", "volume_lfl"],
+  colleagues: ["esat"],
+  service: ["csat"],
+  costs: ["labour", "shrink", "waste", "scc"],
+  risk: ["audits"],
+};
+
+export const GOAL_OF_METRIC: Record<MetricKey, Goal> = {
+  sales_vs_budget: "sales",
+  availability: "sales",
+  volume_lfl: "sales",
+  esat: "colleagues",
+  csat: "service",
+  labour: "costs",
+  shrink: "costs",
+  waste: "costs",
+  scc: "costs",
+  audits: "risk",
+};
+
+export const METRIC_LABELS: Record<MetricKey, string> = {
+  sales_vs_budget: "Sales vs budget",
+  availability: "Availability",
+  volume_lfl: "Volume growth (LFL)",
+  esat: "Colleague engagement (ESAT)",
+  csat: "Customer satisfaction (CSAT)",
+  labour: "Labour efficiency",
+  shrink: "Shrink control",
+  waste: "Waste control",
+  scc: "Cost control (SCC)",
+  audits: "Satisfactory audits",
+};
+
+export const METRIC_SHORT: Record<MetricKey, string> = {
+  sales_vs_budget: "Sales",
+  availability: "Availability",
+  volume_lfl: "Volume LFL",
+  esat: "ESAT",
+  csat: "CSAT",
+  labour: "Labour",
+  shrink: "Shrink",
+  waste: "Waste",
+  scc: "SCC",
+  audits: "Audits",
+};
+
+// All ten metrics are modelled higher-is-better (cost lines framed as control /
+// efficiency scores), so there is no per-metric inversion. Kept as a named
+// export in case a future metric genuinely inverts.
+export const METRIC_INVERTED: Record<MetricKey, boolean> = {
+  sales_vs_budget: false,
+  availability: false,
+  volume_lfl: false,
+  esat: false,
+  csat: false,
+  labour: false,
+  shrink: false,
+  waste: false,
+  scc: false,
+  audits: false,
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {
