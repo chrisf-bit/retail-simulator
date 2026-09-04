@@ -7,25 +7,19 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
-  Binoculars,
   CheckCircle2,
   Clock,
   Eye,
   Flag,
-  HeartHandshake,
   HelpCircle,
   Layers,
-  ListChecks,
   Loader2,
   MessageCircleQuestion,
   Minus,
   Play,
   PlayCircle,
   Download,
-  ScrollText,
-  Sparkles,
   Square,
-  Store,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -36,10 +30,9 @@ import type {
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, BASELINE_WEEKS, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
-import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
+import { BASELINE_WEEKS, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
+import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
-import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
@@ -157,16 +150,14 @@ export default function FacilitatorPage() {
         />
       </div>
 
-      <main className="grid grid-cols-12 gap-5 p-5 xl:min-h-0 xl:flex-1">
-        <div className="col-span-12 flex flex-col gap-4 xl:col-span-7 xl:min-h-0">
+      <main className="grid grid-cols-1 gap-5 p-5 xl:grid-cols-[300px_1fr] xl:min-h-0 xl:flex-1">
+        <div className="flex flex-col gap-4 xl:min-h-0">
           <Leaderboard state={state} />
-          <CoachingGrid state={state} reveal={revealPhase} />
+          <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
         </div>
 
-        <div className="col-span-12 flex flex-col gap-4 xl:col-span-5 xl:min-h-0">
-          <ScriptPanel state={state} />
-          <PatternsPanel state={state} />
-          <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
+        <div className="min-h-0 xl:min-h-0">
+          <CoachingGrid state={state} reveal={revealPhase} />
         </div>
       </main>
     </div>
@@ -229,15 +220,15 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
   }
 
   return (
-    <Card tone="data" className="p-5">
+    <Card tone="data" className="flex min-h-0 flex-1 flex-col p-4">
       <SectionTitle tone="data" icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
       <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[10px] font-medium uppercase tracking-wider text-white/50">
-        <div className="col-span-1">Rank</div>
+        <div className="col-span-2">Rank</div>
         <div className="col-span-6">Team</div>
-        <div className="col-span-3 text-right">Score</div>
-        <div className="col-span-2 text-right">Movement</div>
+        <div className="col-span-2 text-right">Score</div>
+        <div className="col-span-2 text-right">Mv</div>
       </div>
-      <div className="space-y-1">
+      <div className="min-h-0 flex-1 space-y-1 overflow-auto">
         {(() => {
           // Only flag a leader when their score is strictly greater than the
           // next team's. Otherwise everyone at the top is tied and nobody
@@ -257,16 +248,15 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                   isLead ? "bg-brand-500 text-white" : "bg-white/5",
                 )}
               >
-                <div className={cn("col-span-1 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
+                <div className={cn("col-span-2 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
                   #{row.rank}
                 </div>
-                <div className="col-span-6 flex items-center gap-2">
+                <div className="col-span-6 flex min-w-0 items-center gap-2">
                   <ConnectionDot status={status} />
-                  <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
+                  <TeamCrest name={row.name} size={20} tone={isLead ? "lead" : "light"} />
                   <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
-                  {isLead ? <Pill tone="neutral" strong>Lead</Pill> : null}
                 </div>
-                <div className={cn("col-span-3 text-right num text-base font-semibold text-white")}>
+                <div className={cn("col-span-2 text-right num text-base font-semibold text-white")}>
                   {row.score}
                 </div>
                 <div className="col-span-2 text-right">
@@ -358,26 +348,37 @@ function MovementPill({ value }: { value: number }) {
   );
 }
 
+function columnsForTeams(n: number): number {
+  if (n <= 1) return 1;
+  if (n <= 4) return 2;
+  if (n <= 9) return 3;
+  return 4;
+}
+
 function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: boolean }) {
   if (state.teams.length === 0) return null;
   const insightsByTeam = new Map(state.insights.teams.map((i) => [i.teamId, i]));
-  const moment = state.round?.moment;
+  const rankByTeam = new Map(state.leaderboard.map((r) => [r.teamId, r.rank]));
+  const cols = columnsForTeams(state.teams.length);
   return (
-    <Card tone="data" className="flex min-h-0 flex-1 flex-col p-3">
+    <Card tone="data" className="flex h-full min-h-0 flex-col p-3">
       <SectionTitle
         tone="data"
         icon={<Layers className="h-4 w-4" />}
         title="Team coaching cards"
-        subtitle="Observations, things to consider, and questions you can ask"
+        subtitle="Trajectory and one question to ask each team"
       />
-      <div className="grid flex-1 grid-cols-1 gap-2 overflow-auto xl:grid-cols-2">
+      <div
+        className="grid min-h-0 flex-1 auto-rows-fr gap-2.5 overflow-hidden"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
         {state.teams.map((t) => (
           <CoachingCard
             key={t.id}
             team={t}
             insight={insightsByTeam.get(t.id)}
+            rank={rankByTeam.get(t.id)}
             reveal={reveal}
-            moment={moment}
           />
         ))}
       </div>
@@ -388,31 +389,33 @@ function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: bo
 function CoachingCard({
   team,
   insight,
+  rank,
   reveal,
-  moment,
 }: {
   team: TeamPublic;
   insight: TeamInsight | undefined;
+  rank?: number;
   reveal: boolean;
-  moment?: import("@sim/shared").TeamMoment;
 }) {
-  const momentResponseId = team.lastDecision?.momentResponseId;
-  const momentResponse = moment && momentResponseId ? moment.options.find((o) => o.id === momentResponseId) : undefined;
+  const question = insight?.questions?.[0];
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden rounded-2xl bg-white/5 p-3.5 ring-1 ring-white/10">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
-          <TeamCrest name={team.name} size={22} tone="light" />
-          <span className="truncate text-[15px] font-semibold tracking-tight text-white">{team.name}</span>
+          {rank ? (
+            <span className="num shrink-0 text-[13px] font-semibold text-white/50">#{rank}</span>
+          ) : null}
+          <TeamCrest name={team.name} size={20} tone="light" />
+          <span className="truncate text-sm font-semibold tracking-tight text-white">{team.name}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="rounded-full bg-white/10 px-2 py-0.5 num text-[13px] font-semibold text-white">
             {team.score}
           </span>
           {team.submitted ? (
             <Pill tone="ok" strong>
-              <CheckCircle2 className="h-3 w-3" /> Submitted
+              <CheckCircle2 className="h-3 w-3" /> In
             </Pill>
           ) : (
             <Pill tone="warn" surface="dark">Pending</Pill>
@@ -439,35 +442,12 @@ function CoachingCard({
                 <Delta value={delta} onDark />
               </div>
               <div className="mt-1">
-                <Sparkline values={series} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+                <Sparkline values={series} height={26} onDark baselinePoints={BASELINE_WEEKS} />
               </div>
             </div>
           );
         })}
       </div>
-
-      {moment ? (
-        <div className="flex items-start gap-2.5 rounded-xl bg-white/5 p-2.5">
-          <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
-            <PersonaAvatar name={moment.persona.name} size={32} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-brand-400">
-              <HeartHandshake className="h-3.5 w-3.5" /> People moment &middot; {moment.persona.name}
-            </div>
-            {momentResponse ? (
-              <div className="flex items-start gap-2">
-                <Pill tone="info" strong>{ARCHETYPE_LABELS[momentResponse.archetype]}</Pill>
-                <p className="text-[12px] leading-snug text-white/80">&ldquo;{momentResponse.label}&rdquo;</p>
-              </div>
-            ) : team.submitted ? (
-              <p className="text-[12px] italic text-white/60">No response chosen. Worth asking why.</p>
-            ) : (
-              <p className="text-[12px] italic text-white/50">Not yet responded.</p>
-            )}
-          </div>
-        </div>
-      ) : null}
 
       {reveal && team.revealedHidden ? (
         <div className="rounded-xl bg-white/5 p-2.5">
@@ -488,177 +468,14 @@ function CoachingCard({
         </div>
       ) : null}
 
-      {insight ? (
-        <div className="space-y-1.5">
-          {insight.observations.length > 0 ? (
-            <InsightList
-              icon={<Binoculars className="h-3 w-3" />}
-              label="Observed"
-              items={insight.observations}
-              tone="neutral"
-            />
-          ) : null}
-          {insight.questions.length > 0 ? (
-            <InsightList
-              icon={<MessageCircleQuestion className="h-3 w-3" />}
-              label="Ask them"
-              items={insight.questions}
-              tone="info"
-              italic
-            />
-          ) : null}
+      {question ? (
+        <div className="mt-auto rounded-xl bg-brand-500/15 px-3.5 py-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-300">
+            <MessageCircleQuestion className="h-3 w-3" /> Ask them
+          </div>
+          <p className="text-[13px] italic leading-snug text-white/90">&ldquo;{question}&rdquo;</p>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function InsightList({
-  icon,
-  label,
-  items,
-  tone,
-  italic = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  items: string[];
-  tone: "neutral" | "info" | "warn";
-  italic?: boolean;
-}) {
-  const tones = {
-    neutral: "bg-white/5",
-    info: "bg-brand-500/15",
-    warn: "bg-brand-500/15",
-  };
-  const labelTones = {
-    neutral: "text-white/60",
-    info: "text-brand-300",
-    warn: "text-brand-300",
-  };
-  return (
-    <div className={cn("rounded-xl px-3.5 py-3", tones[tone])}>
-      <div className={cn("mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide", labelTones[tone])}>
-        {icon}
-        {label}
-      </div>
-      <ul className="space-y-1.5">
-        {items.map((t, i) => (
-          <li key={i} className={cn("text-[15px] leading-relaxed text-white/90", italic && "italic")}>
-            {italic ? "“" : null}
-            {t}
-            {italic ? "”" : null}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ScriptPanel({ state }: { state: SessionStatePublic }) {
-  const script = state.insights.script;
-  return (
-    <Card tone="data" className="p-5">
-      <SectionTitle
-        tone="data"
-        icon={<ScrollText className="h-4 w-4" />}
-        title={script.headline}
-        subtitle="Your talk track for this phase"
-      />
-      <div className="space-y-3">
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-brand-400">
-            <ListChecks className="h-4 w-4" /> Say / do
-          </div>
-          <ul className="space-y-2">
-            {script.talkTrack.map((t, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-base leading-relaxed text-white/90">
-                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-brand-500" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {script.watchFor.length > 0 ? (
-          <div className="rounded-lg bg-white/5 p-2.5">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/60">
-              <Eye className="h-4 w-4" /> Watch for
-            </div>
-            <ul className="space-y-1">
-              {script.watchFor.map((w, i) => (
-                <li key={i} className="text-xs leading-snug text-white/70">
-                  {w}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </Card>
-  );
-}
-
-function PatternsPanel({ state }: { state: SessionStatePublic }) {
-  const patterns = state.insights.patterns;
-  const prompts = state.prompts;
-  return (
-    <Card tone="data" className="flex min-h-0 flex-1 flex-col p-3">
-      <SectionTitle
-        tone="data"
-        icon={<Sparkles className="h-5 w-5" />}
-        title="Patterns across the room"
-        subtitle="Things worth naming"
-      />
-      <div className="flex-1 space-y-2 overflow-auto">
-        {patterns.length === 0 && prompts.length === 0 ? (
-          <div className="flex h-full items-center justify-center rounded-lg bg-white/5 p-5 text-center">
-            <p className="text-xs text-white/50">
-              Room-level patterns will appear once teams have played at least one shift.
-            </p>
-          </div>
-        ) : null}
-        {patterns.map((p) => (
-          <PatternCard key={p.id} tone={p.tone} text={p.text} />
-        ))}
-        {prompts.map((p) => (
-          <PatternCard
-            key={p.id}
-            tone={p.tone === "warning" ? "warn" : p.tone === "positive" ? "positive" : "info"}
-            text={p.text}
-            teamName={p.teamName}
-          />
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function PatternCard({
-  tone,
-  text,
-  teamName,
-}: {
-  tone: "info" | "warn" | "positive";
-  text: string;
-  teamName?: string;
-}) {
-  const eyebrowLabel = {
-    info: "Noticed",
-    warn: "Watch",
-    positive: "Working well",
-  }[tone];
-  const eyebrowColor = {
-    info: "text-white/50",
-    warn: "text-white/80",
-    positive: "text-emerald-300",
-  }[tone];
-  return (
-    <div className="rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/5">
-      <div className={cn("mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]", eyebrowColor)}>
-        {teamName ? `${teamName} · ${eyebrowLabel}` : eyebrowLabel}
-      </div>
-      <p className="text-base leading-relaxed text-white/90">{text}</p>
     </div>
   );
 }
