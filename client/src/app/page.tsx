@@ -94,9 +94,12 @@ export default function LandingPage() {
           </div>
 
           <h1 className="mb-4 max-w-3xl text-5xl font-semibold tracking-tighter text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)] sm:text-6xl">
-            Leadership under pressure
+            The Store Is Yours
           </h1>
-          <p className="mb-8 max-w-xl text-lg text-white/75 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
+          <p className="mb-2 max-w-xl text-lg text-white/80 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
+            Four weeks to lead the people, priorities and performance.
+          </p>
+          <p className="mb-8 max-w-xl text-sm text-white/60 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
             A live, multi-team, head-to-head retail simulation.
           </p>
 
@@ -116,7 +119,7 @@ export default function LandingPage() {
             <Store className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight text-white">
-            Plumfield Stores <span className="text-white/65">· Leadership Simulation</span>
+            Plumfield Stores <span className="text-white/65">· The Store Is Yours</span>
           </span>
         </div>
 

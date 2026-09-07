@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Plumfield Stores · Leadership Simulation",
-  description: "Real-time multi-team retail leadership simulation for Plumfield Stores.",
+  title: "The Store Is Yours · Plumfield Stores",
+  description: "Four weeks to lead the people, priorities and performance. A live, multi-team retail leadership simulation for Plumfield Stores.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
