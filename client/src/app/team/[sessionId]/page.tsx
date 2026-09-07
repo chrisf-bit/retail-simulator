@@ -400,7 +400,7 @@ function TeamHeader({
         <TeamCrest name={team.name} size={44} tone="light" />
         <div>
           <div className="text-xl font-semibold tracking-tighter text-white">{team.name}</div>
-          <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
+          <div className="mt-1 flex items-center gap-3 text-xs text-white/65">
             {phase === "round" || phase === "round_results" ? (
               <ShiftRibbon current={round} total={totalRounds} onDark size="sm" />
             ) : (
@@ -513,7 +513,7 @@ function MetricsHud({
             </span>
             <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-teal-300">Store HUD</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[12px] text-white/40">
+          <div className="flex items-center gap-1.5 text-[12px] text-white/65">
             <Activity className="h-3.5 w-3.5 text-teal-400/70" /> Live performance
           </div>
           <div className="mt-1.5 flex w-fit rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
@@ -658,7 +658,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
             </div>
           );
         })}
-        {issues.length === 0 ? <p className="text-[12px] text-white/50">No active issues.</p> : null}
+        {issues.length === 0 ? <p className="text-[12px] text-white/65">No active issues.</p> : null}
       </div>
     </DataCard>
   );
@@ -687,7 +687,7 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
                 <ScenarioIcon name={a.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium uppercase tracking-wide text-white/50 xl:text-[12px]">
+                <div className="text-xs font-medium uppercase tracking-wide text-white/65 xl:text-[12px]">
                   {a.kind === "head_office" ? "Head office" : "Operational"}
                 </div>
                 <h4 className="text-sm font-semibold text-white xl:text-[13px]">{a.title}</h4>
@@ -696,7 +696,7 @@ function AlertsPanel({ state }: { state: SessionStatePublic }) {
             </div>
           </div>
         ))}
-        {!disruption && alerts.length === 0 ? <p className="text-[12px] text-white/50">No alerts.</p> : null}
+        {!disruption && alerts.length === 0 ? <p className="text-[12px] text-white/65">No alerts.</p> : null}
       </div>
     </DataCard>
   );
@@ -1180,7 +1180,7 @@ function ConfidenceStep({
               )}
             >
               <div className="flex items-center gap-2">
-                <Icon className={cn("h-4 w-4", active ? "text-white" : "text-white/45")} />
+                <Icon className={cn("h-4 w-4", active ? "text-white" : "text-white/65")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
               <span className={cn("text-[12px] leading-snug", active ? "text-white/85" : "text-white/55")}>
@@ -1228,7 +1228,7 @@ function RadioGrid<T extends string>({
               disabled && "cursor-not-allowed opacity-40",
             )}
           >
-            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-white/45")} /> : null}
+            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-white/65")} /> : null}
             <span className="truncate">{labels[opt]}</span>
           </button>
         );
@@ -1253,7 +1253,7 @@ function IssuePicker({
   disabled: boolean;
 }) {
   if (issues.length === 0) {
-    return <p className="text-[12px] text-white/50">No active issues this shift. Nothing to target.</p>;
+    return <p className="text-[12px] text-white/65">No active issues this shift. Nothing to target.</p>;
   }
   return (
     <div className="space-y-2">
@@ -1305,7 +1305,7 @@ function IssuePicker({
         )}
       >
         <div className="flex items-start gap-3">
-          <Shuffle className={cn("mt-0.5 h-4 w-4 shrink-0", spreadEffort ? "text-white" : "text-white/45")} />
+          <Shuffle className={cn("mt-0.5 h-4 w-4 shrink-0", spreadEffort ? "text-white" : "text-white/65")} />
           <div className="min-w-0">
             <h4 className="text-sm font-semibold">Spread effort evenly</h4>
             <p className={cn("mt-0.5 text-[12px]", spreadEffort ? "text-white/85" : "text-white/55")}>
@@ -1343,7 +1343,7 @@ function MomentBlock({
         <div className="min-w-0 flex-1">
           <div className="text-[13px] font-semibold text-white">
             {moment.persona.name}
-            <span className="ml-2 text-[12px] font-normal text-white/50">
+            <span className="ml-2 text-[12px] font-normal text-white/65">
               {moment.persona.role} · {moment.persona.tenure}
             </span>
           </div>
@@ -1492,7 +1492,7 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
       <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
       <div className="min-w-0 flex-1">
         <div className="text-[12px] font-semibold text-white">{label}</div>
-        <div className="text-[12px] text-white/50">{hint}</div>
+        <div className="text-[12px] text-white/65">{hint}</div>
       </div>
     </div>
   );
@@ -1501,7 +1501,7 @@ function MapZone({ label, hint }: { label: string; hint: string }) {
 function TabPreview({ n, label }: { n: number; label: string }) {
   return (
     <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[12px] font-semibold text-white/85">
-      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[10px] font-semibold text-white">
+      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[12px] font-semibold text-white">
         {n}
       </span>
       {label}
@@ -1633,7 +1633,7 @@ function ResultsPanel({
         </div>
 
         {/* Footer: filed-away chrome */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-white/45">
+        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
           <span>Shift {shiftN} of {totalRounds}</span>
           <span>Your facilitator will move on when the room is ready</span>
         </div>
@@ -1666,7 +1666,7 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
 function LoadingScreen({ label }: { label: string }) {
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <div className="flex items-center gap-2 text-white/50">
+      <div className="flex items-center gap-2 text-white/65">
         <Loader2 className="h-4 w-4 animate-spin" />
         <span className="text-sm">{label}</span>
       </div>

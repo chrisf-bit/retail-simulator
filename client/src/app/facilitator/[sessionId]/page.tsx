@@ -182,7 +182,7 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         </div>
         <div>
           <div className="text-xl font-semibold tracking-tighter text-white">Facilitator</div>
-          <div className="mt-1 flex items-center gap-3 text-xs text-white/50">
+          <div className="mt-1 flex items-center gap-3 text-xs text-white/65">
             <span>
               {phaseText[state.phase]}
               {" · "}
@@ -196,7 +196,7 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
       </div>
       <div className="flex items-center gap-3">
         <div className="rounded-full bg-surface-panel px-4 py-1.5 ring-1 ring-white/10">
-          <div className="text-[10px] font-medium uppercase tracking-wider text-white/50">Session code</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider text-white/65">Session code</div>
           <div className="num text-2xl font-semibold tracking-[0.3em] text-white">{state.code}</div>
         </div>
         <div
@@ -222,7 +222,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
   return (
     <Card tone="data" className="flex min-h-0 flex-1 flex-col p-4">
       <SectionTitle tone="data" icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
-      <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[10px] font-medium uppercase tracking-wider text-white/50">
+      <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
         <div className="col-span-2">Rank</div>
         <div className="col-span-6">Team</div>
         <div className="col-span-2 text-right">Score</div>
@@ -281,13 +281,13 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
     <Card tone="data" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="text-[11px] font-medium uppercase tracking-wide text-brand-400">Lobby</div>
+          <div className="text-[12px] font-medium uppercase tracking-wide text-brand-400">Lobby</div>
           <div className="mt-0.5 text-lg font-semibold tracking-tight text-white">
             {allIn ? "All teams joined" : `Waiting for teams (${joined} / ${expected})`}
           </div>
         </div>
         <div className="rounded-2xl bg-brand-500 px-4 py-2 text-center text-white">
-          <div className="text-[10px] font-medium uppercase tracking-wider opacity-80">Share code</div>
+          <div className="text-[12px] font-medium uppercase tracking-wider opacity-80">Share code</div>
           <div className="num text-2xl font-semibold tracking-[0.3em]">{state.code}</div>
         </div>
       </div>
@@ -306,15 +306,15 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-white">{t.name}</div>
-                  <div className="text-[10px] font-medium uppercase tracking-wide text-emerald-300">Joined</div>
+                  <div className="text-[12px] font-medium uppercase tracking-wide text-emerald-300">Joined</div>
                 </div>
               </>
             ) : (
               <>
-                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-white/40" />
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-white/65" />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-white/60">Team {i + 1}</div>
-                  <div className="text-[10px] font-medium uppercase tracking-wide text-ink-400">Awaiting</div>
+                  <div className="text-[12px] font-medium uppercase tracking-wide text-white/65">Awaiting</div>
                 </div>
               </>
             )}
@@ -328,7 +328,7 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
 function MovementPill({ value }: { value: number }) {
   if (value === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-white/50">
+      <span className="inline-flex items-center gap-1 text-xs text-white/65">
         <Minus className="h-3 w-3" />0
       </span>
     );
@@ -404,7 +404,7 @@ function CoachingCard({
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
           {rank ? (
-            <span className="num shrink-0 text-[13px] font-semibold text-white/50">#{rank}</span>
+            <span className="num shrink-0 text-[13px] font-semibold text-white/65">#{rank}</span>
           ) : null}
           <TeamCrest name={team.name} size={20} tone="light" />
           <span className="truncate text-sm font-semibold tracking-tight text-white">{team.name}</span>
@@ -434,7 +434,7 @@ function CoachingCard({
           );
           return (
             <div key={g} className="min-w-0">
-              <div className="truncate text-[10px] font-medium uppercase tracking-wide text-white/50">
+              <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">
                 {GOAL_SHORT[g]}
               </div>
               <div className="mt-0.5 flex items-baseline justify-between gap-1">
@@ -451,13 +451,13 @@ function CoachingCard({
 
       {reveal && team.revealedHidden ? (
         <div className="rounded-xl bg-white/5 p-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-white/50">
+          <div className="mb-1 flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-wide text-white/65">
             <Eye className="h-3.5 w-3.5" /> Hidden drivers
           </div>
           <div className="grid grid-cols-4 gap-2">
             {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
               <div key={h} className="min-w-0">
-                <div className="truncate text-[10px] text-white/50">{HIDDEN_LABELS[h]}</div>
+                <div className="truncate text-[12px] text-white/65">{HIDDEN_LABELS[h]}</div>
                 <div className="flex items-baseline justify-between gap-1">
                   <span className="num text-xs font-semibold text-white">{team.revealedHidden![h]}</span>
                   <Delta value={team.lastHiddenDelta?.[h]} invertedMeaning={HIDDEN_INVERTED[h]} onDark />
@@ -470,7 +470,7 @@ function CoachingCard({
 
       {question ? (
         <div className="mt-auto rounded-xl bg-brand-500/15 px-3.5 py-2.5">
-          <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-300">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-300">
             <MessageCircleQuestion className="h-3 w-3" /> Ask them
           </div>
           <p className="text-[13px] italic leading-snug text-white/90">&ldquo;{question}&rdquo;</p>
@@ -545,7 +545,7 @@ function ControlPanel({
         </>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[11px]">
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[12px]">
         <StatPill label="Phase" value={state.phase} />
         <StatPill label="Shift phase" value={state.round?.phase ?? "-"} />
         <StatPill
@@ -560,7 +560,7 @@ function ControlPanel({
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-white/5 px-2 py-1.5 text-center">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-white/50">{label}</div>
+      <div className="text-[12px] font-medium uppercase tracking-wider text-white/65">{label}</div>
       <div className="mt-0.5 truncate text-xs font-semibold text-white">{value}</div>
     </div>
   );

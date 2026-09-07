@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, Minus, Monitor, Plus, Store, Users } from "lucide-react";
+import { Minus, Monitor, Plus, Store, Users } from "lucide-react";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS } from "@sim/shared";
 import { Button, Card, cn } from "@/components/ui";
 import { getSocket } from "@/lib/socket";
@@ -97,8 +97,7 @@ export default function LandingPage() {
             Leadership under pressure
           </h1>
           <p className="mb-8 max-w-xl text-lg text-white/75 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
-            A live, multi-team retail simulation. Five shifts. Real decisions, real
-            consequences, one shared floor.
+            A live, multi-team, head-to-head retail simulation.
           </p>
 
           <Button size="lg" onClick={() => setLaunched(true)} className="px-8">
@@ -112,24 +111,24 @@ export default function LandingPage() {
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
       <div className="w-full max-w-4xl">
-        <div className="mb-8 flex items-center gap-2">
+        <div className="mb-8 flex items-center justify-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
-            <Activity className="h-4 w-4" />
+            <Store className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight text-white">
-            Plumfield Stores <span className="text-white/45">· Leadership Simulation</span>
+            Plumfield Stores <span className="text-white/65">· Leadership Simulation</span>
           </span>
         </div>
 
-        <h1 className="mb-2 text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>
-        <p className="mb-10 max-w-2xl text-base text-white/60">
-          Multi-team, time-boxed decisions across five shifts. Facilitators control the session and observe all teams;
+        <h1 className="mb-2 text-center text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-white/60">
+          Read the signals and make time-boxed decisions across five shifts. Facilitators control the session and observe all teams;
           teams share a laptop and make decisions under pressure.
         </p>
 
         {mode === "choose" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8 ring-brand-500/20">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border border-white/12 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-8 shadow-panel ring-brand-500/30">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Monitor className="h-5 w-5 text-brand-300" />
@@ -140,7 +139,7 @@ export default function LandingPage() {
                 </p>
 
                 <div className="mt-6">
-                  <label className="mb-2 block text-[12px] font-medium uppercase tracking-wide text-white/50">
+                  <label className="mb-2 block text-[12px] font-medium uppercase tracking-wide text-white/65">
                     Number of teams
                   </label>
                   <div className="flex items-stretch gap-1 rounded-xl bg-black/30 p-1 ring-1 ring-white/10">
@@ -170,7 +169,7 @@ export default function LandingPage() {
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="mt-2 text-[12px] text-white/50">
+                  <p className="mt-2 text-[12px] text-white/65">
                     Between {MIN_TEAMS} and {MAX_TEAMS}. You can still start the session before all teams have joined.
                   </p>
                 </div>
@@ -181,7 +180,7 @@ export default function LandingPage() {
               </Button>
             </Card>
 
-            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 p-8">
+            <Card tone="data" className="grid h-[24rem] grid-rows-[1fr_auto] gap-6 border border-white/12 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-8 shadow-panel ring-teal-500/25">
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <Users className="h-5 w-5 text-teal-300" />
@@ -213,7 +212,7 @@ export default function LandingPage() {
             </div>
             <form onSubmit={joinTeam} className="space-y-4">
               <div>
-                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/50">
+                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/65">
                   Session code
                 </label>
                 <input
@@ -226,7 +225,7 @@ export default function LandingPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/50">
+                <label className="mb-1 block text-[12px] font-medium uppercase tracking-wide text-white/65">
                   Team name
                 </label>
                 <input

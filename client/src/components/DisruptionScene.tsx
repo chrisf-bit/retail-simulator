@@ -549,6 +549,27 @@ const SCENES: Record<string, React.ComponentType<SceneProps>> = {
   server_overheating: ServerOverheatingScene,
 };
 
+/**
+ * Photographic scenes. When a scene name has an entry here, we render the image
+ * instead of the line-art fallback below. Images live in client/public and keep
+ * their own aspect ratio. Add entries as artwork lands, scene by scene.
+ */
+const SCENE_IMAGES: Record<string, string> = {
+  fire_alarm: "/disruptions/dis-01.png",
+  viral_complaint: "/disruptions/dis-03.png",
+  colleague_walkout: "/disruptions/dis-04.png",
+  power_outage: "/disruptions/dis-05.png",
+  medical_incident: "/disruptions/dis-06.png",
+  product_recall: "/disruptions/dis-07.png",
+  till_outage: "/disruptions/dis-08.png",
+  flood: "/disruptions/dis-09.png",
+  director_visit: "/disruptions/dis-10.png",
+  news_crew: "/disruptions/dis-11.png",
+  theft_accusation: "/disruptions/dis-12.png",
+  delivery_crash: "/disruptions/dis-13.png",
+  server_overheating: "/disruptions/dis-14.png",
+};
+
 export function DisruptionScene({
   name,
   className,
@@ -557,6 +578,18 @@ export function DisruptionScene({
   className?: string;
 }) {
   if (!name) return null;
+  const image = SCENE_IMAGES[name];
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt=""
+        aria-hidden="true"
+        className={className}
+        style={{ display: "block", width: "100%", height: "auto" }}
+      />
+    );
+  }
   const Scene = SCENES[name];
   if (!Scene) return null;
   return <Scene className={className} />;

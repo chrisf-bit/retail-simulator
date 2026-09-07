@@ -205,7 +205,7 @@ export function Delta({
   if (value === undefined) return null;
   if (value === 0) {
     return (
-      <span className={cn("inline-flex items-center gap-0.5 text-[12px]", onDark ? "text-white/50" : "text-ink-500")}>
+      <span className={cn("inline-flex items-center gap-0.5 text-[12px]", onDark ? "text-white/65" : "text-ink-500")}>
         <Minus className="h-3 w-3" />
         0
       </span>
@@ -425,7 +425,7 @@ export function ShiftRibbon({
   const pastBg = onDark ? "bg-white/40" : "bg-ink-900";
   const pastText = onDark ? "text-ink-900" : "text-white";
   const futureBg = onDark ? "bg-white/10" : "bg-ink-100";
-  const futureText = onDark ? "text-white/50" : "text-ink-400";
+  const futureText = onDark ? "text-white/65" : "text-ink-400";
   const sizes = size === "sm"
     ? { pill: "h-5 min-w-5 px-1.5", text: "text-[12px]", gap: "gap-1" }
     : { pill: "h-6 min-w-6 px-2", text: "text-[12px]", gap: "gap-1.5" };
