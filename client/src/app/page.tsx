@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Activity, Minus, Monitor, Plus, Users } from "lucide-react";
+import { Activity, Minus, Monitor, Plus, Store, Users } from "lucide-react";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS } from "@sim/shared";
 import { Button, Card, cn } from "@/components/ui";
 import { getSocket } from "@/lib/socket";
@@ -10,6 +10,7 @@ import { enterFullscreen } from "@/lib/fullscreen";
 
 export default function LandingPage() {
   const router = useRouter();
+  const [launched, setLaunched] = useState(false);
   const [mode, setMode] = useState<"choose" | "team">("choose");
   const [code, setCode] = useState("");
   const [teamName, setTeamName] = useState("");
@@ -59,6 +60,53 @@ export default function LandingPage() {
 
   function adjustTeams(delta: number) {
     setExpectedTeams((n) => Math.max(MIN_TEAMS, Math.min(MAX_TEAMS, n + delta)));
+  }
+
+  if (!launched) {
+    return (
+      <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+        {/* Full-bleed splash: the aisle before the storm */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url(/splash.png)" }}
+          aria-hidden
+        />
+        {/* Scrim: darken the top ceiling void where the copy sits and lift the
+            very bottom for the button, leaving the figure and aisles clear. */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-surface-base via-surface-base/40 via-35% to-transparent"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-surface-base to-transparent"
+          aria-hidden
+        />
+
+        {/* One grouped block, sitting in the void above the figure's head. */}
+        <div className="relative z-10 flex h-full w-full flex-col items-center px-6 pt-[14vh] text-center">
+          <div className="mb-5 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
+              <Store className="h-4 w-4" />
+            </div>
+            <span className="text-sm font-semibold uppercase tracking-wide text-white/80">
+              Plumfield Stores
+            </span>
+          </div>
+
+          <h1 className="mb-4 max-w-3xl text-5xl font-semibold tracking-tighter text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)] sm:text-6xl">
+            Leadership under pressure
+          </h1>
+          <p className="mb-8 max-w-xl text-lg text-white/75 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
+            A live, multi-team retail simulation. Five shifts. Real decisions, real
+            consequences, one shared floor.
+          </p>
+
+          <Button size="lg" onClick={() => setLaunched(true)} className="px-8">
+            Launch simulation
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
