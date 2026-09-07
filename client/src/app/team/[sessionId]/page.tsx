@@ -1086,7 +1086,7 @@ function IssueStep({
   return (
     <div>
       <StepHeader
-        title="Where's your focus?"
+        title="Target an issue"
         narrative="Targeting one issue that matches your priority sharpens its impact. Spreading effort keeps you broad, but a targeted store leads more consistently."
         instruction="Target one issue, or choose to spread effort. Either is a decision."
       />
