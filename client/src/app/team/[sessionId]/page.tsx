@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Clock,
   Compass,
+  FileText,
   Flag,
   Flame,
   Gauge,
@@ -36,6 +37,7 @@ import {
   Users2,
   Wallet,
   Wrench,
+  X,
 } from "lucide-react";
 import type {
   ActionApproach,
@@ -194,6 +196,7 @@ export default function TeamPlayerPage() {
   const [activeTab, setActiveTab] = useState<TabId>(1);
   const [kpiView, setKpiView] = useState<"values" | "trends">("values");
   const [acknowledgedDisruptions, setAcknowledgedDisruptions] = useState<Set<string>>(() => new Set());
+  const [handoverOpen, setHandoverOpen] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
@@ -300,6 +303,7 @@ export default function TeamPlayerPage() {
           }
         />
       ) : null}
+      {handoverOpen ? <HandoverModal onClose={() => setHandoverOpen(false)} /> : null}
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -307,6 +311,7 @@ export default function TeamPlayerPage() {
         phase={state.phase}
         timeLeftMs={timeLeft}
         roundPhase={state.round?.phase}
+        onOpenHandover={() => setHandoverOpen(true)}
       />
 
       <div className="shrink-0 px-5 pt-4">
@@ -391,6 +396,7 @@ function TeamHeader({
   phase,
   timeLeftMs,
   roundPhase,
+  onOpenHandover,
 }: {
   team: TeamPublic;
   round: number;
@@ -398,6 +404,7 @@ function TeamHeader({
   phase: string;
   timeLeftMs: number;
   roundPhase?: string;
+  onOpenHandover: () => void;
 }) {
   const clock = formatClock(timeLeftMs);
   const urgent = timeLeftMs < 60_000 && phase === "round";
@@ -417,6 +424,15 @@ function TeamHeader({
         </div>
       </div>
       <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={onOpenHandover}
+          title="Open the store handover"
+          className="press flex h-12 items-center gap-2.5 rounded-full bg-surface-panel px-5 text-white ring-1 ring-white/10 transition-colors hover:bg-white/[0.06]"
+        >
+          <FileText className="h-4 w-4 shrink-0 text-teal-300" />
+          <span className="text-sm font-semibold tracking-tight">Handover</span>
+        </button>
         {roundPhase === "disrupted" ? (
           <HeaderStat icon={AlertTriangle} tone="risk" title="Disruption in effect">
             <span className="text-base font-semibold tracking-tight">Disruption</span>
@@ -1950,6 +1966,135 @@ function DisruptionModal({
           <div className="mt-6 flex justify-end">
             <Button onClick={onAcknowledge}>Understood</Button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Placeholder handover content. Formal document structure with obviously-dummy
+// copy (lorem plus bracketed instructions) so the shape is clear but nothing
+// reads as final. Replace every section with real copy before go-live.
+const HANDOVER_SECTIONS: Array<{ heading: string; note: string; body: string[]; list?: string[] }> = [
+  {
+    heading: "Store overview",
+    note: "[Set the scene: store format, size, catchment, how it has been trading.]",
+    body: [
+      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    ],
+  },
+  {
+    heading: "Your team",
+    note: "[Who is who: strengths, gaps, who to lean on, and who needs a closer eye.]",
+    body: [
+      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    ],
+  },
+  {
+    heading: "Current priorities",
+    note: "[The two or three things that need attention first.]",
+    body: [],
+    list: [
+      "Placeholder priority one. Replace with real copy.",
+      "Placeholder priority two. Replace with real copy.",
+      "Placeholder priority three. Replace with real copy.",
+    ],
+  },
+  {
+    heading: "Watch-outs",
+    note: "[Known issues and risks, and the things the numbers will not tell you.]",
+    body: [
+      "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    ],
+  },
+];
+
+function HandoverModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[55] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="handover-title"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/25"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Document header */}
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
+              <FileText className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-teal-300">Store handover</div>
+              <h2 id="handover-title" className="text-lg font-semibold tracking-tight text-white">
+                Plumfield [Store] - Manager handover
+              </h2>
+              <div className="mt-1 text-[12px] text-white/55">
+                Prepared by [Outgoing Manager] · For the incoming manager · [Date]
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close handover"
+            className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Document body (scrolls internally - a modal is not the page) */}
+        <div className="quiet-scroll min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <div className="mb-4 rounded-xl bg-brand-500/10 px-4 py-3 text-[13px] leading-snug text-white/70 ring-1 ring-brand-500/20">
+            Placeholder handover. Replace every section below with the final copy before go-live. The wording here is dummy text only.
+          </div>
+          {HANDOVER_SECTIONS.map((sec) => (
+            <section key={sec.heading} className="mb-5 last:mb-0">
+              <h3 className="text-sm font-semibold tracking-tight text-white">{sec.heading}</h3>
+              <p className="mt-0.5 text-[12px] italic text-teal-300/80">{sec.note}</p>
+              {sec.body.map((p, i) => (
+                <p key={i} className="mt-2 text-[13px] leading-relaxed text-white/75">
+                  {p}
+                </p>
+              ))}
+              {sec.list ? (
+                <ul className="mt-2 space-y-1.5">
+                  {sec.list.map((li, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-white/75">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400/70" />
+                      <span>{li}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))}
+          <div className="mt-6 border-t border-white/10 pt-4 text-[13px] leading-relaxed text-white/70">
+            <p>[Sign-off: a short, personal note from the outgoing manager.]</p>
+            <p className="mt-2 font-semibold text-white">[Outgoing Manager]</p>
+            <p className="text-[12px] text-white/55">Outgoing Store Manager, Plumfield [Store]</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex shrink-0 justify-end border-t border-white/10 px-6 py-3">
+          <Button variant="quiet" size="sm" onClick={onClose}>
+            Close handover
+          </Button>
         </div>
       </div>
     </div>
