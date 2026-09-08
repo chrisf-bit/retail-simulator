@@ -103,11 +103,24 @@ const config: Config = {
           "0%": { transform: "translateX(-120%)" },
           "100%": { transform: "translateX(120%)" },
         },
+        // Breathing glow to keep the active briefing-walkthrough zone alive so
+        // the "look here" cue does not vanish after the first transition. Two
+        // variants: cyan for READ zones, magenta for the decide zone.
+        breathData: {
+          "0%, 100%": { boxShadow: "0 0 26px -10px rgba(45,212,191,0.35)" },
+          "50%": { boxShadow: "0 0 34px -4px rgba(45,212,191,0.7)" },
+        },
+        breathAct: {
+          "0%, 100%": { boxShadow: "0 0 26px -10px rgba(208,51,224,0.35)" },
+          "50%": { boxShadow: "0 0 34px -4px rgba(208,51,224,0.7)" },
+        },
       },
       animation: {
         hudPulse: "hudPulse 2.2s ease-in-out infinite",
         readoutFlash: "readoutFlash 0.9s ease-out",
         hudScan: "hudScan 6s linear infinite",
+        breathData: "breathData 2.8s ease-in-out infinite",
+        breathAct: "breathAct 2.8s ease-in-out infinite",
       },
     },
   },

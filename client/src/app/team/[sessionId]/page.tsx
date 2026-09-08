@@ -1448,6 +1448,27 @@ const DEMO_METRICS_BEFORE = METRIC_KEYS.reduce((acc, k) => {
   return acc;
 }, {} as Record<MetricKey, number>);
 
+// Small per-metric nudge used to keep the HUD bars gently breathing on the
+// metrics step, so the movement is not a single blink that is easy to miss.
+// Amounts are chosen to move each goal rollup a couple of points without
+// crossing a health band (which would flip a colour and read as a real change).
+const DEMO_METRICS_WOBBLE: Partial<Record<MetricKey, number>> = {
+  sales_vs_budget: 4,
+  availability: 4,
+  volume_lfl: 4,
+  esat: 3,
+  csat: -3,
+  labour: 3,
+  shrink: 3,
+  waste: 3,
+  scc: 3,
+  audits: -3,
+};
+const DEMO_METRICS_WOBBLED = METRIC_KEYS.reduce((acc, k) => {
+  acc[k] = Math.max(0, Math.min(100, DEMO_METRICS_AFTER[k] + (DEMO_METRICS_WOBBLE[k] ?? 0)));
+  return acc;
+}, {} as Record<MetricKey, number>);
+
 // Deterministic gently-rising series (no Math.random, so SSR and client agree).
 function demoSeries(end: number, len: number): number[] {
   const start = Math.max(0, end - 12);
@@ -1559,7 +1580,17 @@ const DEMO_DISRUPTION: DisruptionEvent = {
 function BriefingWalkthrough({ step }: { step: number }) {
   const s = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, step));
 
-  // Allocation is the one control that visibly slides: tween it in on its step.
+  // A slow shared heartbeat. Each step's one-shot animation would otherwise
+  // freeze the moment a facilitator lingers; the beat lets the active demo keep
+  // moving subtly so a team glancing up still sees life on the screen.
+  const [beat, setBeat] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setBeat((b) => (b + 1) % 1000), 1600);
+    return () => clearInterval(id);
+  }, []);
+
+  // Allocation is the one control that visibly slides: tween it in on its step,
+  // then keep a gentle oscillation running so the sliders stay alive.
   const [alloc, setAlloc] = useState<ResourceAllocation>(ZERO_ALLOC);
   useEffect(() => {
     if (s < 4) {
@@ -1574,7 +1605,7 @@ function BriefingWalkthrough({ step }: { step: number }) {
     setAlloc(ZERO_ALLOC);
     const frames = 12;
     let i = 0;
-    const timer = setInterval(() => {
+    const fill = setInterval(() => {
       i += 1;
       const t = i / frames;
       setAlloc({
@@ -1585,15 +1616,36 @@ function BriefingWalkthrough({ step }: { step: number }) {
       });
       if (i >= frames) {
         setAlloc(DEMO_ALLOC);
-        clearInterval(timer);
+        clearInterval(fill);
       }
     }, 55);
-    return () => clearInterval(timer);
+    // After the fill (first tick at 2.2s, well past the ~0.7s fill), shuffle 5%
+    // back and forth between two areas. Total stays 100, so it reads as a manager
+    // still fine-tuning rather than an error.
+    let phase = 0;
+    const wobble = setInterval(() => {
+      phase = (phase + 1) % 2;
+      const d = phase === 1 ? 5 : 0;
+      setAlloc({
+        shop_floor: DEMO_ALLOC.shop_floor + d,
+        backroom: DEMO_ALLOC.backroom,
+        customer_service: DEMO_ALLOC.customer_service - d,
+        problem_resolution: DEMO_ALLOC.problem_resolution,
+      });
+    }, 2200);
+    return () => {
+      clearInterval(fill);
+      clearInterval(wobble);
+    };
   }, [s]);
 
+  // On the metrics step, alternate the HUD values by a small nudge each beat so
+  // the health bars keep gliding up and down instead of settling once.
+  const metricsShown =
+    s === 0 ? DEMO_METRICS_BEFORE : s === 1 && beat % 2 === 1 ? DEMO_METRICS_WOBBLED : DEMO_METRICS_AFTER;
   const demoTeam: TeamPublic = {
     ...DEMO_TEAM_BASE,
-    metrics: (s === 0 ? DEMO_METRICS_BEFORE : DEMO_METRICS_AFTER) as TeamPublic["metrics"],
+    metrics: metricsShown as TeamPublic["metrics"],
     lastMetricDelta: s >= 1 ? DEMO_DELTA : undefined,
   };
 
@@ -1623,10 +1675,11 @@ function BriefingWalkthrough({ step }: { step: number }) {
 
   const dim = (active: boolean) =>
     active ? "opacity-100" : "opacity-40 saturate-[0.6]";
-  const glowData = (active: boolean) =>
-    active && !allBright ? "shadow-[0_0_30px_-6px_rgba(45,212,191,0.55)] rounded-2xl" : "";
-  const glowBrand = (active: boolean) =>
-    active && !allBright ? "shadow-[0_0_30px_-6px_rgba(208,51,224,0.55)] rounded-2xl" : "";
+  // A breathing glow (not a static one) keeps the "look here" cue alive for as
+  // long as the facilitator stays on the step. Suppressed on the all-bright
+  // intro/ready steps, where a calm full view is intended.
+  const glowData = (active: boolean) => (active && !allBright ? "rounded-2xl animate-breathData" : "");
+  const glowBrand = (active: boolean) => (active && !allBright ? "rounded-2xl animate-breathAct" : "");
 
   const noop = () => {};
 
