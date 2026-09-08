@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Monitor, Plus, Store, Users } from "lucide-react";
-import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS } from "@sim/shared";
+import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS, ROUND_COUNT } from "@sim/shared";
 import { Button, Card, cn } from "@/components/ui";
 import { getSocket } from "@/lib/socket";
 import { enterFullscreen } from "@/lib/fullscreen";
@@ -125,7 +125,7 @@ export default function LandingPage() {
 
         <h1 className="mb-2 text-center text-4xl font-semibold tracking-tighter text-white">Run a live session</h1>
         <p className="mx-auto mb-10 max-w-2xl text-center text-base text-white/60">
-          Read the signals and make time-boxed decisions across five shifts. Facilitators control the session and observe all teams;
+          Read the signals and make time-boxed decisions across {ROUND_COUNT} shifts. Facilitators control the session and observe all teams;
           teams share a laptop and make decisions under pressure.
         </p>
 

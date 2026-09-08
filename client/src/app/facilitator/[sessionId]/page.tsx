@@ -21,7 +21,6 @@ import {
   Download,
   Square,
   Trophy,
-  Zap,
 } from "lucide-react";
 import type { Socket } from "socket.io-client";
 import type {
@@ -492,7 +491,6 @@ function ControlPanel({
   token: string | null;
 }) {
   const canEndRound = state.phase === "round";
-  const canDisrupt = state.phase === "round" && state.round?.phase !== "disrupted";
   const reportReady = state.phase === "debrief" || state.phase === "finished";
 
   function openReport() {
@@ -522,26 +520,16 @@ function ControlPanel({
             tone="data"
             icon={<HelpCircle className="h-4 w-4" />}
             title="Shift controls"
-            subtitle="Disruption auto-triggers at 1 min. Override below if needed."
+            subtitle="A disruption may strike during a shift, or the room may run clean."
           />
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={!canDisrupt}
-              onClick={() => socket.emit("facilitator:trigger_disruption", { sessionId })}
-            >
-              <Zap className="h-4 w-4" /> Disrupt now
-            </Button>
-            <Button
-              variant="quiet"
-              size="sm"
-              disabled={!canEndRound}
-              onClick={() => socket.emit("facilitator:end_round", { sessionId })}
-            >
-              <Square className="h-4 w-4" /> End shift early
-            </Button>
-          </div>
+          <Button
+            variant="quiet"
+            size="sm"
+            disabled={!canEndRound}
+            onClick={() => socket.emit("facilitator:end_round", { sessionId })}
+          >
+            <Square className="h-4 w-4" /> End shift early
+          </Button>
         </>
       )}
 

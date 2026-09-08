@@ -3,8 +3,8 @@
 A plain-English extract of everything currently in the simulation, for SME review.
 Use it to decide what to **keep**, **lose**, or **add**.
 
-Cadence: **5 shifts x 5 minutes**. Flow: lobby -> briefing -> shift (x5) -> debrief.
-Each shift auto-triggers one disruption at the 1-minute mark (facilitator can also trigger early).
+Cadence: **8 shifts x 5 minutes**. Flow: lobby -> briefing -> shift (x8) -> debrief.
+Each shift has a 50% chance of one disruption, landing at a random point in the first half of the shift (the same moment for every team). Some shifts stay clean.
 
 _Confidence multiplier is deliberately left out of this pack - assume it applies to all major decisions._
 

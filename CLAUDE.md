@@ -1,6 +1,6 @@
 # Retail Leadership Simulation
 
-A real-time, multi-team, facilitator-led retail leadership simulation for enterprise L&D. Teams share a laptop and make time-boxed decisions across five shifts. Every decision moves live KPIs and four hidden drivers (trust, capability, safety risk, leadership consistency).
+A real-time, multi-team, facilitator-led retail leadership simulation for enterprise L&D. Teams share a laptop and make time-boxed decisions across eight shifts. Every decision moves live KPIs and four hidden drivers (trust, capability, safety risk, leadership consistency).
 
 Repo: https://github.com/chrisf-bit/retail-simulator
 
@@ -100,7 +100,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 - `primary`: brand magenta fill, white text. This is the single most important CTA.
 - `secondary`: `ink-900` fill, white text.
-- `quiet`: `ink-100` fill, dark text. For inline controls (disrupt now, end shift early).
+- `quiet`: `ink-100` fill, dark text. For inline controls (end shift early).
 - `ghost`: transparent. For back buttons and cancels.
 - `danger`: rose fill. Reserved for genuine alarms.
 - No chunky drop shadows. No custom `shadow-btn-ink` offsets. Use `press` class for the subtle press interaction.
@@ -126,11 +126,11 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 ## Game mechanics
 
-**Cadence**: 5 shifts x 5 minutes each.
+**Cadence**: 8 shifts x 5 minutes each. Round count is `ROUND_COUNT` in `shared/src/constants.ts`; duration is `ROUND_DURATION_MS`.
 
-**Flow**: lobby -> briefing -> shift (x5) -> debrief.
+**Flow**: lobby -> briefing -> shift (x8) -> debrief.
 
-**Each shift** auto-triggers a disruption at the 1-minute mark. Facilitator can also "Disrupt now" early. Shift ends when the timer hits zero or all teams submit.
+**Each shift** has a `DISRUPTION_CHANCE` (currently 50%) probability of a disruption. When one fires, it lands at a random point within the opening `DISRUPTION_WINDOW` (currently first 50%) of the shift, the same moment for every team (scheduled once, server-side, on the shared round). Some shifts stay clean. There is no facilitator "Disrupt now" override, and the scheduled time is kept off the public round state so teams cannot read it from the socket payload. Shift ends when the timer hits zero or all teams submit.
 
 **Decisions**: 7 inputs grouped into 5 tabs.
 
@@ -200,6 +200,33 @@ The team round view leads with a full-width console **HUD** band under the heade
 - Auto-deploys on push to `main`
 
 **In-memory state caveat**: any server restart clears all active sessions. Queue deploys for between sessions.
+
+---
+
+## Pen testing
+
+A pen test report is required once the sim is fully built. Notes on how to run it.
+
+**Timing**: run it once feature-complete, on the final stable build you intend to ship (ideally the same commit that goes to the final deploy), not while code is still changing. Fix known hardening gaps during build; let the pen test be independent confirmation.
+
+**Method - test locally, not shared prod.** Do not scan the live URLs. Vercel and Render sit behind their own edge WAF / DDoS protection and their Acceptable Use Policies prohibit unauthorised scanning of infra you don't own - a scanner pointed at prod (e.g. Intruder.io) gets blocked at first contact and can breach ToS. Instead run the identical code locally (`npm run dev`, client `:5173`, server `:3001`) and test that. No WAF, no ToS problem, full log access.
+
+**Scope**: the app layer - Next.js client, and especially the Socket.IO server (`server/src/index.ts`), session-join logic, and event handlers. Out of scope: Vercel/Render infrastructure, other tenants, volumetric DoS.
+
+**Coverage - three parts**:
+1. Dependency CVEs: `npm audit --workspaces --include-workspace-root` (and/or `npx snyk test`).
+2. Automated web scan: OWASP ZAP Automated Scan against `http://localhost:5173` and `http://localhost:3001`, then Report -> Generate Report (HTML/PDF). Free, one comprehensive report. Note: ZAP does NOT test the WebSocket layer.
+3. Access-control & logic testing (manual, highest value - no scanner finds these). Use `socket.io-client` as an attacker client against the local server.
+
+**Known logic/auth findings to confirm and fix** (spotted during review, treat as build hardening not "discoveries"):
+- `facilitator:start_briefing / start_round / end_round / trigger_disruption / next_phase` take only `sessionId` and never check the facilitator token or `socket.data.role` (contrast `facilitator:join`, which does check the token). Any client knowing a session ID can drive the game. Fix: verify role + token on every `facilitator:*` handler.
+- `team:submit_decision` does not verify `socket.data.teamId === teamId`, so a client can submit for another team. Fix: check ownership.
+- `decision` payloads are not validated server-side (e.g. allocations that don't total 100, out-of-range values). Fix: validate against a schema. In-memory state means one crash wipes all live sessions.
+- Session code/ID guessability - check enumeration resistance on join/rejoin.
+
+**Infrastructure security (shared responsibility model)**: the hosting layer is the providers' responsibility, evidenced with their compliance docs, not pen tested by us. Include a short section in the report citing Vercel (`vercel.com/security`, SOC 2 Type II) and Render (`render.com/security`, SOC 2 Type II); grab the actual SOC 2 reports/certificates from their Trust Centers if the client is formal. Suggested framing: infrastructure security is handled by the hosting providers under a shared responsibility model; both maintain SOC 2 Type II certification.
+
+**Report structure**: executive summary; scope & rules of engagement (name the commit); methodology; findings (severity/CVSS, evidence, plain-English remediation, auth gap first); appendices (ZAP report, `npm audit` output); infrastructure/shared-responsibility section.
 
 ---
 

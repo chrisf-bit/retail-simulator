@@ -9,8 +9,16 @@ import type {
   ConfidenceLevel,
 } from "./types";
 
-export const ROUND_COUNT = 5;
+export const ROUND_COUNT = 8;
 export const ROUND_DURATION_MS = 5 * 60 * 1000;
+
+// Disruptions are no longer guaranteed. Each shift has a fixed chance of a
+// disruption striking; when it does, it lands at a random point within the
+// opening window of the shift (the same moment for every team). Both are
+// fractions: DISRUPTION_CHANCE is the per-shift probability, DISRUPTION_WINDOW
+// is the fraction of the shift within which it can land.
+export const DISRUPTION_CHANCE = 0.5;
+export const DISRUPTION_WINDOW = 0.5;
 
 // Number of pre-session weeks in each team's baseline trend. Used by both the
 // server (when seeding the baseline) and the client (when drawing the divider

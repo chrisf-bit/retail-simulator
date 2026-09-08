@@ -12,7 +12,7 @@ import type {
   TeamFull,
   TeamInsight,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, METRIC_SHORT, PRIORITY_LABELS } from "@sim/shared";
+import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, METRIC_SHORT, PRIORITY_LABELS, ROUND_COUNT } from "@sim/shared";
 
 export function generateInsights(
   teams: TeamFull[],
@@ -598,7 +598,7 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
       return {
         headline: "Brief the room (5 minutes)",
         talkTrack: [
-          "Frame the context: each team runs a retail store across five shifts of five minutes each.",
+          `Frame the context: each team runs a retail store across ${ROUND_COUNT} shifts of five minutes each.`,
           "Walk through the decision panel live. Emphasise: there are no right answers, only revealing ones.",
           "Flag the hidden drivers (trust, capability, safety risk, leadership consistency). They shape score without showing.",
           "Remind them: decisions lock when the timer hits zero. Deliberation vs speed is itself a choice.",
@@ -613,7 +613,7 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
         headline: `Shift ${roundNumber} is live`,
         talkTrack: [
           "Stay out of the way. Resist the urge to coach mid-shift.",
-          "A disruption lands automatically one minute in. Use Disrupt now if you want to bring it forward.",
+          "A disruption may strike during the shift, at a moment you will not know in advance - and some shifts stay clean.",
           "Make notes on body language and who is speaking in each team.",
         ],
         watchFor: [
@@ -628,7 +628,7 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
       return {
         headline: "Full session debrief",
         talkTrack: [
-          "Looking across all five shifts, what pattern do you see in your own decisions?",
+          `Looking across all ${ROUND_COUNT} shifts, what pattern do you see in your own decisions?`,
           "Where did your leadership instincts serve you well? Where did they let you down?",
           "What did the hidden drivers - trust, capability, safety risk, leadership consistency - reveal about how you were actually leading?",
           "Which shift felt the most different to manage, and why?",

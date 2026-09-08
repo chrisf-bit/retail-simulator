@@ -20,6 +20,8 @@ import {
   CONNECTION_STRUGGLING_AFTER_MS,
   CONNECTION_TICK_MS,
   DEFAULT_EXPECTED_TEAMS,
+  DISRUPTION_CHANCE,
+  DISRUPTION_WINDOW,
   MAX_TEAMS,
   METRIC_KEYS,
   HIDDEN_KEYS,
@@ -177,6 +179,7 @@ export interface PersistedSession {
   usedDisruptionTitles?: string[];
   baselineTrend: TrendSeries;
   round?: RoundState;
+  disruptionScheduledAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -200,6 +203,11 @@ export class Session {
   private lastBroadcastStatuses?: Map<string, ConnectionStatus>;
   roundTimer?: NodeJS.Timeout;
   disruptionTimer?: NodeJS.Timeout;
+  // Absolute wall-clock time a disruption is due to strike this shift, or
+  // undefined if the coin-flip came up empty for this shift. Kept server-side
+  // (not on the public round) so teams cannot read the payload and learn
+  // whether or when a disruption is coming. Persisted for timer rehydration.
+  private disruptionScheduledAt?: number;
   writeTimer?: NodeJS.Timeout;
   private onUpdate: () => void;
 
@@ -236,6 +244,7 @@ export class Session {
     session.usedDisruptionTitles = new Set(data.usedDisruptionTitles ?? []);
     session.baselineTrend = data.baselineTrend;
     session.round = data.round;
+    session.disruptionScheduledAt = data.disruptionScheduledAt;
     session.createdAt = data.createdAt;
     session.updatedAt = data.updatedAt;
     session.rescheduleTimers();
@@ -257,6 +266,7 @@ export class Session {
       usedDisruptionTitles: Array.from(this.usedDisruptionTitles),
       baselineTrend: this.baselineTrend,
       round: this.round,
+      disruptionScheduledAt: this.disruptionScheduledAt,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -309,13 +319,16 @@ export class Session {
     }
     this.roundTimer = setTimeout(() => this.endRound(), remaining);
 
-    if (!this.round.disruption && this.round.phase === "active") {
-      const disruptionAt = this.round.startedAt + 60_000;
-      const untilDisruption = disruptionAt - now;
+    if (
+      !this.round.disruption &&
+      this.round.phase === "active" &&
+      this.disruptionScheduledAt !== undefined
+    ) {
+      const untilDisruption = this.disruptionScheduledAt - now;
       if (untilDisruption > 0) {
         this.disruptionTimer = setTimeout(() => this.triggerDisruption(), untilDisruption);
       } else {
-        // Missed the 1-min trigger while the server was down. Fire it now.
+        // Missed the scheduled trigger while the server was down. Fire it now.
         setImmediate(() => this.triggerDisruption());
       }
     }
@@ -412,8 +425,15 @@ export class Session {
     this.roundTimer = setTimeout(() => this.endRound(), ROUND_DURATION_MS);
 
     if (this.disruptionTimer) clearTimeout(this.disruptionTimer);
-    const disruptionDelay = 60_000;
-    this.disruptionTimer = setTimeout(() => this.triggerDisruption(), disruptionDelay);
+    this.disruptionScheduledAt = undefined;
+    // A disruption has a fixed chance of striking this shift. When it does, it
+    // lands at a random point within the opening window of the shift - the same
+    // moment for every team, since it is scheduled once here on the shared round.
+    if (Math.random() < DISRUPTION_CHANCE) {
+      const disruptionDelay = Math.random() * ROUND_DURATION_MS * DISRUPTION_WINDOW;
+      this.disruptionScheduledAt = now + disruptionDelay;
+      this.disruptionTimer = setTimeout(() => this.triggerDisruption(), disruptionDelay);
+    }
 
     this.onUpdate();
   }

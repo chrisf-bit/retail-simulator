@@ -256,7 +256,6 @@ export type ClientToServer = {
   "facilitator:start_briefing": { sessionId: string };
   "facilitator:start_round": { sessionId: string };
   "facilitator:end_round": { sessionId: string };
-  "facilitator:trigger_disruption": { sessionId: string };
   "facilitator:pause": { sessionId: string };
   "facilitator:next_phase": { sessionId: string };
   "team:submit_decision": {

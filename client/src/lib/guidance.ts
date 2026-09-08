@@ -43,7 +43,7 @@ export function facilitatorGuidance(state: SessionStatePublic): Guidance {
       return {
         tone: "warn",
         headline: `Shift ${state.round?.number} live`,
-        body: `${subs} of ${total} submitted. Disruption will auto-trigger at the 1-minute mark.`,
+        body: `${subs} of ${total} submitted. A disruption may strike this shift, or it may run clean.`,
       };
     }
     case "round_results":
