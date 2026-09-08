@@ -12,7 +12,16 @@ import type {
   TeamFull,
   TeamInsight,
 } from "@sim/shared";
-import { ARCHETYPE_LABELS, CONFIDENCE_LABELS, LEADERSHIP_LABELS, METRIC_SHORT, PRIORITY_LABELS, ROUND_COUNT } from "@sim/shared";
+import {
+  ARCHETYPE_LABELS,
+  CONFIDENCE_LABELS,
+  LEADERSHIP_LABELS,
+  METRIC_KEYS,
+  METRIC_LABELS,
+  METRIC_SHORT,
+  PRIORITY_LABELS,
+  ROUND_COUNT,
+} from "@sim/shared";
 
 export function generateInsights(
   teams: TeamFull[],
@@ -37,9 +46,60 @@ function pick<T>(pool: T[], seed: string): T {
   return pool[h % pool.length];
 }
 
+// A move of this size (0-100 metric scale) counts as the shift's real story.
+// Below it, the shift read as broadly flat and we anchor on the flattest metric.
+const SIGNIFICANT_MOVE = 4;
+
+/**
+ * The single round-debrief question for a team, anchored on their most
+ * significant metric move this shift. When the shift produced a real swing we
+ * ask about the biggest mover, framed by direction; when the whole shift stayed
+ * broadly flat we ask about the metric that moved least. Seeded by team+round,
+ * so two teams that land on the same metric still get different wording, and the
+ * question is specific to that team's own movement rather than generic.
+ */
+function significantMoveQuestion(metricDelta: Partial<Record<MetricKey, number>>, seed: string): string {
+  const byMagnitude = METRIC_KEYS.map((key) => ({ key, delta: metricDelta[key] ?? 0 })).sort(
+    (a, b) => Math.abs(b.delta) - Math.abs(a.delta),
+  );
+  const biggest = byMagnitude[0];
+  const flattest = byMagnitude[byMagnitude.length - 1];
+
+  if (biggest && Math.abs(biggest.delta) >= SIGNIFICANT_MOVE) {
+    const name = METRIC_LABELS[biggest.key];
+    if (biggest.delta > 0) {
+      return pick(
+        [
+          `${name} moved up the most this shift (+${Math.round(biggest.delta)}). What do you think lifted it?`,
+          `Your biggest gain this shift was ${name} (+${Math.round(biggest.delta)}). Was that where you were aiming?`,
+          `${name} climbed harder than anything else this shift. Which decision do you think drove that?`,
+        ],
+        seed + ":mover-up",
+      );
+    }
+    return pick(
+      [
+        `${name} fell the most this shift (${Math.round(biggest.delta)}). What do you think pulled it down?`,
+        `Your sharpest drop this shift was ${name} (${Math.round(biggest.delta)}). Did you see it coming?`,
+        `${name} took the biggest hit this shift. What would you do to protect it next time?`,
+      ],
+      seed + ":mover-down",
+    );
+  }
+
+  const name = METRIC_LABELS[flattest.key];
+  return pick(
+    [
+      `Nothing moved far this shift - ${name} least of all. Was holding steady the shift you intended?`,
+      `${name} barely shifted this round. What would it have taken to move it?`,
+      `This shift left ${name} almost where it started. Is that a win here, or a missed opportunity?`,
+    ],
+    seed + ":flat",
+  );
+}
+
 function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
   const observations: string[] = [];
-  const questions: string[] = [];
   const history = team.history;
   const seed = `${team.id}:${roundNumber}`;
 
@@ -109,133 +169,18 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
       observations.push(`Biggest move was ${METRIC_SHORT[bigMover[0] as MetricKey]} (${dir} ${Math.abs(bigMover[1])}).`);
     }
 
-    // --- Varied questions: each trigger has a pool, picked by team+round seed ---
-    const pushed: string[] = [];
-
-    if (d.confidence === "confident") {
-      pushed.push(
-        pick(
-          [
-            "What told you this was a shift to press forward rather than ease into?",
-            "What would you need to see to back off the confident stance next shift?",
-            "If you could label the feeling behind that confidence, what would it be?",
-          ],
-          seed + ":conf-high",
-        ),
-      );
-    } else if (d.confidence === "cautious") {
-      pushed.push(
-        pick(
-          [
-            "What made caution feel like the right stance for shift one?",
-            "What would have had to be different for you to press forward instead?",
-            "How did playing cautious sit with the rest of your team?",
-          ],
-          seed + ":conf-low",
-        ),
-      );
-    }
-
-    if (d.leadership === "directive") {
-      pushed.push(
-        pick(
-          [
-            "If you had more time on that shift, what might you have done instead of directing?",
-            "What signalled to you that directive was the stance that fit?",
-            "How did you want your team to feel after you made those calls?",
-          ],
-          seed + ":lead-dir",
-        ),
-      );
-    } else if (d.leadership === "coaching") {
-      pushed.push(
-        pick(
-          [
-            "What did coaching cost you in speed, and was it worth it?",
-            "When did you feel the urge to switch out of coaching into something more direct?",
-          ],
-          seed + ":lead-coach",
-        ),
-      );
-    } else if (d.leadership === "delegated") {
-      pushed.push(
-        pick(
-          [
-            "How did you decide what to hand over versus what to hold on to?",
-            "What would have to go wrong for you to pull the decisions back in?",
-          ],
-          seed + ":lead-del",
-        ),
-      );
-    }
-
-    if (!d.primaryIssueId) {
-      pushed.push(
-        pick(
-          [
-            "How do you decide what is worth giving focus to versus what can wait?",
-            "When you scanned the issues, what pulled your attention first and why?",
-          ],
-          seed + ":no-primary",
-        ),
-      );
-    }
-
-    if (latest.momentArchetype === "directive") {
-      pushed.push(
-        pick(
-          [
-            "What do you think your direct report wanted most from that exchange?",
-            "What stopped you from turning that into a question back to them?",
-          ],
-          seed + ":mom-dir",
-        ),
-      );
-    } else if (latest.momentArchetype === "delegate") {
-      pushed.push(
-        pick(
-          [
-            "What made it feel right to hand that back to them in the moment?",
-            "How confident are you that they left with what they needed?",
-          ],
-          seed + ":mom-del",
-        ),
-      );
-    }
-
-    if (bigMover && bigMover[1] <= -5) {
-      pushed.push(`What do you think pulled ${METRIC_SHORT[bigMover[0] as MetricKey]} down that shift?`);
-    } else if (bigMover && bigMover[1] >= 8) {
-      pushed.push(`What do you think lifted ${METRIC_SHORT[bigMover[0] as MetricKey]} that sharply?`);
-    }
-
-    // Fallback closers, rotated so all teams don't land on the same one.
-    if (pushed.length === 0) {
-      pushed.push(
-        pick(
-          [
-            "What one decision do you most want to pull apart from that shift?",
-            "If you ran that shift again, what would you try differently?",
-            "What did that shift tell you about how you lead under pressure?",
-          ],
-          seed + ":fallback",
-        ),
-      );
-    }
-
-    questions.push(...pushed);
-
     return {
       teamId: team.id,
       teamName: team.name,
       observations: observations.slice(0, 4),
-      questions: questions.slice(0, 3),
+      questions: [significantMoveQuestion(latest.metricDelta, seed)],
       strengthNote: team.strength,
       riskNote: team.risk,
     };
   }
 
-  // --- Multi-round: look for patterns across shifts ---
+  // --- Multi-round: observations look for patterns across shifts. The single
+  // question is always metric-driven (below); these only enrich the context. ---
   const priorities = history.map((h) => h.decision.priority);
   const priorityCounts = countBy(priorities);
   const dominantPriority = entriesOf(priorityCounts).sort((a, b) => b[1] - a[1])[0];
@@ -243,132 +188,39 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     observations.push(
       `Chose ${PRIORITY_LABELS[dominantPriority[0] as Priority]} as priority every shift (${dominantPriority[1]}/${roundsPlayed}).`,
     );
-    questions.push(
-      pick(
-        [
-          `What keeps drawing you back to ${PRIORITY_LABELS[dominantPriority[0] as Priority]}?`,
-          `If you had to put that priority to one side next shift, what would you lead with?`,
-          `What might you be missing by going with ${PRIORITY_LABELS[dominantPriority[0] as Priority]} every time?`,
-        ],
-        seed + ":prio-same",
-      ),
-    );
   } else if (entriesOf(priorityCounts).length >= 3) {
     observations.push(`Spread their priority across ${entriesOf(priorityCounts).length} different focus areas.`);
-    questions.push(
-      pick(
-        [
-          "Has your priority shifting been responsive to what the room threw up, or reactive?",
-          "When you look back, which of your priority picks do you think you got most right?",
-        ],
-        seed + ":prio-spread",
-      ),
-    );
   }
 
   const styles = history.map((h) => h.decision.leadership);
   const directiveCount = styles.filter((s) => s === "directive").length;
   if (directiveCount >= Math.ceil(roundsPlayed * 0.6)) {
     observations.push(`Used directive leadership in ${directiveCount} of ${styles.length} shifts.`);
-    questions.push(
-      pick(
-        [
-          "What would have changed if you had coached this one through instead of directing?",
-          "Where did the directive stance help you, and where did it cost you?",
-          "What does directive look like from your team's side of the conversation?",
-        ],
-        seed + ":dir-heavy",
-      ),
-    );
   }
   const styleSet = new Set(styles);
   if (roundsPlayed >= 3 && styleSet.size === 1) {
     observations.push(`Held the same leadership style (${LEADERSHIP_LABELS[styles[0]]}) across all shifts.`);
-    questions.push(
-      pick(
-        [
-          "Was holding one style across every shift deliberate, or did pressure narrow your options?",
-          "When you imagine changing style next shift, what would it cost you to do that?",
-        ],
-        seed + ":style-locked",
-      ),
-    );
   }
 
   const escalations = history.filter((h) => h.decision.action === "escalate").length;
   if (escalations >= 2) {
     observations.push(`Escalated in ${escalations} of ${roundsPlayed} shifts.`);
-    questions.push(
-      pick(
-        [
-          "What makes a decision yours to own versus one to send upward?",
-          "If escalation wasn't available, how would you have handled those moments?",
-        ],
-        seed + ":escalate",
-      ),
-    );
   }
 
   const salesDelta = latest.metricDelta.sales_vs_budget ?? 0;
   if (salesDelta >= 8) observations.push(`Sales moved up sharply (+${salesDelta}) in shift ${latest.round}.`);
   if (salesDelta <= -6) observations.push(`Sales slipped by ${salesDelta} in shift ${latest.round}.`);
 
-  if (team.metrics.csat < 45) {
-    questions.push(
-      pick(
-        [
-          "If you could only move one indicator next shift, which would you pick and why?",
-          "Where does the customer sit in your thinking right now?",
-          "What would a customer walking round your store say about their visit?",
-        ],
-        seed + ":cust-low",
-      ),
-    );
-  } else if (team.metrics.csat > 75) {
+  if (team.metrics.csat > 75) {
     observations.push(`Customer experience is holding high (${team.metrics.csat}).`);
   }
 
-  if (team.hidden.trust < 40) {
-    questions.push(
-      pick(
-        [
-          "How would your team describe the last ten minutes of working with you?",
-          "What signal do you think you've been sending that's pulling trust down?",
-        ],
-        seed + ":trust-low",
-      ),
-    );
-  } else if (team.hidden.trust > 75) {
+  if (team.hidden.trust > 75) {
     observations.push(`Trust is building strongly (${team.hidden.trust}).`);
   }
 
   if (team.hidden.safety_risk > 60) {
     observations.push(`Safety risk has drifted high (${team.hidden.safety_risk}).`);
-    questions.push(
-      pick(
-        [
-          "Which risk are you most comfortable carrying, and which one is quietly bothering you?",
-          "What has safety been quietly traded for across these shifts?",
-        ],
-        seed + ":safety-high",
-      ),
-    );
-  }
-
-  const allocs = history.map((h) => h.decision.allocation);
-  if (allocs.length >= 2) {
-    const avgResolution = allocs.reduce((a, b) => a + b.problem_resolution, 0) / allocs.length;
-    if (avgResolution < 15) {
-      questions.push(
-        pick(
-          [
-            "What's behind consistently low resource into problem resolution?",
-            "When you rebuild next shift's allocation, what changes first?",
-          ],
-          seed + ":alloc-res",
-        ),
-      );
-    }
   }
 
   const confidences = history.map((h) => h.decision.confidence).filter((c): c is ConfidenceLevel => !!c);
@@ -378,28 +230,6 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     const [top, topN] = entries[0] ?? ["measured", 0];
     if (topN === confidences.length && top !== "measured") {
       observations.push(`Played ${CONFIDENCE_LABELS[top as ConfidenceLevel]} in every shift so far.`);
-      if (top === "confident") {
-        questions.push(
-          pick(
-            [
-              "What tells you a decision is worth pressing on versus one worth hedging?",
-              "When has that confident stance caught you out?",
-            ],
-            seed + ":conf-every",
-          ),
-        );
-      }
-      if (top === "cautious") {
-        questions.push(
-          pick(
-            [
-              "Is playing cautious every shift habit, or strategy?",
-              "What would the shift have to look like for you to press forward?",
-            ],
-            seed + ":cautious-every",
-          ),
-        );
-      }
     }
   }
 
@@ -412,66 +242,24 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
       observations.push(
         `Used ${ARCHETYPE_LABELS[dominant[0] as MomentArchetype]} every time a direct report came to them.`,
       );
-      if (dominant[0] === "directive") {
-        questions.push(
-          pick(
-            [
-              "What does your team learn from a directive answer versus a question back to them?",
-              "Which of those people moments do you most wish you'd handled differently?",
-            ],
-            seed + ":pm-dir",
-          ),
-        );
-      }
     }
   }
   if (momentSkips > 0) {
     observations.push(`Did not respond to ${momentSkips} of ${roundsPlayed} people moments.`);
-    questions.push(
-      pick(
-        [
-          "When you passed on the people moment, what was pulling your attention instead?",
-          "How does a non-response land from the direct report's side?",
-        ],
-        seed + ":pm-skip",
-      ),
-    );
   }
 
   const primaryPicks = history.filter((h) => h.decision.primaryIssueId).length;
   if (primaryPicks === 0) {
     observations.push("Have not picked a primary issue to target in any shift.");
-    questions.push(
-      pick(
-        [
-          "What's stopped you from committing to a primary issue in any shift?",
-          "If you had to pick one moment when naming a primary issue would have mattered, which was it?",
-        ],
-        seed + ":no-primary-multi",
-      ),
-    );
   } else if (primaryPicks === roundsPlayed) {
     observations.push(`Picked a primary issue in every shift (${primaryPicks}/${roundsPlayed}).`);
-  }
-
-  if (questions.length === 0) {
-    questions.push(
-      pick(
-        [
-          "Looking at this shift, what one decision would you make differently if you ran it again?",
-          "What surprised you most about how that shift played out?",
-          "Where did the pressure bite hardest, and what did you do with it?",
-        ],
-        seed + ":multi-fallback",
-      ),
-    );
   }
 
   return {
     teamId: team.id,
     teamName: team.name,
     observations: observations.slice(0, 3),
-    questions: questions.slice(0, 3),
+    questions: [significantMoveQuestion(latest.metricDelta, seed)],
     strengthNote: team.strength,
     riskNote: team.risk,
   };
