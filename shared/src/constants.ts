@@ -20,6 +20,11 @@ export const ROUND_DURATION_MS = 5 * 60 * 1000;
 export const DISRUPTION_CHANCE = 0.5;
 export const DISRUPTION_WINDOW = 0.5;
 
+// Number of steps in the facilitator-driven briefing walkthrough. The client
+// owns the per-step content and animation; the server only clamps the shared
+// step index to this range. Keep in sync with BRIEFING_STEPS in the team page.
+export const BRIEFING_STEP_COUNT = 10;
+
 // Number of pre-session weeks in each team's baseline trend. Used by both the
 // server (when seeding the baseline) and the client (when drawing the divider
 // between history and in-session shifts on sparklines).

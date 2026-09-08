@@ -130,6 +130,7 @@ io.on("connection", (socket) => {
   socket.on("facilitator:start_briefing", ({ sessionId }) => store.get(sessionId)?.startBriefing());
   socket.on("facilitator:start_round", ({ sessionId }) => store.get(sessionId)?.startRound());
   socket.on("facilitator:end_round", ({ sessionId }) => store.get(sessionId)?.endRound());
+  socket.on("facilitator:briefing_step", ({ sessionId, step }) => store.get(sessionId)?.setBriefingStep(step));
   socket.on("facilitator:next_phase", ({ sessionId }) => store.get(sessionId)?.nextPhase());
 
   socket.on(

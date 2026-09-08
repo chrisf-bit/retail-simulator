@@ -8,6 +8,8 @@ import {
   ArrowDown,
   ArrowUp,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Eye,
   Flag,
@@ -16,6 +18,7 @@ import {
   Loader2,
   MessageCircleQuestion,
   Minus,
+  MonitorPlay,
   Play,
   PlayCircle,
   Download,
@@ -29,12 +32,13 @@ import type {
   TeamInsight,
   TeamPublic,
 } from "@sim/shared";
-import { BASELINE_WEEKS, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
+import { BASELINE_WEEKS, BRIEFING_STEP_COUNT, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
 import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
+import { BRIEFING_STEPS } from "@/lib/briefing";
 
 interface PrimaryAction {
   label: string;
@@ -492,6 +496,15 @@ function ControlPanel({
 }) {
   const canEndRound = state.phase === "round";
   const reportReady = state.phase === "debrief" || state.phase === "finished";
+  const briefing = state.phase === "briefing";
+  const step = Math.max(0, Math.min(BRIEFING_STEPS.length - 1, state.briefingStep ?? 0));
+  const stepInfo = BRIEFING_STEPS[step];
+  const lastStep = step >= BRIEFING_STEPS.length - 1;
+
+  function goStep(next: number) {
+    const clamped = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, next));
+    socket.emit("facilitator:briefing_step", { sessionId, step: clamped });
+  }
 
   function openReport() {
     if (!token) return;
@@ -513,6 +526,49 @@ function ControlPanel({
           <Button variant="primary" onClick={openReport} disabled={!token} className="w-full justify-center">
             <Download className="h-4 w-4" /> Download session report
           </Button>
+        </>
+      ) : briefing ? (
+        <>
+          <SectionTitle
+            tone="data"
+            icon={<MonitorPlay className="h-4 w-4" />}
+            title="Briefing walkthrough"
+            subtitle="Step the room through the store screen. Every team follows on their own laptop."
+          />
+          <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">
+                Step {step + 1} of {BRIEFING_STEPS.length}
+              </span>
+              <div className="flex items-center gap-1">
+                {BRIEFING_STEPS.map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full transition-colors",
+                      i === step ? "bg-brand-400" : i < step ? "bg-white/40" : "bg-white/15",
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="mt-1.5 text-sm font-semibold tracking-tight text-white">{stepInfo.title}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-teal-300">
+              <MonitorPlay className="h-3 w-3" /> {stepInfo.teamsSee}
+            </div>
+            <p className="mt-2 text-[13px] leading-snug text-white/70">{stepInfo.body}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <Button variant="quiet" size="sm" disabled={step <= 0} onClick={() => goStep(step - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Back
+              </Button>
+              <Button variant="primary" size="sm" disabled={lastStep} onClick={() => goStep(step + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+              {lastStep ? (
+                <span className="text-[12px] leading-tight text-white/60">Walkthrough done. Start Shift 1 above.</span>
+              ) : null}
+            </div>
+          </div>
         </>
       ) : (
         <>

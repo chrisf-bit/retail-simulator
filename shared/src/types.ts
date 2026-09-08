@@ -245,6 +245,10 @@ export interface SessionStatePublic {
   }>;
   prompts: FacilitatorPrompt[];
   insights: SessionInsights;
+  // Facilitator-driven walkthrough step during the briefing phase. 0-indexed;
+  // teams render the animated demo for this step. Only meaningful while
+  // phase === "briefing".
+  briefingStep: number;
   serverNow: number;
 }
 
@@ -256,6 +260,7 @@ export type ClientToServer = {
   "facilitator:start_briefing": { sessionId: string };
   "facilitator:start_round": { sessionId: string };
   "facilitator:end_round": { sessionId: string };
+  "facilitator:briefing_step": { sessionId: string; step: number };
   "facilitator:pause": { sessionId: string };
   "facilitator:next_phase": { sessionId: string };
   "team:submit_decision": {

@@ -39,8 +39,10 @@ import {
 } from "lucide-react";
 import type {
   ActionApproach,
+  Alert,
   ConfidenceLevel,
   Decision,
+  DisruptionEvent,
   Goal,
   Issue,
   MetricKey,
@@ -50,15 +52,18 @@ import type {
   SessionStatePublic,
   TeamMoment,
   TeamPublic,
+  TrendSeries,
 } from "@sim/shared";
 import {
   ACTION_LABELS,
   BASELINE_WEEKS,
+  BRIEFING_STEP_COUNT,
   CONFIDENCE_DESCRIPTIONS,
   CONFIDENCE_LABELS,
   GOAL_KEYS,
   GOAL_SHORT,
   HIDDEN_INVERTED,
+  HIDDEN_KEYS,
   HIDDEN_LABELS,
   METRICS_OF_GOAL,
   METRIC_KEYS,
@@ -74,6 +79,7 @@ import { DisruptionScene } from "@/components/DisruptionScene";
 import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState, useTeamHeartbeat } from "@/lib/useSession";
 import { teamGuidance } from "@/lib/guidance";
+import { briefingStepGuidance } from "@/lib/briefing";
 import { ScenarioIcon } from "@/lib/scenarioIcons";
 
 const PRIORITY_ICONS: Record<Priority, React.ComponentType<{ className?: string }>> = {
@@ -258,7 +264,8 @@ export default function TeamPlayerPage() {
     (!state.round?.moment || !!momentResponseId);
   const inputsActive = !team.submitted && !roundLocked && state.phase === "round";
   const canSubmit = inputsActive && requiredAll;
-  const guidance = teamGuidance(state, team.submitted);
+  const guidance =
+    state.phase === "briefing" ? briefingStepGuidance(state.briefingStep) : teamGuidance(state, team.submitted);
 
   function submit() {
     if (!teamId || !priority || !action || !leadership || !confidence) return;
@@ -309,7 +316,7 @@ export default function TeamPlayerPage() {
       {state.phase === "lobby" ? (
         <LobbyPanel code={state.code} teamName={team.name} />
       ) : state.phase === "briefing" ? (
-        <BriefingPanel />
+        <BriefingWalkthrough step={state.briefingStep} />
       ) : state.phase === "debrief" || state.phase === "finished" ? (
         <DebriefPanel team={team} rank={state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0} />
       ) : state.phase === "round_results" ? (
@@ -323,7 +330,7 @@ export default function TeamPlayerPage() {
             <ZoneLabel label="Context" tone="data" />
             <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
               <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
-              <AlertsPanel state={state} />
+              <AlertsPanel alerts={state.round?.alerts ?? []} disruption={state.round?.disruption} />
             </div>
           </aside>
 
@@ -664,9 +671,7 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
   );
 }
 
-function AlertsPanel({ state }: { state: SessionStatePublic }) {
-  const alerts = state.round?.alerts ?? [];
-  const disruption = state.round?.disruption;
+function AlertsPanel({ alerts, disruption }: { alerts: Alert[]; disruption?: DisruptionEvent }) {
   return (
     <DataCard className="flex min-h-0 flex-col p-3">
       <DataHeader icon={BellRing} title="Alerts" />
@@ -1399,122 +1404,294 @@ function LobbyPanel({ code, teamName }: { code: string; teamName: string }) {
   );
 }
 
-function BriefingPanel() {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-5">
-      <DataCard className="p-5">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
-            <Store className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-brand-300">Today you are</div>
-            <div className="text-2xl font-semibold tracking-tighter text-white">A Plumfield store manager</div>
-            <p className="mt-1 text-sm text-white/60">
-              {ROUND_COUNT} shifts · 5 minutes each · 4 decision steps per shift. Each shift moves your live store metrics and 4 hidden drivers: trust, capability, safety risk, and leadership consistency.
-            </p>
-          </div>
-        </div>
-      </DataCard>
+// --- Briefing walkthrough --------------------------------------------------
+// The briefing is a facilitator-driven, animated tour of the real shift screen.
+// The facilitator advances the step (broadcast as state.briefingStep); every
+// team's screen renders the matching demo below, so the room stays together
+// without needing frame-level sync - only the step index is shared. Step copy
+// lives in lib/briefing.ts so the facilitator stepper shares one source.
 
-      <DataCard className="p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Here's what you'll see</div>
-            <div className="text-lg font-semibold tracking-tight text-white">Where every step lives</div>
-          </div>
-          <Pill tone="info" strong>
-            <Clock className="h-3 w-3" /> 5 min per shift
-          </Pill>
-        </div>
-        <ScreenMap />
-      </DataCard>
-    </div>
-  );
+const DEMO_ALLOC: ResourceAllocation = {
+  shop_floor: 40,
+  backroom: 15,
+  customer_service: 30,
+  problem_resolution: 15,
+};
+const ZERO_ALLOC: ResourceAllocation = { shop_floor: 0, backroom: 0, customer_service: 0, problem_resolution: 0 };
+
+const DEMO_METRICS_AFTER: Record<MetricKey, number> = {
+  sales_vs_budget: 72,
+  availability: 66,
+  volume_lfl: 58,
+  esat: 70,
+  csat: 64,
+  labour: 55,
+  shrink: 49,
+  waste: 53,
+  scc: 51,
+  audits: 62,
+};
+const DEMO_DELTA: Partial<Record<MetricKey, number>> = {
+  sales_vs_budget: 4,
+  availability: 3,
+  volume_lfl: 2,
+  esat: 3,
+  csat: -2,
+  labour: -3,
+  shrink: 2,
+  waste: -1,
+  scc: 1,
+  audits: 2,
+};
+const DEMO_METRICS_BEFORE = METRIC_KEYS.reduce((acc, k) => {
+  acc[k] = DEMO_METRICS_AFTER[k] - (DEMO_DELTA[k] ?? 0);
+  return acc;
+}, {} as Record<MetricKey, number>);
+
+// Deterministic gently-rising series (no Math.random, so SSR and client agree).
+function demoSeries(end: number, len: number): number[] {
+  const start = Math.max(0, end - 12);
+  return Array.from({ length: len }, (_, i) => {
+    const t = len <= 1 ? 1 : i / (len - 1);
+    const base = start + (end - start) * t;
+    const wiggle = Math.sin(i * 1.3) * 3;
+    const v = i === len - 1 ? end : base + wiggle;
+    return Math.round(Math.max(0, Math.min(100, v)));
+  });
 }
+const DEMO_TREND: TrendSeries = (() => {
+  const trend = {} as TrendSeries;
+  const len = BASELINE_WEEKS + 3;
+  for (const k of METRIC_KEYS) trend[k] = demoSeries(DEMO_METRICS_AFTER[k], len);
+  for (const k of HIDDEN_KEYS) trend[k] = demoSeries(50, len);
+  return trend;
+})();
 
-function ScreenMap() {
+const DEMO_TEAM_BASE: Omit<TeamPublic, "metrics" | "lastMetricDelta"> = {
+  id: "demo",
+  name: "Demo store",
+  score: 0,
+  lastMovement: 0,
+  trend: DEMO_TREND,
+  submitted: false,
+  connectionStatus: "connected",
+};
+
+const DEMO_ISSUES: Issue[] = [
+  {
+    id: "demo-i1",
+    title: "Chilled aisle running warm",
+    description: "Two chillers drifted off temperature overnight. Fresh availability is slipping.",
+    severity: "high",
+    tags: ["customer", "commercial"],
+    urgency: 5,
+    type: "A",
+    scored: true,
+    icon: "thermometer",
+  },
+  {
+    id: "demo-i2",
+    title: "Queues building at the tills",
+    description: "Lunchtime rush with two tills down. Customers are waiting.",
+    severity: "medium",
+    tags: ["customer"],
+    urgency: 3,
+    type: "A",
+    scored: true,
+    icon: "clock",
+  },
+  {
+    id: "demo-i3",
+    title: "Delivery running late",
+    description: "Ambient delivery delayed forty minutes. The backroom is under pressure.",
+    severity: "low",
+    tags: ["commercial"],
+    urgency: 2,
+    type: "A",
+    scored: true,
+    icon: "truck",
+  },
+];
+
+const DEMO_ALERTS: Alert[] = [
+  {
+    id: "demo-a1",
+    kind: "head_office",
+    title: "Weekend promotion goes live",
+    message: "The meal-deal promotion starts at noon. Expect footfall to lift.",
+    timestamp: 0,
+    icon: "megaphone",
+  },
+  {
+    id: "demo-a2",
+    kind: "operational",
+    title: "Two colleagues off sick",
+    message: "You are down two team members on the early shift.",
+    timestamp: 0,
+    icon: "users",
+  },
+];
+
+const DEMO_MOMENT: TeamMoment = {
+  id: "demo-m1",
+  persona: { name: "Priya", role: "Team Leader", tenure: "3 years" },
+  situation:
+    "Priya has spotted a rota clash for the weekend and is unsure whether to swap the shifts herself or wait for you.",
+  prompt: "How do you want me to handle it?",
+  options: [
+    { id: "demo-o1", label: "Tell her exactly what to do, then move on.", archetype: "directive" },
+    { id: "demo-o2", label: "Ask what she sees as the options, then decide together.", archetype: "collaborative" },
+    { id: "demo-o3", label: "Coach her to work it through and check back with you.", archetype: "coaching" },
+    { id: "demo-o4", label: "Hand it to her to own, and back her call.", archetype: "delegate" },
+  ],
+};
+const DEMO_MOMENT_RESPONSE = "demo-o3";
+
+const DEMO_DISRUPTION: DisruptionEvent = {
+  id: "demo-d1",
+  title: "Fire alarm activated",
+  message: "The fire alarm has triggered. You may need to begin the evacuation procedure.",
+  impact: "Trading paused",
+  triggeredAt: 0,
+  scene: "fire_alarm",
+};
+
+function BriefingWalkthrough({ step }: { step: number }) {
+  const s = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, step));
+
+  // Allocation is the one control that visibly slides: tween it in on its step.
+  const [alloc, setAlloc] = useState<ResourceAllocation>(ZERO_ALLOC);
+  useEffect(() => {
+    if (s < 4) {
+      setAlloc(ZERO_ALLOC);
+      return;
+    }
+    if (s > 4) {
+      setAlloc(DEMO_ALLOC);
+      return;
+    }
+    // s === 4: glide from empty to a valid 100% split.
+    setAlloc(ZERO_ALLOC);
+    const frames = 12;
+    let i = 0;
+    const timer = setInterval(() => {
+      i += 1;
+      const t = i / frames;
+      setAlloc({
+        shop_floor: Math.round(DEMO_ALLOC.shop_floor * t),
+        backroom: Math.round(DEMO_ALLOC.backroom * t),
+        customer_service: Math.round(DEMO_ALLOC.customer_service * t),
+        problem_resolution: Math.round(DEMO_ALLOC.problem_resolution * t),
+      });
+      if (i >= frames) {
+        setAlloc(DEMO_ALLOC);
+        clearInterval(timer);
+      }
+    }, 55);
+    return () => clearInterval(timer);
+  }, [s]);
+
+  const demoTeam: TeamPublic = {
+    ...DEMO_TEAM_BASE,
+    metrics: (s === 0 ? DEMO_METRICS_BEFORE : DEMO_METRICS_AFTER) as TeamPublic["metrics"],
+    lastMetricDelta: s >= 1 ? DEMO_DELTA : undefined,
+  };
+
+  const priority: Priority | null = s >= 3 ? "customer" : null;
+  const action: ActionApproach | null = s >= 3 ? "adapt_local" : null;
+  const leadership: LeadershipStyle | null = s >= 4 ? "coaching" : null;
+  const primaryIssueId = s >= 5 ? DEMO_ISSUES[0].id : null;
+  const momentResponseId = s >= 6 ? DEMO_MOMENT_RESPONSE : null;
+  const confidence: ConfidenceLevel | null = s >= 7 ? "measured" : null;
+  const showDisruption = s === 8;
+  const allocTotal = alloc.shop_floor + alloc.backroom + alloc.customer_service + alloc.problem_resolution;
+
+  const demoTab: TabId = s >= 3 && s <= 7 ? (((s - 2) as TabId)) : s >= 8 ? 5 : 1;
+
+  const demoTabComplete: Record<TabId, boolean> = {
+    1: !!priority && !!action,
+    2: !!leadership && allocTotal === 100,
+    3: !!primaryIssueId,
+    4: !!momentResponseId,
+    5: !!confidence,
+  };
+
+  const allBright = s === 0 || s === 9;
+  const hudActive = allBright || s === 1;
+  const contextActive = allBright || s === 2 || s === 8;
+  const decideActive = allBright || (s >= 3 && s <= 8);
+
+  const dim = (active: boolean) =>
+    active ? "opacity-100" : "opacity-40 saturate-[0.6]";
+  const glowData = (active: boolean) =>
+    active && !allBright ? "shadow-[0_0_30px_-6px_rgba(45,212,191,0.55)] rounded-2xl" : "";
+  const glowBrand = (active: boolean) =>
+    active && !allBright ? "shadow-[0_0_30px_-6px_rgba(208,51,224,0.55)] rounded-2xl" : "";
+
+  const noop = () => {};
+
   return (
-    <div className="rounded-2xl bg-surface-stage p-3 ring-1 ring-white/5">
-      <div className="flex items-center justify-between rounded-lg bg-surface-panel px-3 py-2 ring-1 ring-white/10">
-        <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded bg-brand-500" />
-          <div className="h-2 w-24 rounded bg-white/15" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-5 w-14 rounded-full bg-white/10" />
-          <div className="h-5 w-14 rounded-full bg-white/10" />
-        </div>
+    <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
+      <div className={cn("transition-all duration-500", dim(hudActive), glowData(hudActive))}>
+        <MetricsHud team={demoTeam} view="values" onViewChange={noop} />
       </div>
 
-      <div className="mt-2 grid grid-cols-[minmax(180px,1fr)_2fr] gap-2">
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 px-1">
-            <span className="h-1 w-1 rounded-full bg-teal-400" />
-            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-teal-300">Context</span>
+      <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
+        <aside
+          className={cn(
+            "flex flex-col gap-3 transition-all duration-500 xl:min-h-0 xl:overflow-hidden",
+            dim(contextActive),
+            glowData(contextActive),
+          )}
+        >
+          <ZoneLabel label="Context" tone="data" />
+          <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
+            <IssuesContextPanel issues={DEMO_ISSUES} primaryIssueId={primaryIssueId} />
+            <AlertsPanel alerts={DEMO_ALERTS} disruption={showDisruption ? DEMO_DISRUPTION : undefined} />
           </div>
-          <MapZone label="Store KPIs" hint="Live numbers + trends" />
-          <MapZone label="Active issues" hint="3 live pressures" />
-          <MapZone label="Alerts" hint="Head office + disruption" />
-        </div>
+        </aside>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 px-1">
-            <span className="h-1 w-1 rounded-full bg-brand-500" />
-            <span className="text-[12px] font-semibold uppercase tracking-[0.15em] text-brand-300">Decide</span>
+        <section
+          className={cn(
+            "flex min-w-0 flex-col gap-3 transition-all duration-500 xl:min-h-0",
+            dim(decideActive),
+            glowBrand(decideActive),
+          )}
+        >
+          <ZoneLabel label="Decide" tone="brand" />
+          {/* pointer-events-none: this is a scripted demo, not an input surface. */}
+          <div className="pointer-events-none select-none xl:min-h-0 xl:flex-1">
+            <DecisionPanel
+              activeTab={demoTab}
+              setActiveTab={noop}
+              tabComplete={demoTabComplete}
+              priority={priority}
+              setPriority={noop}
+              action={action}
+              setAction={noop}
+              leadership={leadership}
+              setLeadership={noop}
+              allocation={alloc}
+              setAllocation={noop}
+              confidence={confidence}
+              setConfidence={noop}
+              primaryIssueId={primaryIssueId}
+              setPrimaryIssueId={noop}
+              spreadEffort={false}
+              setSpreadEffort={noop}
+              momentResponseId={momentResponseId}
+              setMomentResponseId={noop}
+              issues={DEMO_ISSUES}
+              moment={DEMO_MOMENT}
+              inputsActive
+              canSubmit={false}
+              submitted={false}
+              onSubmit={noop}
+            />
           </div>
-          <div className="rounded-lg bg-surface-decide p-3 ring-1 ring-brand-500/25">
-            <div className="mb-2 flex items-center gap-1 rounded-lg bg-white/[0.06] p-1 ring-1 ring-white/10">
-              <TabPreview n={1} label="Focus" />
-              <TabPreview n={2} label="Team" />
-              <TabPreview n={3} label="Respond" />
-              <TabPreview n={4} label="Confidence" />
-            </div>
-            <div className="space-y-1 text-[12px]">
-              <MiniStep tab="Step 1 · Focus" items={["Priority focus", "Action approach"]} />
-              <MiniStep tab="Step 2 · Team" items={["Leadership style", "Resource allocation"]} />
-              <MiniStep tab="Step 3 · Respond" items={["Primary issue (optional)", "People moment"]} />
-              <MiniStep tab="Step 4 · Confidence" items={["Confidence level"]} />
-            </div>
-            <div className="mt-2 h-7 rounded-md bg-brand-500 text-center text-[12px] font-semibold leading-7 text-white">
-              Submit decision
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
-    </div>
-  );
-}
-
-function MapZone({ label, hint }: { label: string; hint: string }) {
-  return (
-    <div className="flex items-start gap-2 rounded-lg bg-surface-panel p-2.5 ring-1 ring-white/10">
-      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/40" />
-      <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-semibold text-white">{label}</div>
-        <div className="text-[12px] text-white/65">{hint}</div>
-      </div>
-    </div>
-  );
-}
-
-function TabPreview({ n, label }: { n: number; label: string }) {
-  return (
-    <div className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white/10 px-2 py-1 text-[12px] font-semibold text-white/85">
-      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[12px] font-semibold text-white">
-        {n}
-      </span>
-      {label}
-    </div>
-  );
-}
-
-function MiniStep({ tab, items }: { tab: string; items: string[] }) {
-  return (
-    <div className="rounded-md bg-white/[0.04] px-2 py-1.5 ring-1 ring-white/10">
-      <div className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">{tab}</div>
-      <div className="text-[12px] text-white/70">{items.join(" · ")}</div>
-    </div>
+    </main>
   );
 }
 

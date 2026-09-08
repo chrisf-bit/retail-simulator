@@ -16,6 +16,7 @@ import type {
 } from "@sim/shared";
 import {
   BASELINE_WEEKS,
+  BRIEFING_STEP_COUNT,
   CONNECTION_DROPPED_AFTER_MS,
   CONNECTION_STRUGGLING_AFTER_MS,
   CONNECTION_TICK_MS,
@@ -198,6 +199,9 @@ export class Session {
   usedDisruptionTitles = new Set<string>();
   baselineTrend: TrendSeries = buildBaselineTrend();
   round?: RoundState;
+  // Facilitator-driven walkthrough step during the briefing phase. Ephemeral
+  // (not persisted): a mid-briefing restart simply resets the demo to step 0.
+  briefingStep = 0;
   createdAt = Date.now();
   updatedAt = Date.now();
   private lastBroadcastStatuses?: Map<string, ConnectionStatus>;
@@ -381,6 +385,15 @@ export class Session {
   startBriefing() {
     if (this.phase !== "lobby") return;
     this.phase = "briefing";
+    this.briefingStep = 0;
+    this.onUpdate();
+  }
+
+  setBriefingStep(step: number) {
+    if (this.phase !== "briefing") return;
+    const clamped = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, Math.floor(step)));
+    if (clamped === this.briefingStep) return;
+    this.briefingStep = clamped;
     this.onUpdate();
   }
 
@@ -597,6 +610,7 @@ export class Session {
       leaderboard,
       prompts: this.prompts,
       insights,
+      briefingStep: this.briefingStep,
       serverNow: Date.now(),
     };
   }
