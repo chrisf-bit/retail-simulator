@@ -130,6 +130,8 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 **Flow**: lobby -> briefing -> shift (x8) -> debrief.
 
+**Briefing** is a facilitator-driven, animated walkthrough of the real shift screen (not a static explainer). The facilitator steps through `BRIEFING_STEP_COUNT` steps (currently 10) with a Back/Next stepper; the current step is broadcast as `briefingStep` in public state (via the `facilitator:briefing_step` event), so every team's laptop renders the matching demo in lockstep. Only the step index is synced - each screen runs its own local CSS animation, so no frame-level sync is needed. Each step highlights one zone (metrics HUD, Context, one of the five decision tabs, disruption) and dims the rest, driven by synthetic demo data. Step content is shared between the team and facilitator views in `client/src/lib/briefing.ts` (length guarded against `BRIEFING_STEP_COUNT`). `briefingStep` is ephemeral (not persisted); a mid-briefing server restart resets it to 0.
+
 **Each shift** has a `DISRUPTION_CHANCE` (currently 50%) probability of a disruption. When one fires, it lands at a random point within the opening `DISRUPTION_WINDOW` (currently first 50%) of the shift, the same moment for every team (scheduled once, server-side, on the shared round). Some shifts stay clean. There is no facilitator "Disrupt now" override, and the scheduled time is kept off the public round state so teams cannot read it from the socket payload. Shift ends when the timer hits zero or all teams submit.
 
 **Decisions**: 7 inputs grouped into 5 tabs.
@@ -178,6 +180,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 - `client/src/lib/socket.ts`: singleton Socket.IO client.
 - `client/src/lib/useSession.ts`: shared session-state hook with server-time offset.
 - `client/src/lib/guidance.ts`: phase-specific headline / body copy for facilitator and team PhaseGuide banner.
+- `client/src/lib/briefing.ts`: shared step content for the briefing walkthrough (title / body / "teams see" line), consumed by both the team `BriefingWalkthrough` and the facilitator stepper. Length is guarded against `BRIEFING_STEP_COUNT`.
 
 ---
 
@@ -219,7 +222,7 @@ A pen test report is required once the sim is fully built. Notes on how to run i
 3. Access-control & logic testing (manual, highest value - no scanner finds these). Use `socket.io-client` as an attacker client against the local server.
 
 **Known logic/auth findings to confirm and fix** (spotted during review, treat as build hardening not "discoveries"):
-- `facilitator:start_briefing / start_round / end_round / trigger_disruption / next_phase` take only `sessionId` and never check the facilitator token or `socket.data.role` (contrast `facilitator:join`, which does check the token). Any client knowing a session ID can drive the game. Fix: verify role + token on every `facilitator:*` handler.
+- `facilitator:start_briefing / start_round / end_round / briefing_step / next_phase` take only `sessionId` and never check the facilitator token or `socket.data.role` (contrast `facilitator:join`, which does check the token). Any client knowing a session ID can drive the game (including scrubbing the briefing walkthrough). Fix: verify role + token on every `facilitator:*` handler.
 - `team:submit_decision` does not verify `socket.data.teamId === teamId`, so a client can submit for another team. Fix: check ownership.
 - `decision` payloads are not validated server-side (e.g. allocations that don't total 100, out-of-range values). Fix: validate against a schema. In-memory state means one crash wipes all live sessions.
 - Session code/ID guessability - check enumeration resistance on join/rejoin.
