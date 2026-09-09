@@ -9,6 +9,7 @@ import type {
   ResourceAllocation,
   Issue,
   DisruptionEvent,
+  Hardness,
   MomentArchetype,
   TeamMoment,
 } from "@sim/shared";
@@ -178,31 +179,81 @@ function momentEffects(
   }
   const chosen = moment.options.find((o) => o.id === decision.momentResponseId);
   if (!chosen) return { metric: {}, hidden: {} };
-  return {
-    metric: MOMENT_METRIC_EFFECTS[chosen.archetype],
-    hidden: MOMENT_HIDDEN_EFFECTS[chosen.archetype],
-  };
+
+  let metric: Partial<Metrics> = { ...MOMENT_METRIC_EFFECTS[chosen.archetype] };
+  let hidden: Partial<HiddenDrivers> = { ...MOMENT_HIDDEN_EFFECTS[chosen.archetype] };
+
+  // Read-the-person bonus: the validation pack names a "best stance" per moment
+  // (the archetype that fits this person and situation). Matching it earns a
+  // modest bonus; the base archetype effects above already reward the general
+  // instinct, so this just tips reading the individual correctly.
+  if (moment.bestArchetype && chosen.archetype === moment.bestArchetype) {
+    metric = mergeDelta(metric, { esat: +3, csat: +1 });
+    hidden = mergeDelta(hidden, { trust: +2, capability: +1, leadership_consistency: +1 });
+  }
+
+  return { metric, hidden };
 }
 
+// Hardness scales the hidden-driver (safety risk, trust) hit. moderate is the
+// baseline; gentle softens it, severe sharpens it. From the content pack.
+const HARDNESS_FACTOR: Record<Hardness, number> = {
+  gentle: 0.6,
+  moderate: 1,
+  severe: 1.4,
+};
+
+// Disruption impact is driven by the validated content pack. `weight` (1-5)
+// scales how much is at stake (KPI magnitude), `hardness` scales how punishing
+// it is to ride out (driver hit). Everything is scored (A+B policy sign-off is
+// not happening for the MVP); the A vs A+B tag now only decides which response
+// is correct:
+// - A+B events touch a safety / policy line: escalating to the right owner is
+//   the correct instinct, so it mitigates the safety hit and steadies leadership;
+//   going it alone leaves the full hit standing.
+// - A events are operational judgement calls: adapting locally or reallocating
+//   recovers ground, and escalating what you could have handled reads as
+//   offloading.
 function disruptionEffects(
   disruption: DisruptionEvent | undefined,
   decision: Decision,
 ): { metric: Partial<Metrics>; hidden: Partial<HiddenDrivers> } {
   if (!disruption) return { metric: {}, hidden: {} };
 
-  const metric: Partial<Metrics> = { sales_vs_budget: -2, csat: -2, availability: -1 };
-  const hidden: Partial<HiddenDrivers> = { safety_risk: +2, trust: -1 };
+  const w = disruption.weight / 3; // weight 3 is the baseline
+  const h = HARDNESS_FACTOR[disruption.hardness] ?? 1;
 
-  if (decision.action === "escalate" && disruption.title.toLowerCase().includes("fire")) {
-    metric.availability = (metric.availability ?? 0) + 3;
-    hidden.safety_risk = (hidden.safety_risk ?? 0) - 3;
-  }
-  if (decision.action === "adapt_local" && disruption.title.toLowerCase().includes("competitor")) {
-    metric.sales_vs_budget = (metric.sales_vs_budget ?? 0) + 4;
-    hidden.capability = (hidden.capability ?? 0) + 1;
-  }
-  if (decision.action === "reallocate") {
-    metric.availability = (metric.availability ?? 0) + 2;
+  // Realism impact: the disruption happened, so KPIs and drivers move regardless
+  // of the response, scaled by what is at stake and how hard it is to ride out.
+  const metric: Partial<Metrics> = {
+    sales_vs_budget: Math.round(-2 * w),
+    csat: Math.round(-2 * h),
+    availability: Math.round(-1 * w),
+  };
+  const hidden: Partial<HiddenDrivers> = {
+    safety_risk: Math.round(+2 * h),
+    trust: Math.round(-1 * h),
+  };
+
+  if (disruption.type === "A+B") {
+    // Safety / policy line: escalating to the owner is correct.
+    if (decision.action === "escalate") {
+      hidden.safety_risk = (hidden.safety_risk ?? 0) - Math.round(2 * h);
+      hidden.leadership_consistency = (hidden.leadership_consistency ?? 0) + 1;
+    }
+  } else {
+    // Operational judgement call: reward a sensible local response.
+    if (decision.action === "adapt_local") {
+      metric.sales_vs_budget = (metric.sales_vs_budget ?? 0) + Math.round(3 * w);
+      metric.csat = (metric.csat ?? 0) + 2;
+      hidden.capability = (hidden.capability ?? 0) + 1;
+    }
+    if (decision.action === "reallocate") {
+      metric.availability = (metric.availability ?? 0) + Math.round(2 * w);
+    }
+    if (decision.action === "escalate") {
+      hidden.leadership_consistency = (hidden.leadership_consistency ?? 0) - 1;
+    }
   }
 
   return { metric, hidden };

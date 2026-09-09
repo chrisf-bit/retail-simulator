@@ -29,6 +29,9 @@ import {
   MIN_TEAMS,
   ROUND_COUNT,
   ROUND_DURATION_MS,
+  METRIC_DEFS,
+  metricBaselineNorm,
+  metricNormFromReal,
 } from "@sim/shared";
 import type { ConnectionStatus } from "@sim/shared";
 import type { TrendSeries } from "@sim/shared";
@@ -40,18 +43,13 @@ import { generateInsights } from "./insights.js";
 import { deleteSessionFile, readAllSessionFiles, SESSION_TTL_MS, writeSessionFile } from "./persistence.js";
 
 // Starting (week-0) values per metric and hidden driver. All 0-100.
-const START_METRICS: Metrics = {
-  sales_vs_budget: 60,
-  availability: 62,
-  volume_lfl: 55,
-  esat: 65,
-  csat: 62,
-  labour: 58,
-  shrink: 60,
-  waste: 58,
-  scc: 57,
-  audits: 63,
-};
+// Every team starts at the validated real-world baseline for each metric,
+// normalised onto the engine's 0-100 scale (see METRIC_DEFS in @sim/shared).
+// Kept unrounded so the opening HUD reads exactly as the pack's baseline.
+const START_METRICS: Metrics = METRIC_KEYS.reduce((acc, k) => {
+  acc[k] = metricNormFromReal(k, METRIC_DEFS[k].baseline);
+  return acc;
+}, {} as Metrics);
 
 const START_HIDDEN: HiddenDrivers = {
   safety_risk: 30,
@@ -61,22 +59,18 @@ const START_HIDDEN: HiddenDrivers = {
 };
 
 // Where each series sat 16 weeks before the session, drifting to its START value.
-const BASELINE_FROM: Record<TrendKey, number> = {
-  sales_vs_budget: 74,
-  availability: 63,
-  volume_lfl: 50,
-  esat: 56,
-  csat: 66,
-  labour: 62,
-  shrink: 52,
-  waste: 50,
-  scc: 60,
-  audits: 68,
-  safety_risk: 18,
-  trust: 52,
-  capability: 44,
-  leadership_consistency: 60,
-};
+// Metrics start a touch above baseline so the pre-session history shows a gentle
+// decline into the dip the incoming manager inherits (the "unreliable narrator"
+// handover insists the dip is nothing - the trend says otherwise).
+const BASELINE_FROM: Record<TrendKey, number> = (() => {
+  const from = {} as Record<TrendKey, number>;
+  for (const k of METRIC_KEYS) from[k] = Math.min(100, metricBaselineNorm(k) + 8);
+  from.safety_risk = 18;
+  from.trust = 52;
+  from.capability = 44;
+  from.leadership_consistency = 60;
+  return from;
+})();
 
 function startingMetrics(): Metrics {
   return { ...START_METRICS };

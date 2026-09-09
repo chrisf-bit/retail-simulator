@@ -151,6 +151,133 @@ export const METRIC_INVERTED: Record<MetricKey, boolean> = {
   audits: false,
 };
 
+// ---------------------------------------------------------------------------
+// Real-world metric definitions (MVP content validation, 2026-09-09)
+// ---------------------------------------------------------------------------
+// The engine runs every metric on an abstract 0-100, higher-is-better scale.
+// These defs anchor that scale to the store's real numbers: `floor` maps to 0,
+// `ceiling` maps to 100, with the validated `baseline` (each team's starting
+// position) and `target` expressed in real units. The helpers convert a 0-100
+// value to its real display string and locate the baseline / target on the
+// 0-100 scale. Ordinal metrics (medal, audit) carry tier labels worst -> best,
+// and their floor/ceiling/baseline/target are tier indices.
+
+export type MetricFormat = "currency" | "percent" | "growth" | "medal" | "audit";
+
+export interface MetricDef {
+  format: MetricFormat;
+  floor: number; // real value (or tier index) mapped to 0
+  ceiling: number; // real value (or tier index) mapped to 100
+  baseline: number; // validated starting value
+  target: number; // validated "what good looks like"
+  tiers?: string[]; // ordinal labels, worst -> best (medal / audit)
+  tiersShort?: string[]; // compact ordinal labels for tight cells
+}
+
+export const METRIC_DEFS: Record<MetricKey, MetricDef> = {
+  sales_vs_budget: { format: "currency", floor: -225_000, ceiling: 150_000, baseline: -125_000, target: 0 },
+  availability: { format: "percent", floor: 96, ceiling: 98.5, baseline: 97, target: 97.5 },
+  volume_lfl: { format: "growth", floor: -5, ceiling: 3, baseline: 0.5, target: 0.1 },
+  esat: { format: "percent", floor: 60, ceiling: 82, baseline: 65, target: 72 },
+  csat: {
+    format: "medal",
+    floor: 0,
+    ceiling: 3,
+    baseline: 2,
+    target: 3,
+    tiers: ["No medal", "Bronze", "Silver", "Gold"],
+  },
+  labour: { format: "currency", floor: -35_000, ceiling: 35_000, baseline: 5_000, target: 0 },
+  shrink: { format: "currency", floor: -60_000, ceiling: 60_000, baseline: 0, target: 0 },
+  waste: { format: "currency", floor: -40_000, ceiling: 40_000, baseline: -4_000, target: 0 },
+  scc: { format: "currency", floor: -25_000, ceiling: 35_000, baseline: 7_000, target: 0 },
+  audits: {
+    format: "audit",
+    floor: 0,
+    ceiling: 3,
+    baseline: 2,
+    target: 3,
+    tiers: ["Concerns raised", "Improvements required", "Satisfactory with opportunities", "Satisfactory"],
+    tiersShort: ["Concerns", "Improve", "Satis. +ops", "Satis."],
+  },
+};
+
+// Normalise a real value onto the metric's 0-100 scale (clamped).
+export function metricNormFromReal(key: MetricKey, real: number): number {
+  const d = METRIC_DEFS[key];
+  const n = ((real - d.floor) / (d.ceiling - d.floor)) * 100;
+  return Math.max(0, Math.min(100, n));
+}
+
+// Convert a 0-100 value back to its real-world value (or tier index).
+export function metricRealFromNorm(key: MetricKey, norm: number): number {
+  const d = METRIC_DEFS[key];
+  return d.floor + (norm / 100) * (d.ceiling - d.floor);
+}
+
+export function metricBaselineNorm(key: MetricKey): number {
+  return Math.round(metricNormFromReal(key, METRIC_DEFS[key].baseline));
+}
+
+export function metricTargetNorm(key: MetricKey): number {
+  return Math.round(metricNormFromReal(key, METRIC_DEFS[key].target));
+}
+
+function fmtCurrencyFull(v: number): string {
+  const r = Math.round(v / 1000) * 1000;
+  const sign = r > 0 ? "+" : r < 0 ? "-" : "";
+  return `${sign}£${Math.abs(r).toLocaleString("en-GB")}`;
+}
+
+function fmtCurrencyShort(v: number): string {
+  const k = Math.round(v / 1000);
+  if (k === 0) return "£0";
+  return `${k > 0 ? "+" : "-"}£${Math.abs(k)}k`;
+}
+
+function tierLabel(d: MetricDef, real: number, short: boolean): string {
+  const tiers = (short && d.tiersShort) || d.tiers || [];
+  const idx = Math.max(0, Math.min(tiers.length - 1, Math.round(real)));
+  return tiers[idx] ?? "";
+}
+
+function fmtReal(d: MetricDef, real: number, short: boolean): string {
+  switch (d.format) {
+    case "currency":
+      return short ? fmtCurrencyShort(real) : fmtCurrencyFull(real);
+    case "percent":
+      return `${real.toFixed(1)}%`;
+    case "growth":
+      return `${real > 0 ? "+" : ""}${real.toFixed(1)}%`;
+    case "medal":
+      return tierLabel(d, real, false);
+    case "audit":
+      return tierLabel(d, real, short);
+  }
+}
+
+// Full real-world display string for a 0-100 value (e.g. "-£125,000", "97.5%").
+export function metricDisplay(key: MetricKey, norm: number): string {
+  return fmtReal(METRIC_DEFS[key], metricRealFromNorm(key, norm), false);
+}
+
+// Compact real-world display for tight cells (e.g. "-£125k", "Satis. +ops").
+export function metricDisplayShort(key: MetricKey, norm: number): string {
+  return fmtReal(METRIC_DEFS[key], metricRealFromNorm(key, norm), true);
+}
+
+// Exact validated target / baseline labels, formatted straight from the real
+// values (no 0-100 round-trip, so they read exactly as the pack states them).
+export function metricTargetLabel(key: MetricKey, short = true): string {
+  const d = METRIC_DEFS[key];
+  return fmtReal(d, d.target, short);
+}
+
+export function metricBaselineLabel(key: MetricKey, short = true): string {
+  const d = METRIC_DEFS[key];
+  return fmtReal(d, d.baseline, short);
+}
+
 export const PRIORITY_LABELS: Record<Priority, string> = {
   safety_loss: "Safety / Loss",
   people_team: "People / Team",

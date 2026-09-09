@@ -73,6 +73,8 @@ import {
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
   ROUND_COUNT,
+  metricDisplayShort,
+  metricTargetLabel,
 } from "@sim/shared";
 import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRibbon, Sparkline } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
@@ -1586,11 +1588,16 @@ const DEMO_MOMENT_RESPONSE = "demo-o3";
 
 const DEMO_DISRUPTION: DisruptionEvent = {
   id: "demo-d1",
+  ref: "DIS-01",
   title: "Fire alarm activated",
   message: "The fire alarm has triggered. You may need to begin the evacuation procedure.",
   impact: "Trading paused",
   triggeredAt: 0,
   scene: "fire_alarm",
+  weight: 5,
+  hardness: "severe",
+  type: "A+B",
+  scored: false,
 };
 
 function BriefingWalkthrough({ step }: { step: number }) {
@@ -1831,10 +1838,11 @@ function ResultsPanel({
             {METRIC_KEYS.map((k) => (
               <div key={k} className="rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/10">
                 <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/55">{METRIC_SHORT[k]}</div>
-                <div className="mt-1 flex items-baseline justify-between">
-                  <span className="num text-lg font-semibold text-white">{team.metrics?.[k] ?? 0}</span>
+                <div className="mt-1 flex items-baseline justify-between gap-1">
+                  <span className="num truncate text-sm font-semibold text-white">{metricDisplayShort(k, team.metrics?.[k] ?? 0)}</span>
                   <Delta value={team.lastMetricDelta?.[k]} onDark />
                 </div>
+                <div className="mt-1 truncate text-[12px] text-white/40">Target {metricTargetLabel(k)}</div>
                 <div className="mt-1.5">
                   <Bar value={team.metrics?.[k] ?? 0} onDark />
                 </div>
@@ -1975,37 +1983,51 @@ function DisruptionModal({
 // Placeholder handover content. Formal document structure with obviously-dummy
 // copy (lorem plus bracketed instructions) so the shape is clear but nothing
 // reads as final. Replace every section with real copy before go-live.
+// This handover is written in the voice of the outgoing manager and is a
+// deliberately unreliable narrator. The opinions here are confident, plausible
+// and self-serving, and they collide on purpose with what teams observe on the
+// floor (the people-moments, issues and live drivers). Trusting it at face value
+// pushes teams to act early and wrongly. Reading it against the floor, and
+// waiting to observe, is the better play. Placeholder copy until final SME/client
+// sign-off, but written to be playable as-is.
 const HANDOVER_SECTIONS: Array<{ heading: string; note: string; body: string[]; list?: string[] }> = [
   {
     heading: "Store overview",
-    note: "[Set the scene: store format, size, catchment, how it has been trading.]",
+    note: "The short version: we are in good shape.",
     body: [
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-      "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "Northgate is a big superstore on the edge of a comfortable catchment. Loyal regulars, a steady weekly shop, not much footfall drama. It runs itself if you let it. Nine years I have been here and the rhythm barely changes, so do not come in expecting to reinvent the place.",
+      "You will see Head Office fussing over a few numbers on the dashboards. Take most of it with a pinch of salt. Availability and service have always been our strength and customers love this store. The dip you will spot is a seasonal blip and a regional data quirk, not anything real on the floor. Do not go chasing it, and do not let the team feel you doubting them in your first week.",
     ],
   },
   {
     heading: "Your team",
-    note: "[Who is who: strengths, gaps, who to lean on, and who needs a closer eye.]",
+    note: "Straight talk, between us.",
     body: [
-      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+      "Sam Taylor (Duty Manager) knows this floor better than anyone alive. On anything operational, just go with Sam. It saves you the headache and the team expects it.",
+      "Priya Patel is rock solid and ambitious. Keep her busy and she is happy. No need for a career chat, she knows exactly where she stands with us.",
+      "Dan Morgan has been a bit of a sulk since he missed out on the manager job. Technically excellent, but do not indulge the mood. He responds to a firm line, so set the bar and he falls in.",
+      "Jo Chen I would keep on a short leash. Misses briefings, a touch unreliable. Come down early and clearly so she knows the standard from day one.",
+      "Nadia Hassan is your safety net. Nothing fazes her and she will pick up anything you hand her. Lean on her while you find your feet, she likes being needed.",
+      "Ben Okafor is a good lad but a worrier. He flags things that turn out to be nothing. If he brings you a drama, thank him and move on. Do not let it eat your day.",
     ],
   },
   {
-    heading: "Current priorities",
-    note: "[The two or three things that need attention first.]",
+    heading: "First-week priorities",
+    note: "Where I would put your energy.",
     body: [],
     list: [
-      "Placeholder priority one. Replace with real copy.",
-      "Placeholder priority two. Replace with real copy.",
-      "Placeholder priority three. Replace with real copy.",
+      "Get the beers and wines planogram back to full compliance before the regional visit. That is what they will actually look at.",
+      "Drive availability on the big lines. It is a numbers game, so push it hard and make it visible.",
+      "Keep the WhatsApp noise down. If the team is grumbling, be seen to be firm early and it settles.",
     ],
   },
   {
     heading: "Watch-outs",
-    note: "[Known issues and risks, and the things the numbers will not tell you.]",
+    note: "A few things to save you the bother.",
     body: [
-      "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      "Head Office will try to make the colleague engagement pulse your problem. It is not. The survey always lands low here, the team just likes a moan. Do not over-react to it.",
+      "There are one or two EHO actions floating around the bakery prep area from the last audit. It is paperwork more than anything, nothing is actually wrong back there. Sign it off and move on.",
+      "Keep half an eye on the till float variances. I suspect one of the newer colleagues is just careless with the cash-ups. I would have a quiet word rather than making it formal and blowing it out of proportion.",
     ],
   },
 ];
@@ -2040,10 +2062,10 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
             <div>
               <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-teal-300">Store handover</div>
               <h2 id="handover-title" className="text-lg font-semibold tracking-tight text-white">
-                Plumfield [Store] - Manager handover
+                Plumfield Northgate - Manager handover
               </h2>
               <div className="mt-1 text-[12px] text-white/55">
-                Prepared by [Outgoing Manager] · For the incoming manager · [Date]
+                Prepared by Ray Dolan · For the incoming manager · Your first week
               </div>
             </div>
           </div>
@@ -2059,8 +2081,8 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
 
         {/* Document body (scrolls internally - a modal is not the page) */}
         <div className="quiet-scroll min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <div className="mb-4 rounded-xl bg-brand-500/10 px-4 py-3 text-[13px] leading-snug text-white/70 ring-1 ring-brand-500/20">
-            Placeholder handover. Replace every section below with the final copy before go-live. The wording here is dummy text only.
+          <div className="mb-4 rounded-xl bg-white/[0.03] px-4 py-3 text-[13px] italic leading-snug text-white/70 ring-1 ring-white/10">
+            A few notes to get you started. Read this and you will know everything you need to. There are no real surprises here, I promise. Sorry to be handing over on the run, but you will pick it up fast.
           </div>
           {HANDOVER_SECTIONS.map((sec) => (
             <section key={sec.heading} className="mb-5 last:mb-0">
@@ -2084,9 +2106,9 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
             </section>
           ))}
           <div className="mt-6 border-t border-white/10 pt-4 text-[13px] leading-relaxed text-white/70">
-            <p>[Sign-off: a short, personal note from the outgoing manager.]</p>
-            <p className="mt-2 font-semibold text-white">[Outgoing Manager]</p>
-            <p className="text-[12px] text-white/55">Outgoing Store Manager, Plumfield [Store]</p>
+            <p>You have inherited a good store and a good team. My advice: hit the ground running, make a couple of visible calls in your first week so they know who is in charge, and do not overthink it. Trust your gut over the dashboards. You will be grand.</p>
+            <p className="mt-2 font-semibold text-white">Ray Dolan</p>
+            <p className="text-[12px] text-white/55">Outgoing Store Manager, Plumfield Northgate</p>
           </div>
         </div>
 

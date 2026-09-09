@@ -85,6 +85,7 @@ or "what makes you say that?" rather than moving straight to the next question.
 - How much of your decision was evidence, and how much was instinct?
 
 ## The handover (the unreliable narrator)
+Facilitator answer key (trap-by-trap): [handover-facilitator-crib.md](handover-facilitator-crib.md).
 - How much did you trust the handover you were given?
 - Where did what you found differ from what you were told?
 - What did the previous manager get right, and what did they not?

@@ -49,8 +49,11 @@ export type TrendSeries = Record<TrendKey, number[]>;
 
 export type Severity = "low" | "medium" | "high";
 
-// Scenario governance tag. "A" is realism-only; "A+B" is governed by a
-// Sainsbury's policy and cannot be scored until a policy owner signs off.
+// Scenario governance tag. "A" is an operational judgement call; "A+B" touches a
+// Sainsbury's policy line (food safety, security, safeguarding, conduct). Policy
+// sign-off is not happening for the MVP, so both are scored; the tag now shapes
+// which response is correct (escalate for A+B, handle locally for A), not whether
+// the item counts.
 export type ScenarioType = "A" | "A+B";
 
 export interface ResourceAllocation {
@@ -68,10 +71,11 @@ export interface Issue {
   tags: Priority[];
   // Priority weight 1-5 for the ranking mechanic. 5 = must be dealt with first
   // (safety, food safety, compliance, safeguarding, security); 1 = cosmetic.
-  // Placeholder values seeded from the SME workbook until sign-off.
+  // Validated in the MVP content pack; feeds the planned prioritisation mechanic.
   urgency: number;
-  // Governance tag. A+B issues are policy-governed and must not be scored until
-  // a named policy owner confirms the correct response (scored=false until then).
+  // Governance tag (A / A+B). Policy sign-off is not happening for the MVP, so
+  // everything is scored; `type` shapes the correct response, not whether it
+  // counts. `scored` is kept true across the bank.
   type: ScenarioType;
   scored: boolean;
   icon?: string;
@@ -106,6 +110,10 @@ export interface TeamMoment {
   situation: string;
   prompt: string;
   options: MomentOption[];
+  // Validated "best stance here" from the MVP content pack: the archetype that
+  // best fits this person and situation. Choosing it earns a read-the-person
+  // bonus in scoring. Optional so demo/synthetic moments can omit it.
+  bestArchetype?: MomentArchetype;
 }
 
 export interface Decision {
@@ -185,6 +193,11 @@ export interface RoundState {
   disruption?: DisruptionEvent;
 }
 
+// How punishing a disruption is to ride out (MVP content validation pack).
+// Distinct from `weight`: weight is how much is at stake (KPI magnitude);
+// hardness is how unforgiving a poor or slow response is (driver hit).
+export type Hardness = "gentle" | "moderate" | "severe";
+
 export interface DisruptionEvent {
   id: string;
   title: string;
@@ -192,6 +205,19 @@ export interface DisruptionEvent {
   impact: string;
   triggeredAt: number;
   scene?: string;
+  // Validation ref (e.g. "DIS-01"), traceable to the content pack.
+  ref?: string;
+  // Priority weight 1-5: how much is at stake. 5 = existential (safety, closure);
+  // 1 = cosmetic. Scales the KPI impact when the disruption strikes.
+  weight: number;
+  // How hard it is to ride out. Scales the hidden-driver (safety risk, trust) hit.
+  hardness: Hardness;
+  // Governance tag (A / A+B). Policy sign-off is not happening for the MVP, so
+  // all disruptions are scored; `type` decides the correct response (escalate for
+  // A+B safety/policy events, handle locally for A operational ones).
+  type: ScenarioType;
+  // Kept true across the bank (no sign-off gate for the MVP).
+  scored: boolean;
 }
 
 export interface FacilitatorPrompt {
