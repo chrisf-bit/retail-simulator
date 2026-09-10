@@ -1,0 +1,423 @@
+THE STORE IS YOURS
+Trainer's guide to running a live session
+
+A plain-English handbook for the facilitator running "The Store Is Yours", the
+live retail leadership simulation set in Plumfield Stores. Read it once before
+your first session. Keep it beside you when you run one. Everything here matches
+the current build of the game.
+
+
+-------------------------------------------------------------------------------
+1. WHAT THIS IS, IN ONE BREATH
+-------------------------------------------------------------------------------
+
+Each team runs a Plumfield store for eight shifts. Every shift they read what is
+happening on the floor and make a set of time-boxed leadership decisions on a
+shared laptop. Those decisions move live store numbers, and quietly move four
+hidden drivers underneath (trust, capability, safety risk and leadership
+consistency). It is head-to-head: several teams play the same shifts at the same
+time, and a leaderboard tracks them.
+
+You are not a referee and you are not a lecturer. You open the room, brief them,
+start each shift, stay out of the way while they play, and then run the debrief
+where the real learning happens. The game hands you a tailored question for each
+team after every shift, so you always have somewhere to start.
+
+The whole point is self-awareness. There are no right answers, only revealing
+ones. Say that early and mean it.
+
+
+-------------------------------------------------------------------------------
+2. BEFORE YOU START (KIT AND ROOM)
+-------------------------------------------------------------------------------
+
+You need:
+
+- One screen for you, the facilitator. A laptop is fine, but a big screen or
+  projector the whole room can see makes the briefing and debrief much stronger.
+- One shared laptop per team. Teams gather round it and decide together. Sharing
+  the laptop is deliberate; how they make decisions as a group is part of what
+  you are watching.
+- A steady internet connection for every device. The game is live and talks to a
+  server the whole time. Weak wifi shows up as teams dropping and rejoining.
+- Between two and eight teams. Four is the sweet spot. More teams means a busier
+  debrief but a richer room.
+
+A word of warning worth taking seriously: the game holds everything in memory on
+the server. If the server restarts mid-session, every live session is wiped and
+you cannot get it back. Do not let anyone deploy an update while you are running.
+Run your session start to finish on a stable build.
+
+
+-------------------------------------------------------------------------------
+3. SETTING THE GAME UP
+-------------------------------------------------------------------------------
+
+There are two roles, and each has its own screen. You are the Facilitator. The
+teams are Teams. They never share a screen with you.
+
+To create the session (you):
+
+1. Open the game's web address. You land on the splash screen. Press "Launch
+   simulation". The game goes full screen.
+2. Choose the Facilitator card on the left.
+3. Set the number of teams with the plus and minus buttons (two to eight). You
+   can change your mind later by just starting with fewer; you do not have to
+   wait for a full house.
+4. Press "Create session". You are taken to your Facilitator dashboard, and a
+   five-character session code appears top right (something like A7K2N).
+
+Keep that dashboard open and do not lose the link. Your access is tied to a
+private token in that web address. If you close it, reopening from the same
+browser will usually get you back in; if you open a fresh browser with just the
+plain address, it will refuse you. Treat the session as yours alone.
+
+To get the teams in (them):
+
+1. Each team opens the same web address on their laptop and presses "Launch
+   simulation".
+2. They choose the Team card on the right, then "Join a session".
+3. They type your five-character code and a team name (for example "North Store"),
+   and press "Join session".
+
+As each team joins, you see them appear on your dashboard in the lobby, filling
+the slots you set. When everyone is in, you are ready to brief. You can start
+before every slot is filled if a team is running late.
+
+
+-------------------------------------------------------------------------------
+4. HOW A SESSION RUNS, START TO FINISH
+-------------------------------------------------------------------------------
+
+The session moves through a fixed set of phases. You drive the moves between
+them. Only the shifts themselves are on a hard clock; everything else waits for
+you, so you can never be rushed through a briefing or a debrief.
+
+  Lobby        Teams join. You wait until you are ready.
+  Briefing     You walk the room through the screen, at your own pace.
+  Shift 1      Five minutes on the clock. Teams decide.
+  Debrief 1    You debrief that shift. Takes as long as you let it.
+  Shift 2 ...  And so on, for eight shifts in total.
+  Debrief 8    The last shift debrief.
+  Full debrief One reflective conversation across the whole session.
+  Close        You close the session and can download a report.
+
+Rough timings: a shift is five minutes of play. A quick between-shift debrief is
+five to ten minutes. Budget a good half hour for the briefing plus first shift,
+then settle into a rhythm. A full run of eight shifts with proper debriefs is a
+half-day workshop, not a lunch-hour filler. You control the pace throughout.
+
+The one clock: a shift lasts five minutes. It ends when the timer hits zero, or
+sooner if every team has submitted. You can also end it early yourself.
+
+
+-------------------------------------------------------------------------------
+5. HOW THE GAME WORKS (SO YOU CAN EXPLAIN IT)
+-------------------------------------------------------------------------------
+
+The store, in numbers. Every store is measured against five goals: Sales,
+Colleagues, Service, Costs and Risk. Underneath those five goals sit ten specific
+measures (things like sales against budget, availability, colleague engagement,
+customer satisfaction, labour and waste control, audits). The top-of-screen HUD
+shows the five goals at a glance; teams can open a full "All 10" view to see
+every measure with its real value against baseline and target. Each team also
+starts with sixteen weeks of history behind them, so even the first shift has a
+trend to read into.
+
+The decisions. Each shift, a team makes seven decisions grouped into five tabs:
+
+  Focus       A priority to lead with, and how they will act on it. Both required.
+  Team        A leadership style, and how they split their people's time across
+              four areas of the store (the split must add up to 100 percent).
+              Both required.
+  Issue       Optionally, they point their effort at one of the three live issues,
+              or deliberately stay broad. Either is a real choice.
+  People      When a named member of their team needs them this shift, how they
+              respond. Required whenever that person appears.
+  Confidence  How hard they back the whole plan: Cautious, Measured or Confident.
+              Required.
+
+Confidence is the sting. It multiplies everything that happens that shift, good
+and bad. Cautious dampens the swing (about three-quarters). Measured is straight.
+Confident amplifies it (about a third more either way). Backing a good plan hard
+pays off; backing a poor one hard hurts more.
+
+The hidden drivers. Under the visible numbers sit four things the game never
+shows during a shift: trust, capability, safety risk and leadership consistency.
+They shape the score without appearing on the board. They are revealed after a
+shift resolves, on the team's own results screen and on your coaching cards. They
+are where a lot of the leadership learning lives.
+
+What teams read before they act. On the left of their screen is Context: exactly
+three live Issues (what is happening in the store right now) and up to two Alerts
+from head office and operations. They should read these before deciding.
+
+The handover, and why it lies. Every team can open a "Handover" document, a note
+from the outgoing manager, Ray Dolan. It is written to sound confident and
+helpful and it is deliberately unreliable. Ray tempts teams to act early on his
+word; teams who take him at face value make confident wrong moves, and teams who
+read him against what they actually see on the floor do better. You have a full
+answer key for this (see the debrief section). It is one of the richest threads
+in the whole game.
+
+
+-------------------------------------------------------------------------------
+6. THE RANDOM EVENTS, AND THE ODDS
+-------------------------------------------------------------------------------
+
+The one source of genuine randomness you need to understand is disruptions. A
+disruption is something going wrong mid-shift: a fire alarm, a walkout, a till
+outage, a viral complaint, and so on.
+
+The odds, plainly:
+
+- Every shift has a fifty-fifty chance of a disruption. It is decided fresh each
+  shift, so some shifts break and some stay completely clean.
+- When one does fire, it lands somewhere in the first half of the shift (the
+  first two and a half minutes), at a moment nobody can predict.
+- It hits every team at the same instant. That keeps it fair: no team gets an
+  easier ride than another. It is the same store weather for everyone.
+- You cannot trigger or cancel one. There is deliberately no "disrupt now" button.
+  The unpredictability is the teaching point.
+
+What that means across a full session of eight shifts: expect roughly four
+disruptions on average, but any given run can have more or fewer. It is possible,
+though very unlikely, to get a clean sweep or a run where nearly every shift
+breaks. Do not promise the room a disruption, and do not act surprised by a quiet
+shift; a shift with nothing going wrong tempts teams into their own revealing
+choices, which is useful in itself.
+
+The other "events" are not random in the same way but are worth knowing:
+
+- Issues: there are always exactly three live issues per shift.
+- Alerts: up to two head-office or operational alerts, plus one more if a
+  disruption is running, so never more than three messages at once.
+- People moments: on some shifts a named direct report comes to the manager with
+  a situation. When that happens, the People tab becomes required. How teams
+  respond quietly moves trust and capability.
+
+On your own screen, when a disruption is live during a shift, a clear "Disruption
+live" marker shows up in your control strip, so you always know the room is in
+the thick of one.
+
+
+-------------------------------------------------------------------------------
+7. CONTROLLING THE GAME (YOUR DASHBOARD)
+-------------------------------------------------------------------------------
+
+Your Facilitator dashboard is built so the things you actually touch sit at the
+top, and the things you read sit below. From the top down:
+
+- The header. Your session code (share this with latecomers), the shift clock,
+  and how many teams are in. A full-screen toggle sits here too.
+
+- The guidance banner. A short prompt telling you what this phase is for, with
+  the single most important button on the right. That button always does the
+  next big thing: "Start briefing", then "Start Shift 1", then "Start Shift 2"
+  after each debrief, and finally "Begin debrief" and "Close session". If you
+  only remember one control, remember that this banner button moves you forward.
+
+- The control strip. Directly beneath the banner. This is your moment-to-moment
+  control and it changes with the phase:
+    During the briefing, it holds the Back and Next buttons that step the whole
+    room through the walkthrough, with the step number and the current step's
+    talking points.
+    During a shift, it holds "End shift early" and a live count of how many teams
+    have submitted, plus the "Disruption live" marker when one is running.
+    After the session, it holds the "Download report" button.
+  On the right of this strip you always see how many teams are in.
+
+- The leaderboard. A compact ranking down the side, so you can see who is ahead
+  and who is moving, without it dominating the screen.
+
+- The coaching cards. The large area of the screen. One card per team. This is
+  your debrief engine, described in the next section.
+
+How a shift actually ends. It ends on its own when the five minutes run out, or
+the moment all teams have submitted, whichever comes first. If the room is clearly
+done and you do not want to wait for the clock, press "End shift early". After a
+shift ends you move into that shift's results, and the banner button becomes
+"Start Shift" for the next one when you are ready.
+
+
+-------------------------------------------------------------------------------
+8. RUNNING THE BRIEFING
+-------------------------------------------------------------------------------
+
+The briefing is not a slide deck. It is a guided, animated tour of the real shift
+screen, and it happens on every team's laptop at once, in lockstep with you. You
+press Next; every team's screen advances to the same step and plays the matching
+little demonstration. You talk over it.
+
+To run it: from the lobby, press "Start briefing" in the banner. Then use Back
+and Next in the control strip to move through the walkthrough. The strip shows
+you the step's title and a short talking script for each one, so you always know
+what to say. When you reach the end, press "Start Shift 1" in the banner.
+
+There are eleven steps, and they lead the room through the screen in a natural
+order:
+
+  1. Welcome. The whole screen, at rest. Set the scene.
+  2. Read your store. The top HUD lights up: five goals, health bars, trends.
+  3. See all ten measures. The full ten-metric view opens over the screen, so the
+     room sees the real numbers behind the five goals. This is the moment to point
+     out baselines and targets. It opens on every team's laptop together and they
+     cannot close it; you move everyone on with Next.
+  4. What's happening. The Context column: the three issues and the alerts.
+  5. Set your focus. The Focus tab: a priority and an action.
+  6. Lead your team. The Team tab: leadership style and the people split.
+  7. Target an issue. The Issue tab: point your effort, or stay broad.
+  8. Handle the people moment. The People tab: a real team member needs you.
+  9. Back your plan. The Confidence tab: cautious, measured or confident.
+  10. Expect the unexpected. A disruption strikes, to show what one looks like.
+  11. The store is yours. The full screen, bright and ready to play.
+
+Keep it moving but do not rush. The briefing is where you set the tone: no right
+answers, decisions lock when the clock hits zero, and the numbers usually mean
+something even when the handover tells them otherwise. If your venue has the
+outgoing-manager welcome video, play it before you start the walkthrough; it
+points teams to the handover document.
+
+
+-------------------------------------------------------------------------------
+9. FACILITATING THE SHIFT DEBRIEFS (THE PROMPT CARDS)
+-------------------------------------------------------------------------------
+
+This is the heart of your job. After each shift, the game turns your dashboard
+into a set of prompt cards, one per team, and hands you tailored questions. You
+do not have to invent anything on the spot.
+
+What is on each team's card:
+
+- Who they are, their score and where they rank.
+- Their five goals with the direction each one moved this shift.
+- Once a shift has resolved, their hidden drivers (trust, capability, safety risk,
+  leadership consistency), so you can see what was moving underneath.
+- At the top of the card, an "Ask them" question. This is the important part. It
+  is written for that specific team, anchored on the single measure that moved
+  most for them this shift (or, if they held steady, the thing that barely moved).
+  Two teams will get different questions even if they look similar, because the
+  question follows their own story.
+
+How to use the cards well:
+
+- Lead with the card's question. Read the "Ask them" line to the team as it is,
+  then stop talking. Sit in the silence. The second answer people give is usually
+  the honest one.
+- Follow up rather than move on. "Say more about that." "What makes you say that?"
+  A single question opened up beats six questions rattled through.
+- Pick two or three teams, or two or three threads, per shift. You do not have to
+  visit every card every shift. Spread the attention across the session.
+- Do not read the score out as a verdict. The numbers are a way into the thinking,
+  not the point of it. Resist ranking teams against each other out loud; surface
+  the difference in approach instead.
+- Watch who says "we" and who says "I", and whether teams credit their choices or
+  blame the game. Notice where the room goes quiet. That is usually where the
+  learning is.
+
+Your guidance banner also gives you a short, room-wide talk track for each shift,
+picking up on patterns it has spotted across all teams (for example, everyone
+chose the same priority, or the whole room played it cautious). Use those to open
+a whole-room conversation, then drop into individual cards.
+
+Going deeper with the printed question bank. Alongside the on-screen questions you
+have a fuller bank of open questions, grouped by theme, in the file
+"debrief-questions.md". Threads include priorities and focus, acting versus
+observing, leadership style, resource trade-offs, the people moment, confidence
+and risk, disruptions, reading the store versus trusting the gut, the handover,
+team dynamics, emotion and pressure, patterns over time, and transfer back to the
+real workplace. Keep it open on your own screen or printed beside you. Pick a
+couple that fit what you just watched. The same rule applies: two or three, not
+ten, then sit in the silence.
+
+The handover thread (the unreliable narrator). One of the strongest debrief
+seams is Ray Dolan's handover. You have a full answer key in
+"handover-facilitator-crib.md": it lists, person by person and claim by claim,
+where Ray steers teams wrong and what the floor actually shows. Do not pre-empt
+it; let teams discover the mismatches themselves across the shifts. Then in the
+debrief, ask the open handover questions first ("How much did you trust the
+handover?", "Where did what you found differ from what you were told?"), and only
+then, where it sharpens the point, name a specific trap from the crib. Frame it as
+a leadership lesson in reading people and data for yourself, never as a gotcha.
+Ray's sign-off, "trust your gut over the dashboards", is the whole mechanic in one
+line; it is worth quoting back to the room and asking whose gut they trusted, his
+or their own, and what it cost or saved them.
+
+
+-------------------------------------------------------------------------------
+10. THE FULL-SESSION DEBRIEF
+-------------------------------------------------------------------------------
+
+After the eighth shift, the banner offers "Begin debrief". This is the one
+reflective conversation that looks across the whole session rather than a single
+shift. Your dashboard gives you a set of wide-angle questions for it, for example:
+
+- Looking across all eight shifts, what pattern do you see in your own decisions?
+- Where did your leadership instincts serve you well, and where did they let you
+  down?
+- What did the hidden drivers reveal about how you were actually leading?
+- Which shift felt the most different to manage, and why?
+- What is one thing you will try differently on Monday morning?
+
+Let this run. This is where individual shift moments join up into a leadership
+signature people can actually take away. Watch for genuine reflection versus
+polished defending, and again, mind the quiet.
+
+
+-------------------------------------------------------------------------------
+11. CLOSING AND THE REPORT
+-------------------------------------------------------------------------------
+
+When the conversation is done, press "Close session". You can then use "Download
+report" in the control strip to open a clean, printable session summary you can
+share with the room or keep for your records. Leave the final leaderboard up for
+half a minute while people settle, thank the room, and point them to any
+follow-up material.
+
+
+-------------------------------------------------------------------------------
+12. WHEN THINGS WOBBLE (TROUBLESHOOTING)
+-------------------------------------------------------------------------------
+
+- A team's laptop drops out. The game reconnects automatically when the wifi
+  recovers, and they rejoin the same team without losing their place. If it hangs,
+  they can refresh the page; their team is remembered on that laptop.
+- You lose your dashboard. Reopen it in the same browser you created it in and it
+  should let you straight back in. This is why you keep that tab open and do not
+  hand your link around.
+- A team cannot join. Check they are typing the exact five-character code, in
+  capitals, and that the session is still open. Codes are case-insensitive on
+  entry but must match.
+- Nobody can do anything and the codes stop working. That usually means the server
+  has restarted and the session is gone. There is no recovery; you start a fresh
+  session. This is why nobody should deploy or restart anything during a live run.
+- Do not point security scanners at the live site during a session. If you are
+  doing any technical testing, that is a separate, offline exercise.
+
+
+-------------------------------------------------------------------------------
+13. QUICK REFERENCE
+-------------------------------------------------------------------------------
+
+  Teams per session          2 to 8 (4 is ideal)
+  Session code               5 characters, you share it
+  Shifts                     8
+  Shift length               5 minutes (ends early if all teams submit)
+  Briefing                   11 guided steps, you set the pace
+  Disruption chance          50 percent per shift, independent each shift
+  Disruption timing          somewhere in the first half of the shift
+  Disruption fairness        same moment for every team; you cannot trigger it
+  Expected disruptions       about 4 across a full session, but it varies
+  Live issues                always 3 per shift
+  Alerts                     up to 2, plus 1 more during a disruption
+  Decisions                  7 inputs across 5 tabs
+  Confidence                 Cautious ~0.75, Measured 1.00, Confident ~1.35
+  Hidden drivers             trust, capability, safety risk, leadership consistency
+  Baseline history           16 weeks per team
+
+  Your two companion documents:
+    debrief-questions.md          the full open-question bank, by theme
+    handover-facilitator-crib.md  the answer key to Ray's unreliable handover
+
+Run it warm, keep out of the shifts, and do your best work in the debriefs. The
+game will always hand you a way in.
