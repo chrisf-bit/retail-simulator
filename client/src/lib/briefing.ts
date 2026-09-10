@@ -15,6 +15,11 @@ export const BRIEFING_STEPS: Array<{ title: string; body: string; teamsSee: stri
     teamsSee: "The metrics HUD lights up and the bars move.",
   },
   {
+    title: "See all ten measures",
+    body: "The HUD rolls up into five goals, but each one is built from real store numbers. Open the full view and you get all ten measures - sales, availability, engagement, costs, audits and more - each with its live value against baseline and target. This is where the detail lives when you want it.",
+    teamsSee: "The full ten-metric breakdown opens over the screen.",
+  },
+  {
     title: "What's happening",
     body: "On the left is your Context. Active issues are what is live in the store right now; Alerts are messages from head office and operations. Read these before you act.",
     teamsSee: "The Context column with issues and alerts.",

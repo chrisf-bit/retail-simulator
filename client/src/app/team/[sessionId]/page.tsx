@@ -18,6 +18,7 @@ import {
   Flame,
   Gauge,
   HeartHandshake,
+  LayoutGrid,
   LineChart,
   Loader2,
   MessageCircleQuestion,
@@ -63,16 +64,20 @@ import {
   CONFIDENCE_DESCRIPTIONS,
   CONFIDENCE_LABELS,
   GOAL_KEYS,
+  GOAL_LABELS,
   GOAL_SHORT,
   HIDDEN_INVERTED,
   HIDDEN_KEYS,
   HIDDEN_LABELS,
   METRICS_OF_GOAL,
   METRIC_KEYS,
+  METRIC_LABELS,
   METRIC_SHORT,
   LEADERSHIP_LABELS,
   PRIORITY_LABELS,
   ROUND_COUNT,
+  metricBaselineLabel,
+  metricDisplay,
   metricDisplayShort,
   metricTargetLabel,
 } from "@sim/shared";
@@ -199,6 +204,7 @@ export default function TeamPlayerPage() {
   const [kpiView, setKpiView] = useState<"values" | "trends">("values");
   const [acknowledgedDisruptions, setAcknowledgedDisruptions] = useState<Set<string>>(() => new Set());
   const [handoverOpen, setHandoverOpen] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem(`team:${sessionId}`);
@@ -306,6 +312,7 @@ export default function TeamPlayerPage() {
         />
       ) : null}
       {handoverOpen ? <HandoverModal onClose={() => setHandoverOpen(false)} /> : null}
+      {metricsOpen ? <MetricsModal team={team} onClose={() => setMetricsOpen(false)} /> : null}
       <TeamHeader
         team={team}
         round={state.round?.number ?? 0}
@@ -330,7 +337,7 @@ export default function TeamPlayerPage() {
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
         <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
-          <MetricsHud team={team} view={kpiView} onViewChange={setKpiView} />
+          <MetricsHud team={team} view={kpiView} onViewChange={setKpiView} onOpenMetrics={() => setMetricsOpen(true)} />
 
           <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
@@ -510,10 +517,12 @@ function MetricsHud({
   team,
   view,
   onViewChange,
+  onOpenMetrics,
 }: {
   team: TeamPublic;
   view: "values" | "trends";
   onViewChange: (v: "values" | "trends") => void;
+  onOpenMetrics: () => void;
 }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-surface-console p-2.5 shadow-panel ring-1 ring-teal-500/20">
@@ -565,6 +574,13 @@ function MetricsHud({
               <LineChart className="h-3.5 w-3.5" />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={onOpenMetrics}
+            className="press mt-1.5 flex w-fit items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[12px] text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:text-white"
+          >
+            <LayoutGrid className="h-3.5 w-3.5 text-teal-300" /> All 10
+          </button>
         </div>
 
         {/* Readouts: hairline-divided cells */}
@@ -1616,15 +1632,15 @@ function BriefingWalkthrough({ step }: { step: number }) {
   // then keep a gentle oscillation running so the sliders stay alive.
   const [alloc, setAlloc] = useState<ResourceAllocation>(ZERO_ALLOC);
   useEffect(() => {
-    if (s < 4) {
+    if (s < 5) {
       setAlloc(ZERO_ALLOC);
       return;
     }
-    if (s > 4) {
+    if (s > 5) {
       setAlloc(DEMO_ALLOC);
       return;
     }
-    // s === 4: glide from empty to a valid 100% split.
+    // s === 5 (Team tab): glide from empty to a valid 100% split.
     setAlloc(ZERO_ALLOC);
     const frames = 12;
     let i = 0;
@@ -1672,16 +1688,18 @@ function BriefingWalkthrough({ step }: { step: number }) {
     lastMetricDelta: s >= 1 ? DEMO_DELTA : undefined,
   };
 
-  const priority: Priority | null = s >= 3 ? "customer" : null;
-  const action: ActionApproach | null = s >= 3 ? "adapt_local" : null;
-  const leadership: LeadershipStyle | null = s >= 4 ? "coaching" : null;
-  const primaryIssueId = s >= 5 ? DEMO_ISSUES[0].id : null;
-  const momentResponseId = s >= 6 ? DEMO_MOMENT_RESPONSE : null;
-  const confidence: ConfidenceLevel | null = s >= 7 ? "measured" : null;
-  const showDisruption = s === 8;
+  // Step map (11 steps): 0 welcome, 1 HUD, 2 all-ten-metrics, 3 Context,
+  // 4 Focus, 5 Team, 6 Issue, 7 People, 8 Confidence, 9 Disruption, 10 ready.
+  const priority: Priority | null = s >= 4 ? "customer" : null;
+  const action: ActionApproach | null = s >= 4 ? "adapt_local" : null;
+  const leadership: LeadershipStyle | null = s >= 5 ? "coaching" : null;
+  const primaryIssueId = s >= 6 ? DEMO_ISSUES[0].id : null;
+  const momentResponseId = s >= 7 ? DEMO_MOMENT_RESPONSE : null;
+  const confidence: ConfidenceLevel | null = s >= 8 ? "measured" : null;
+  const showDisruption = s === 9;
   const allocTotal = alloc.shop_floor + alloc.backroom + alloc.customer_service + alloc.problem_resolution;
 
-  const demoTab: TabId = s >= 3 && s <= 7 ? (((s - 2) as TabId)) : s >= 8 ? 5 : 1;
+  const demoTab: TabId = s >= 4 && s <= 8 ? (((s - 3) as TabId)) : s >= 9 ? 5 : 1;
 
   const demoTabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
@@ -1691,10 +1709,10 @@ function BriefingWalkthrough({ step }: { step: number }) {
     5: !!confidence,
   };
 
-  const allBright = s === 0 || s === 9;
-  const hudActive = allBright || s === 1;
-  const contextActive = allBright || s === 2 || s === 8;
-  const decideActive = allBright || (s >= 3 && s <= 8);
+  const allBright = s === 0 || s === 10;
+  const hudActive = allBright || s === 1 || s === 2;
+  const contextActive = allBright || s === 3 || s === 9;
+  const decideActive = allBright || (s >= 4 && s <= 9);
 
   const dim = (active: boolean) =>
     active ? "opacity-100" : "opacity-40 saturate-[0.6]";
@@ -1708,8 +1726,10 @@ function BriefingWalkthrough({ step }: { step: number }) {
 
   return (
     <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
+      {/* Step 2: the full ten-metric view, presented in lockstep with the room. */}
+      {s === 2 ? <MetricsModal team={demoTeam} presentation /> : null}
       <div className={cn("transition-all duration-500", dim(hudActive), glowData(hudActive))}>
-        <MetricsHud team={demoTeam} view="values" onViewChange={noop} />
+        <MetricsHud team={demoTeam} view="values" onViewChange={noop} onOpenMetrics={noop} />
       </div>
 
       <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
@@ -2031,6 +2051,155 @@ const HANDOVER_SECTIONS: Array<{ heading: string; note: string; body: string[]; 
     ],
   },
 ];
+
+// Full 10-metric breakdown behind the 5-goal HUD, opened from the HUD's
+// "All 10" button. Read-only, grouped by goal so the "five goals, ten measures"
+// frame stays legible. Scrolls internally (a modal is not the page).
+// `presentation` mode is the facilitator-driven briefing view: the room is
+// stepped into this by the shared briefing step, so there are no dismiss
+// affordances (no backdrop click, Escape or close button) - the facilitator
+// advances everyone together with Next.
+function MetricsModal({
+  team,
+  onClose,
+  presentation = false,
+}: {
+  team: TeamPublic;
+  onClose?: () => void;
+  presentation?: boolean;
+}) {
+  useEffect(() => {
+    if (presentation) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, presentation]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[55] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="metrics-title"
+      onClick={presentation ? undefined : onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/25"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
+              <LayoutGrid className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-teal-300">Store metrics</div>
+              <h2 id="metrics-title" className="text-lg font-semibold tracking-tight text-white">
+                Five goals, ten measures
+              </h2>
+              <div className="mt-1 text-[12px] text-white/55">
+                The full picture behind the HUD. Live values against baseline and target.
+              </div>
+            </div>
+          </div>
+          {presentation ? null : (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close metrics"
+              className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Body (scrolls internally) */}
+        <div className="quiet-scroll min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-5">
+          {GOAL_KEYS.map((g) => {
+            const Icon = GOAL_ICONS[g];
+            const rollup = goalRollup(team, g);
+            const tone = HUD_TONE[healthOf(rollup.value)];
+            const metrics = METRICS_OF_GOAL[g];
+            return (
+              <section key={g} className="rounded-2xl bg-white/[0.03] p-3.5 ring-1 ring-white/10">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/5 ring-1 ring-white/10",
+                      tone.glow,
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", tone.text)} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold tracking-tight text-white">{GOAL_LABELS[g]}</div>
+                    <div className="text-[12px] text-white/50">
+                      {metrics.length} measure{metrics.length === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="num text-xl font-semibold text-white">{rollup.value}</span>
+                    <Delta value={rollup.delta} onDark />
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {metrics.map((k) => (
+                    <MetricDetailCard key={k} team={team} metric={k} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-6 py-3">
+          <div className="flex items-center gap-1.5 text-[12px] text-white/50">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-teal-300/70" /> Read-only. Your decisions move these each shift.
+          </div>
+          {presentation ? (
+            <span className="text-[12px] text-white/40">Your facilitator is walking the room through this.</span>
+          ) : (
+            <Button variant="quiet" size="sm" onClick={onClose}>
+              Close
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricDetailCard({ team, metric }: { team: TeamPublic; metric: MetricKey }) {
+  const norm = team.metrics?.[metric] ?? 0;
+  const series = team.trend?.[metric] ?? [];
+  return (
+    <div className="flex w-[168px] grow basis-[168px] flex-col rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+      <div className="text-[13px] font-medium leading-snug text-white/80">{METRIC_LABELS[metric]}</div>
+      <div className="mt-1.5 flex items-baseline justify-between gap-1">
+        <span className="num text-lg font-semibold text-white">{metricDisplay(metric, norm)}</span>
+        <Delta value={team.lastMetricDelta?.[metric]} onDark />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2 text-[12px] text-white/45">
+        <span className="inline-flex items-center gap-1">
+          <Target className="h-3 w-3" /> {metricTargetLabel(metric)}
+        </span>
+        <span className="text-white/25">·</span>
+        <span>Base {metricBaselineLabel(metric)}</span>
+      </div>
+      <div className="mt-2.5">
+        <Bar value={norm} onDark />
+      </div>
+      <div className="mt-2.5">
+        <Sparkline values={series} height={28} onDark baselinePoints={BASELINE_WEEKS} />
+      </div>
+    </div>
+  );
+}
 
 function HandoverModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
