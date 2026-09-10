@@ -207,13 +207,27 @@ export default function TeamPlayerPage() {
   const [metricsOpen, setMetricsOpen] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(`team:${sessionId}`);
+    // Break-glass recovery: a facilitator-issued link carries
+    // ?recover=<teamId>.<token>. Seed local storage from it, then strip the
+    // param from the URL so the credential is not left in the address bar.
+    const params = new URLSearchParams(window.location.search);
+    const recover = params.get("recover");
+    if (recover) {
+      const dot = recover.indexOf(".");
+      if (dot > 0) {
+        localStorage.setItem(`team:${sessionId}`, recover.slice(0, dot));
+        localStorage.setItem(`teamtoken:${sessionId}`, recover.slice(dot + 1));
+      }
+      window.history.replaceState({}, "", `/team/${sessionId}`);
+    }
+
+    const stored = localStorage.getItem(`team:${sessionId}`);
     if (!stored) {
       router.replace("/");
       return;
     }
     setTeamId(stored);
-    const token = sessionStorage.getItem(`teamtoken:${sessionId}`) ?? undefined;
+    const token = localStorage.getItem(`teamtoken:${sessionId}`) ?? undefined;
     const rejoin = () => socket.emit("session:rejoin", { sessionId, teamId: stored, token });
     rejoin();
     // Re-announce ourselves whenever Socket.IO reconnects after a drop.
@@ -247,7 +261,8 @@ export default function TeamPlayerPage() {
 
   useEffect(() => {
     if (error === "Unable to rejoin" || error === "Session code not recognised") {
-      sessionStorage.removeItem(`team:${sessionId}`);
+      localStorage.removeItem(`team:${sessionId}`);
+      localStorage.removeItem(`teamtoken:${sessionId}`);
       setSessionEnded(true);
     }
   }, [error, sessionId]);

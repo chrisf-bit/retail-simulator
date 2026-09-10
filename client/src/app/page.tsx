@@ -21,9 +21,9 @@ export default function LandingPage() {
   function createFacilitator() {
     const socket = getSocket();
     setSubmitting(true);
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key && key.startsWith("team:")) sessionStorage.removeItem(key);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("team:") || key.startsWith("teamtoken:"))) localStorage.removeItem(key);
     }
     socket.once(
       "session:created",
@@ -44,10 +44,12 @@ export default function LandingPage() {
     const socket = getSocket();
     setSubmitting(true);
     const onJoined = ({ sessionId, teamId, token }: { sessionId: string; teamId: string; token?: string }) => {
-      sessionStorage.setItem(`team:${sessionId}`, teamId);
+      // localStorage (not sessionStorage) so an accidental tab close or refresh
+      // does not orphan the team - they can reopen and rejoin.
+      localStorage.setItem(`team:${sessionId}`, teamId);
       // Per-team session token: proves ownership on rejoin so no other client can
       // hijack this team. Returned once at join; kept alongside the teamId.
-      if (token) sessionStorage.setItem(`teamtoken:${sessionId}`, token);
+      if (token) localStorage.setItem(`teamtoken:${sessionId}`, token);
       router.push(`/team/${sessionId}`);
     };
     const onErr = (e: { message: string }) => {

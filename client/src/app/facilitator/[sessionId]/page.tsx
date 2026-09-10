@@ -10,10 +10,13 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Check,
   Clock,
+  Copy,
   Eye,
   Flag,
   HelpCircle,
+  KeyRound,
   Layers,
   Loader2,
   MessageCircleQuestion,
@@ -24,6 +27,7 @@ import {
   Download,
   Square,
   Trophy,
+  X,
 } from "lucide-react";
 import type { Socket } from "socket.io-client";
 import type {
@@ -106,6 +110,19 @@ export default function FacilitatorPage() {
   const endsAt = state?.round?.phase === "active" || state?.round?.phase === "disrupted" ? state?.round?.endsAt : undefined;
   const timeLeft = useCountdown(endsAt, offsetMs);
 
+  const [recovery, setRecovery] = useState<{ teamId: string; url: string } | null>(null);
+  useEffect(() => {
+    const handler = ({ teamId, token }: { teamId: string; token: string }) => {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const url = `${origin}/team/${sessionId}?recover=${encodeURIComponent(`${teamId}.${token}`)}`;
+      setRecovery({ teamId, url });
+    };
+    socket.on("team:recovery_token", handler);
+    return () => {
+      socket.off("team:recovery_token", handler);
+    };
+  }, [socket, sessionId]);
+
   if (sessionEnded) {
     return <SessionEndedScreen />;
   }
@@ -128,9 +145,14 @@ export default function FacilitatorPage() {
   const guidance = facilitatorGuidance(state);
   const primary = getPrimaryAction(state);
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
+  const reissue = (teamId: string) => socket.emit("facilitator:reissue_team_token", { sessionId, teamId });
+  const recoveryTeamName = recovery ? state.teams.find((t) => t.id === recovery.teamId)?.name ?? "Team" : "";
 
   return (
     <div className="flex min-h-full w-full flex-col xl:h-full xl:overflow-hidden">
+      {recovery ? (
+        <RecoveryModal teamName={recoveryTeamName} url={recovery.url} onClose={() => setRecovery(null)} />
+      ) : null}
       <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
 
       <div className="shrink-0 px-5 pt-5">
@@ -167,7 +189,7 @@ export default function FacilitatorPage() {
         ) : (
           <>
             <div className="min-h-0 xl:min-h-0">
-              <CoachingGrid state={state} reveal={revealPhase} />
+              <CoachingGrid state={state} reveal={revealPhase} onReissue={reissue} />
             </div>
             <div className="flex min-h-0 flex-col xl:min-h-0">
               <Leaderboard state={state} />
@@ -370,7 +392,15 @@ function columnsForTeams(n: number): number {
   return 4;
 }
 
-function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: boolean }) {
+function CoachingGrid({
+  state,
+  reveal,
+  onReissue,
+}: {
+  state: SessionStatePublic;
+  reveal: boolean;
+  onReissue: (teamId: string) => void;
+}) {
   if (state.teams.length === 0) return null;
   const insightsByTeam = new Map(state.insights.teams.map((i) => [i.teamId, i]));
   const rankByTeam = new Map(state.leaderboard.map((r) => [r.teamId, r.rank]));
@@ -394,6 +424,7 @@ function CoachingGrid({ state, reveal }: { state: SessionStatePublic; reveal: bo
             insight={insightsByTeam.get(t.id)}
             rank={rankByTeam.get(t.id)}
             reveal={reveal}
+            onReissue={onReissue}
           />
         ))}
       </div>
@@ -406,11 +437,13 @@ function CoachingCard({
   insight,
   rank,
   reveal,
+  onReissue,
 }: {
   team: TeamPublic;
   insight: TeamInsight | undefined;
   rank?: number;
   reveal: boolean;
+  onReissue: (teamId: string) => void;
 }) {
   const question = insight?.questions?.[0];
   return (
@@ -425,6 +458,14 @@ function CoachingCard({
           <span className="truncate text-sm font-semibold tracking-tight text-white">{team.name}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onReissue(team.id)}
+            title="Reissue this team's access link (if they lost their device)"
+            className="press flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-white/50 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white/90"
+          >
+            <KeyRound className="h-3 w-3" />
+          </button>
           <span className="rounded-full bg-white/10 px-2 py-0.5 num text-[13px] font-semibold text-white">
             {team.score}
           </span>
@@ -621,6 +662,90 @@ function ControlBar({
         </p>
       ) : null}
     </Card>
+  );
+}
+
+// Break-glass recovery: shows the one-time recovery link the server minted for a
+// team that lost its device state. The facilitator sends the link to the team;
+// opening it restores their place. Read-only, copy to clipboard, no codes typed.
+function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard blocked; the field is selectable as a fallback
+    }
+  };
+  return (
+    <div
+      className="fixed inset-0 z-[55] flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recovery-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/25"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
+              <KeyRound className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-teal-300">Recovery link</div>
+              <h2 id="recovery-title" className="text-lg font-semibold tracking-tight text-white">{teamName}</h2>
+              <div className="mt-1 text-[12px] text-white/55">
+                Open this link on the team&apos;s device to restore their place. It replaces any earlier link for this team.
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-2 rounded-xl bg-black/30 p-2 ring-1 ring-white/10">
+            <input
+              readOnly
+              value={url}
+              onFocusCapture={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 bg-transparent px-2 text-[13px] text-white/80 focus:outline-none"
+            />
+            <Button variant="quiet" size="sm" onClick={copy}>
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" /> Copy
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="mt-3 text-[12px] leading-snug text-white/50">
+            Send it to the team however is easiest - paste it into their browser, or share it over chat. No codes to type.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

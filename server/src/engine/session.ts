@@ -432,6 +432,20 @@ export class Session {
     return typeof providedHash === "string" && providedHash === team.sessionTokenHash;
   }
 
+  /**
+   * Facilitator break-glass: replace a team's token hash (the caller mints the
+   * raw token and hands it back to the team via a recovery link). Invalidates
+   * any previously issued token for that team - intended for when a team's own
+   * device has lost its stored credential.
+   */
+  setTeamTokenHash(teamId: string, hash: string): boolean {
+    const team = this.teams.get(teamId);
+    if (!team) return false;
+    team.sessionTokenHash = hash;
+    this.onUpdate();
+    return true;
+  }
+
   touchTeam(teamId: string): void {
     const team = this.teams.get(teamId);
     if (!team) return;

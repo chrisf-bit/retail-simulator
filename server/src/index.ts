@@ -12,13 +12,13 @@ const PORT = Number(process.env.PORT ?? 3001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
-// Fail-closed-ish CORS: when CLIENT_ORIGIN is set (production), allow only it
-// plus the local dev origins. When it is unset we fall back to permissive rather
-// than lock the server out - but warn loudly so it gets set in prod.
+// Fail-closed CORS: allow only CLIENT_ORIGIN (production) plus the local dev
+// origins. Never "*". If CLIENT_ORIGIN is unset, only localhost works - that is
+// the safe failure, and it forces the env var to be set in prod.
 const DEV_ORIGINS = ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173"];
-const corsOrigin: string | string[] = CLIENT_ORIGIN ? [CLIENT_ORIGIN, ...DEV_ORIGINS] : "*";
+const corsOrigin: string[] = [CLIENT_ORIGIN, ...DEV_ORIGINS].filter((o): o is string => !!o);
 if (!CLIENT_ORIGIN) {
-  console.warn("[cors] CLIENT_ORIGIN not set - allowing all origins. Set it in production.");
+  console.warn("[cors] CLIENT_ORIGIN not set - only localhost origins allowed. Set it in production.");
 }
 
 // Per-socket rate limit: sliding window, sized to comfortably clear heartbeats
@@ -42,6 +42,14 @@ function isRateLimited(id: string): boolean {
 // Cap sessions created per socket so one client cannot exhaust memory/disk.
 const MAX_SESSIONS_PER_SOCKET = 20;
 const createCounts = new Map<string, number>();
+
+// Facilitator-join brute-force lockout. The token is a 24-char random string
+// (infeasible to guess) and the rate limiter already caps attempts, so this is
+// defence-in-depth. Keyed by socket.id + sessionId (resets on reconnect, so a
+// shared proxy IP can never lock out other rooms).
+const FAC_ATTEMPT_MAX = 8;
+const FAC_LOCKOUT_MS = 5 * 60 * 1000;
+const facAttempts = new Map<string, { count: number; until: number }>();
 
 function hashToken(token: unknown): string | undefined {
   if (typeof token !== "string" || token.length === 0) return undefined;
@@ -192,9 +200,20 @@ io.on("connection", (socket) => {
   on("facilitator:join", ({ sessionId, token }: { sessionId: string; token?: string }) => {
     const session = store.get(sessionId);
     if (!session) return socket.emit("error", { message: "Session not found" });
+    const attemptKey = `${socket.id}:${sessionId}`;
+    const lock = facAttempts.get(attemptKey);
+    if (lock && lock.until > Date.now()) {
+      return socket.emit("error", { message: "Too many attempts. Try again shortly." });
+    }
     if (!token || token !== session.facilitatorToken) {
+      const count = (lock?.count ?? 0) + 1;
+      facAttempts.set(attemptKey, {
+        count,
+        until: count >= FAC_ATTEMPT_MAX ? Date.now() + FAC_LOCKOUT_MS : 0,
+      });
       return socket.emit("error", { message: "Not authorised" });
     }
+    facAttempts.delete(attemptKey);
     socket.join(`session:${session.id}`);
     socket.data.role = "facilitator";
     socket.data.sessionId = session.id;
@@ -249,6 +268,20 @@ io.on("connection", (socket) => {
   );
   on("facilitator:next_phase", ({ sessionId }) => requireFacilitator(socket, sessionId)?.nextPhase());
 
+  // Break-glass: mint a fresh token for a team that has lost its device state,
+  // and return it (once) to the facilitator, who hands it to the team as a
+  // recovery link. Facilitator-gated; invalidates the team's prior token.
+  on("facilitator:reissue_team_token", ({ sessionId, teamId }: { sessionId: string; teamId: string }) => {
+    const session = requireFacilitator(socket, sessionId);
+    if (!session) return;
+    if (typeof teamId !== "string" || !session.teams.has(teamId)) return;
+    const token = crypto.randomBytes(24).toString("hex");
+    const hash = hashToken(token);
+    if (!hash) return;
+    session.setTeamTokenHash(teamId, hash);
+    socket.emit("team:recovery_token", { teamId, token });
+  });
+
   on(
     "team:submit_decision",
     ({ sessionId, teamId, decision }: { sessionId: string; teamId: string; decision: unknown }) => {
@@ -268,6 +301,10 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     eventTimes.delete(socket.id);
     createCounts.delete(socket.id);
+    const prefix = `${socket.id}:`;
+    for (const key of facAttempts.keys()) {
+      if (key.startsWith(prefix)) facAttempts.delete(key);
+    }
   });
 });
 
