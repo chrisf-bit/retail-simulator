@@ -301,6 +301,9 @@ What is on each team's card:
   most for them this shift (or, if they held steady, the thing that barely moved).
   Two teams will get different questions even if they look similar, because the
   question follows their own story.
+- A small key icon in the card's top corner. You will rarely need it: it generates
+  a recovery link if a team ever has to move to a new device. See the
+  troubleshooting section for how it works.
 
 How to use the cards well:
 
@@ -384,7 +387,18 @@ follow-up material.
 
 - A team's laptop drops out. The game reconnects automatically when the wifi
   recovers, and they rejoin the same team without losing their place. If it hangs,
-  they can refresh the page; their team is remembered on that laptop.
+  they can refresh the page, or even close the tab and reopen the game on that same
+  laptop - their team is remembered on that machine, so a refresh or accidental
+  close no longer loses their place.
+- A team has to move to a different device (their laptop died, or someone cleared
+  the browser). Use the recovery link. On your dashboard, each team's coaching card
+  has a small key icon in its top corner. Click it and you get a one-off recovery
+  link for that team; copy it and send it to the team however is easiest (paste it
+  into their new device's browser, or share it over chat). Opening the link puts
+  them back into their own team with their score and history intact. There are no
+  codes to read out. Note that issuing a new link retires the old one, so use it
+  when a team has genuinely lost their original device, not while they are still on
+  it.
 - You lose your dashboard. Reopen it in the same browser you created it in and it
   should let you straight back in. This is why you keep that tab open and do not
   hand your link around.
