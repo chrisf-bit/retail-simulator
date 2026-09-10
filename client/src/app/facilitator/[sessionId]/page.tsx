@@ -181,7 +181,7 @@ export default function FacilitatorPage() {
         </div>
       ) : null}
 
-      <main className="grid grid-cols-1 gap-5 p-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_300px]">
+      <main className="grid grid-cols-1 gap-5 p-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_340px]">
         {state.phase === "lobby" ? (
           <div className="xl:col-span-2">
             <Leaderboard state={state} />
@@ -261,11 +261,11 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
       <SectionTitle tone="data" icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
       <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
         <div className="col-span-2">Rank</div>
-        <div className="col-span-6">Team</div>
+        <div className="col-span-5">Team</div>
         <div className="col-span-2 text-right">Score</div>
-        <div className="col-span-2 text-right">Mv</div>
+        <div className="col-span-3 text-right">Mv</div>
       </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-auto">
+      <div className="quiet-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
         {(() => {
           // Only flag a leader when their score is strictly greater than the
           // next team's. Otherwise everyone at the top is tied and nobody
@@ -288,7 +288,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                 <div className={cn("col-span-2 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
                   #{row.rank}
                 </div>
-                <div className="col-span-6 flex min-w-0 items-center gap-2">
+                <div className="col-span-5 flex min-w-0 items-center gap-2">
                   <ConnectionDot status={status} />
                   <TeamCrest name={row.name} size={20} tone={isLead ? "lead" : "light"} />
                   <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
@@ -296,7 +296,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                 <div className={cn("col-span-2 text-right num text-base font-semibold text-white")}>
                   {row.score}
                 </div>
-                <div className="col-span-2 text-right">
+                <div className="col-span-3 flex justify-end">
                   <MovementPill value={row.movement} />
                 </div>
               </div>

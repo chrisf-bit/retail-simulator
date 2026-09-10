@@ -553,9 +553,9 @@ function MetricsHud({
         className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-white/[0.04] blur-2xl animate-hudScan"
       />
 
-      <div className="relative flex items-stretch gap-3">
+      <div className="relative grid grid-cols-6 items-stretch gap-3">
         {/* Console title / status */}
-        <div className="flex w-[128px] shrink-0 flex-col justify-center gap-1 pl-2 pr-1">
+        <div className="flex flex-col justify-center gap-1 pl-2 pr-1">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5 items-center justify-center">
               <span className="absolute inline-flex h-2.5 w-2.5 rounded-full bg-teal-400/70 animate-hudPulse" />
@@ -600,7 +600,7 @@ function MetricsHud({
         </div>
 
         {/* Readouts: hairline-divided cells */}
-        <div className="grid flex-1 grid-cols-5 gap-px overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10">
+        <div className="col-span-5 grid grid-cols-5 gap-px overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10">
           {GOAL_KEYS.map((g) => (
             <GoalReadout key={g} team={team} goal={g} view={view} />
           ))}
@@ -642,16 +642,18 @@ function GoalReadout({
         <span className="num text-3xl font-semibold leading-none text-white">{value}</span>
         <Delta value={delta} onDark />
       </div>
-      {view === "values" ? (
-        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            className={cn("h-full rounded-full transition-all duration-700 ease-out", tone.bar)}
-            style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-          />
-        </div>
-      ) : (
-        <Sparkline values={series} height={30} onDark baselinePoints={BASELINE_WEEKS} />
-      )}
+      <div className="flex h-12 items-center">
+        {view === "values" ? (
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className={cn("h-full rounded-full transition-all duration-700 ease-out", tone.bar)}
+              style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+            />
+          </div>
+        ) : (
+          <Sparkline values={series} height={48} onDark baselinePoints={BASELINE_WEEKS} />
+        )}
+      </div>
     </div>
   );
 }

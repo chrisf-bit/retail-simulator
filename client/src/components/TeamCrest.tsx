@@ -1,6 +1,6 @@
 /**
- * Team mark: a bespoke Plumfield storefront - a scalloped shop awning over an
- * arched shop door - drawn as a single-colour stroke SVG (24x24, Lucide-style
+ * Team mark: a bespoke Plumfield storefront - a clean overhanging shop awning
+ * over an arched shop door - drawn as a single-colour stroke SVG (24x24, Lucide-style
  * 2px stroke) so it stays crisp at any size and tints deterministically per
  * team. Every team reads as the same shop shape; only the accent colour varies,
  * so it stays a secondary cue alongside the always-present team name (safe for
@@ -53,14 +53,14 @@ function StorefrontMark({
       className={className}
       {...rest}
     >
-      {/* Shopfront (walls, floor, lintel under the awning) */}
-      <path d="M4.5 8 H19.5 V21 H4.5 Z" />
+      {/* Shopfront body (side walls under the awning) */}
+      <path d="M4.5 8 V21 M19.5 8 V21" />
       {/* Ground line, a touch wider than the shop */}
       <path d="M3 21 H21" />
-      {/* Awning: straight roofline with a scalloped canopy hanging below */}
-      <path d="M3.5 5 H20.5 V8 q -2.125 2 -4.25 0 q -2.125 2 -4.25 0 q -2.125 2 -4.25 0 q -2.125 2 -4.25 0 Z" />
-      {/* Awning stripe seams, aligned to the scallop junctions */}
-      <path d="M7.75 5 V8 M12 5 V8 M16.25 5 V8" />
+      {/* Awning: a clean overhanging canopy, straight edges (no scallops) */}
+      <path d="M3 4 H21 V8 H3 Z" />
+      {/* Awning stripe seams */}
+      <path d="M7.5 4 V8 M12 4 V8 M16.5 4 V8" />
       {/* Arched shop door, centred */}
       <path d="M9.75 21 V14.5 a2.25 2.25 0 0 1 4.5 0 V21" />
     </svg>
