@@ -153,15 +153,27 @@ export default function FacilitatorPage() {
         />
       </div>
 
-      <main className="grid grid-cols-1 gap-5 p-5 xl:grid-cols-[300px_1fr] xl:min-h-0 xl:flex-1">
-        <div className="flex flex-col gap-4 xl:min-h-0">
-          <Leaderboard state={state} />
-          <ControlPanel sessionId={sessionId} state={state} socket={socket} token={token} />
+      {state.phase !== "lobby" ? (
+        <div className="shrink-0 px-5 pt-4">
+          <ControlBar sessionId={sessionId} state={state} socket={socket} token={token} />
         </div>
+      ) : null}
 
-        <div className="min-h-0 xl:min-h-0">
-          <CoachingGrid state={state} reveal={revealPhase} />
-        </div>
+      <main className="grid grid-cols-1 gap-5 p-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_300px]">
+        {state.phase === "lobby" ? (
+          <div className="xl:col-span-2">
+            <Leaderboard state={state} />
+          </div>
+        ) : (
+          <>
+            <div className="min-h-0 xl:min-h-0">
+              <CoachingGrid state={state} reveal={revealPhase} />
+            </div>
+            <div className="flex min-h-0 flex-col xl:min-h-0">
+              <Leaderboard state={state} />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
@@ -426,6 +438,15 @@ function CoachingCard({
         </div>
       </div>
 
+      {question ? (
+        <div className="rounded-xl bg-brand-500/15 px-3.5 py-2.5 ring-1 ring-brand-400/20">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-300">
+            <MessageCircleQuestion className="h-3 w-3" /> Ask them
+          </div>
+          <p className="text-[13px] italic leading-snug text-white/90">&ldquo;{question}&rdquo;</p>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-5 gap-2">
         {GOAL_KEYS.map((g) => {
           const ms = METRICS_OF_GOAL[g];
@@ -470,20 +491,15 @@ function CoachingCard({
           </div>
         </div>
       ) : null}
-
-      {question ? (
-        <div className="mt-auto rounded-xl bg-brand-500/15 px-3.5 py-2.5">
-          <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-300">
-            <MessageCircleQuestion className="h-3 w-3" /> Ask them
-          </div>
-          <p className="text-[13px] italic leading-snug text-white/90">&ldquo;{question}&rdquo;</p>
-        </div>
-      ) : null}
     </div>
   );
 }
 
-function ControlPanel({
+// Persistent control strip under the guide banner: the facilitator's
+// moment-to-moment controls live here (top of screen, not buried in a side
+// column). Context-sensitive - briefing stepper, live-shift controls, or the
+// report download - with an always-on submitted / disruption readout on the right.
+function ControlBar({
   sessionId,
   state,
   socket,
@@ -500,6 +516,8 @@ function ControlPanel({
   const step = Math.max(0, Math.min(BRIEFING_STEPS.length - 1, state.briefingStep ?? 0));
   const stepInfo = BRIEFING_STEPS[step];
   const lastStep = step >= BRIEFING_STEPS.length - 1;
+  const submitted = state.teams.filter((t) => t.submitted).length;
+  const disrupted = state.round?.phase === "disrupted";
 
   function goStep(next: number) {
     const clamped = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, next));
@@ -514,99 +532,95 @@ function ControlPanel({
   }
 
   return (
-    <Card tone="data" className="p-5">
-      {reportReady ? (
-        <>
-          <SectionTitle
-            tone="data"
-            icon={<Download className="h-4 w-4" />}
-            title="Session report"
-            subtitle="Download a printable summary for the room"
-          />
-          <Button variant="primary" onClick={openReport} disabled={!token} className="w-full justify-center">
-            <Download className="h-4 w-4" /> Download session report
-          </Button>
-        </>
-      ) : briefing ? (
-        <>
-          <SectionTitle
-            tone="data"
-            icon={<MonitorPlay className="h-4 w-4" />}
-            title="Briefing walkthrough"
-            subtitle="Step the room through the store screen. Every team follows on their own laptop."
-          />
-          <div className="rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[12px] font-semibold uppercase tracking-wider text-brand-300">
-                Step {step + 1} of {BRIEFING_STEPS.length}
-              </span>
-              <div className="flex items-center gap-1">
-                {BRIEFING_STEPS.map((_, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full transition-colors",
-                      i === step ? "bg-brand-400" : i < step ? "bg-white/40" : "bg-white/15",
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="mt-1.5 text-sm font-semibold tracking-tight text-white">{stepInfo.title}</div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-teal-300">
-              <MonitorPlay className="h-3 w-3" /> {stepInfo.teamsSee}
-            </div>
-            <p className="mt-2 text-[13px] leading-snug text-white/70">{stepInfo.body}</p>
-            <div className="mt-3 flex items-center gap-2">
-              <Button variant="quiet" size="sm" disabled={step <= 0} onClick={() => goStep(step - 1)}>
-                <ChevronLeft className="h-4 w-4" /> Back
-              </Button>
-              <Button variant="primary" size="sm" disabled={lastStep} onClick={() => goStep(step + 1)}>
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-              {lastStep ? (
-                <span className="text-[12px] leading-tight text-white/60">Walkthrough done. Start Shift 1 above.</span>
-              ) : null}
+    <Card tone="data" className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3">
+      {briefing ? (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="shrink-0 rounded-lg bg-brand-500/15 px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wider text-brand-300">
+            Step {step + 1}/{BRIEFING_STEPS.length}
+          </span>
+          <div className="hidden shrink-0 items-center gap-1 sm:flex">
+            {BRIEFING_STEPS.map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full transition-colors",
+                  i === step ? "bg-brand-400" : i < step ? "bg-white/40" : "bg-white/15",
+                )}
+              />
+            ))}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold tracking-tight text-white">{stepInfo.title}</div>
+            <div className="flex items-center gap-1.5 text-[12px] text-teal-300">
+              <MonitorPlay className="h-3 w-3 shrink-0" />
+              <span className="truncate">{stepInfo.teamsSee}</span>
             </div>
           </div>
-        </>
-      ) : (
-        <>
-          <SectionTitle
-            tone="data"
-            icon={<HelpCircle className="h-4 w-4" />}
-            title="Shift controls"
-            subtitle="A disruption may strike during a shift, or the room may run clean."
-          />
-          <Button
-            variant="quiet"
-            size="sm"
-            disabled={!canEndRound}
-            onClick={() => socket.emit("facilitator:end_round", { sessionId })}
-          >
-            <Square className="h-4 w-4" /> End shift early
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="quiet" size="sm" disabled={step <= 0} onClick={() => goStep(step - 1)}>
+              <ChevronLeft className="h-4 w-4" /> Back
+            </Button>
+            <Button variant="primary" size="sm" disabled={lastStep} onClick={() => goStep(step + 1)}>
+              Next <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ) : reportReady ? (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-white/70">
+            <Download className="h-4 w-4 shrink-0 text-teal-300" />
+            <span className="truncate">Session complete. Download a printable summary for the room.</span>
+          </div>
+          <Button variant="primary" size="sm" onClick={openReport} disabled={!token} className="shrink-0">
+            <Download className="h-4 w-4" /> Download report
           </Button>
-        </>
+        </div>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-white/70">
+            <HelpCircle className="h-4 w-4 shrink-0 text-teal-300" />
+            <span className="truncate">
+              {canEndRound
+                ? "Shift live. Let the clock run, or end early once every team is in."
+                : "Shift resolved. Advance the room from the banner above."}
+            </span>
+          </div>
+          {canEndRound ? (
+            <Button
+              variant="quiet"
+              size="sm"
+              className="shrink-0"
+              onClick={() => socket.emit("facilitator:end_round", { sessionId })}
+            >
+              <Square className="h-4 w-4" /> End shift early
+            </Button>
+          ) : null}
+        </div>
       )}
 
-      <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-white/5 p-2 text-[12px]">
-        <StatPill label="Phase" value={state.phase} />
-        <StatPill label="Shift phase" value={state.round?.phase ?? "-"} />
-        <StatPill
-          label="Submitted"
-          value={`${state.teams.filter((t) => t.submitted).length}/${state.teams.length}`}
-        />
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {disrupted ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-risk px-3 py-1.5 text-[12px] font-semibold text-white">
+            <AlertTriangle className="h-3.5 w-3.5" /> Disruption live
+          </span>
+        ) : null}
+        <div className="rounded-xl bg-white/5 px-3 py-1.5 text-center ring-1 ring-white/10">
+          <div className="text-[12px] font-medium uppercase tracking-wider text-white/65">Submitted</div>
+          <div className="num text-sm font-semibold text-white">
+            {submitted}/{state.teams.length}
+          </div>
+        </div>
       </div>
-    </Card>
-  );
-}
 
-function StatPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-white/5 px-2 py-1.5 text-center">
-      <div className="text-[12px] font-medium uppercase tracking-wider text-white/65">{label}</div>
-      <div className="mt-0.5 truncate text-xs font-semibold text-white">{value}</div>
-    </div>
+      {briefing ? (
+        <p className="w-full border-t border-white/10 pt-2.5 text-[13px] leading-snug text-white/70">
+          {stepInfo.body}
+          {lastStep ? (
+            <span className="text-white/50"> Walkthrough done - start Shift 1 from the banner above.</span>
+          ) : null}
+        </p>
+      ) : null}
+    </Card>
   );
 }
 
