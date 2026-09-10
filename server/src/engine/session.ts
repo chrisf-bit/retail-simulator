@@ -1,12 +1,17 @@
 import { nanoid } from "nanoid";
 import type {
+  ActionApproach,
   Alert,
+  ConfidenceLevel,
   Decision,
   DisruptionEvent,
   FacilitatorPrompt,
   HiddenDrivers,
   Issue,
+  LeadershipStyle,
   Metrics,
+  Priority,
+  ResourceAllocation,
   RoundState,
   SessionPhase,
   SessionStatePublic,
@@ -158,6 +163,66 @@ function generateCode(): string {
   let out = "";
   for (let i = 0; i < 5; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
+}
+
+// Server-authoritative decision validation. Client input is untrusted, so every
+// field is checked against the known option sets and the live round before it is
+// allowed to touch scoring: bad enums, non-finite / out-of-range allocations, an
+// allocation that does not total 100, or ids that do not reference a real issue /
+// moment option are all rejected (returns null). Guards against a crafted payload
+// poisoning a team's metrics (or a NaN propagating through the maths).
+const VALID_PRIORITIES: readonly Priority[] = ["safety_loss", "people_team", "customer", "commercial"];
+const VALID_ACTIONS: readonly ActionApproach[] = ["standard", "adapt_local", "escalate", "reallocate"];
+const VALID_LEADERSHIP: readonly LeadershipStyle[] = ["directive", "collaborative", "coaching", "delegated"];
+const VALID_CONFIDENCE: readonly ConfidenceLevel[] = ["cautious", "measured", "confident"];
+const ALLOC_KEYS = ["shop_floor", "backroom", "customer_service", "problem_resolution"] as const;
+
+function sanitizeDecision(input: unknown, round: RoundState): Omit<Decision, "submittedAt"> | null {
+  if (!input || typeof input !== "object") return null;
+  const d = input as Record<string, unknown>;
+
+  if (!VALID_PRIORITIES.includes(d.priority as Priority)) return null;
+  if (!VALID_ACTIONS.includes(d.action as ActionApproach)) return null;
+  if (!VALID_LEADERSHIP.includes(d.leadership as LeadershipStyle)) return null;
+  if (!VALID_CONFIDENCE.includes(d.confidence as ConfidenceLevel)) return null;
+
+  const alloc = d.allocation;
+  if (!alloc || typeof alloc !== "object") return null;
+  const allocRec = alloc as Record<string, unknown>;
+  const cleanAlloc = {} as ResourceAllocation;
+  let sum = 0;
+  for (const k of ALLOC_KEYS) {
+    const v = allocRec[k];
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 100) return null;
+    const iv = Math.round(v);
+    cleanAlloc[k] = iv;
+    sum += iv;
+  }
+  if (sum !== 100) return null;
+
+  let primaryIssueId: string | undefined;
+  if (d.primaryIssueId !== undefined && d.primaryIssueId !== null) {
+    if (typeof d.primaryIssueId !== "string") return null;
+    if (!round.issues.some((i) => i.id === d.primaryIssueId)) return null;
+    primaryIssueId = d.primaryIssueId;
+  }
+
+  let momentResponseId: string | undefined;
+  if (d.momentResponseId !== undefined && d.momentResponseId !== null) {
+    if (typeof d.momentResponseId !== "string") return null;
+    if (!round.moment || !round.moment.options.some((o) => o.id === d.momentResponseId)) return null;
+    momentResponseId = d.momentResponseId;
+  }
+
+  return {
+    priority: d.priority as Priority,
+    action: d.action as ActionApproach,
+    leadership: d.leadership as LeadershipStyle,
+    allocation: cleanAlloc,
+    confidence: d.confidence as ConfidenceLevel,
+    primaryIssueId,
+    momentResponseId,
+  };
 }
 
 export interface PersistedSession {
@@ -336,7 +401,7 @@ export class Session {
     return this.teams.size >= this.expectedTeams;
   }
 
-  addTeam(name: string): TeamFull {
+  addTeam(name: string, sessionTokenHash?: string): TeamFull {
     const team: TeamFull = {
       id: nanoid(8),
       name,
@@ -347,10 +412,24 @@ export class Session {
       submitted: false,
       history: [],
       lastSeenAt: Date.now(),
+      sessionTokenHash,
     };
     this.teams.set(team.id, team);
     this.onUpdate();
     return team;
+  }
+
+  /**
+   * Gate a rejoin / submit against the team's stored token hash. The caller
+   * hashes the raw token the client presented and passes the hash in. Sessions
+   * persisted before tokens existed carry no hash - allow those through so an
+   * in-flight game is not broken by the upgrade (legacy fallback).
+   */
+  verifyTeamToken(teamId: string, providedHash: string | undefined): boolean {
+    const team = this.teams.get(teamId);
+    if (!team) return false;
+    if (!team.sessionTokenHash) return true; // legacy pre-token session
+    return typeof providedHash === "string" && providedHash === team.sessionTokenHash;
   }
 
   touchTeam(teamId: string): void {
@@ -454,12 +533,15 @@ export class Session {
     this.onUpdate();
   }
 
-  submitDecision(teamId: string, input: Omit<Decision, "submittedAt">) {
+  submitDecision(teamId: string, input: unknown) {
     const team = this.teams.get(teamId);
     if (!team || !this.round) return;
     if (this.round.phase === "locked" || this.round.phase === "reveal") return;
 
-    team.lastDecision = { ...input, submittedAt: Date.now() };
+    const clean = sanitizeDecision(input, this.round);
+    if (!clean) return; // reject malformed / out-of-range payloads outright
+
+    team.lastDecision = { ...clean, submittedAt: Date.now() };
     team.submitted = true;
     this.onUpdate();
 
@@ -705,6 +787,22 @@ export class SessionStore {
         this.byCode.delete(session.code);
         await deleteSessionFile(id);
       }
+    }
+
+    // Sweep the disk too: a file whose session is not in memory (an orphan from a
+    // long uptime, or written by a prior instance) is never touched by the loop
+    // above, only by hydrate() at boot. Prune stale orphans here so they cannot
+    // accumulate on a server that runs for days without a restart.
+    try {
+      const files = await readAllSessionFiles<PersistedSession>();
+      for (const { sessionId, updatedAt } of files) {
+        if (this.byId.has(sessionId)) continue;
+        if (now - updatedAt > SESSION_TTL_MS) {
+          await deleteSessionFile(sessionId);
+        }
+      }
+    } catch (err) {
+      console.warn("[persistence] disk sweep failed:", err);
     }
   }
 

@@ -11,7 +11,7 @@ Teams compete head-to-head, each managing a retail store. Decisions are made und
 - **Frontend:** Next.js 14 (App Router), React 18, Tailwind CSS, Lucide icons. Hosts on Vercel.
 - **Backend:** Node.js + Express + Socket.IO. Hosts on Render.
 - **Shared:** TypeScript types and constants consumed by both sides.
-- **State:** In-memory on the server (structured so a persistence layer can be added later).
+- **State:** In-memory on the server, snapshotted to a disk-backed store so sessions survive a restart.
 
 ---
 

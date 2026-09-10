@@ -10,7 +10,7 @@ Repo: https://github.com/chrisf-bit/retail-simulator
 
 - **Monorepo** via npm workspaces: `client/` + `server/` + `shared/`
 - **Client**: Next.js 14 (App Router), React 18, Tailwind CSS, Lucide icons, Socket.IO client. Deployed to Vercel.
-- **Server**: Node 20 + Express + Socket.IO. In-memory state. Runs via `tsx` in both dev and prod (no tsc build step). Deployed to Render.
+- **Server**: Node 20 + Express + Socket.IO. In-memory state with disk-backed persistence (session snapshots to `PERSISTENCE_DIR`, a mounted Render disk at `/var/data` in prod; restored on boot, so game data survives restarts). Runs via `tsx` in both dev and prod (no tsc build step). Deployed to Render.
 - **Shared**: TypeScript types + constants consumed by both sides.
 
 ---
@@ -130,7 +130,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 **Flow**: lobby -> briefing -> shift (x8) -> debrief.
 
-**Briefing** is a facilitator-driven, animated walkthrough of the real shift screen (not a static explainer). The facilitator steps through `BRIEFING_STEP_COUNT` steps (currently 10) with a Back/Next stepper; the current step is broadcast as `briefingStep` in public state (via the `facilitator:briefing_step` event), so every team's laptop renders the matching demo in lockstep. Only the step index is synced - each screen runs its own local CSS animation, so no frame-level sync is needed. Each step highlights one zone (metrics HUD, Context, one of the five decision tabs, disruption) and dims the rest, driven by synthetic demo data. Step content is shared between the team and facilitator views in `client/src/lib/briefing.ts` (length guarded against `BRIEFING_STEP_COUNT`). `briefingStep` is ephemeral (not persisted); a mid-briefing server restart resets it to 0. On a large-screen venue, a Synthesia AI-avatar welcome video (outgoing manager, room-wide, one audio source) can play before the walkthrough; it points teams to the handover document.
+**Briefing** is a facilitator-driven, animated walkthrough of the real shift screen (not a static explainer). The facilitator steps through `BRIEFING_STEP_COUNT` steps (currently 11) with a Back/Next stepper; the current step is broadcast as `briefingStep` in public state (via the `facilitator:briefing_step` event), so every team's laptop renders the matching demo in lockstep. Only the step index is synced - each screen runs its own local CSS animation, so no frame-level sync is needed. Each step highlights one zone (metrics HUD, Context, one of the five decision tabs, disruption) and dims the rest, driven by synthetic demo data. Step content is shared between the team and facilitator views in `client/src/lib/briefing.ts` (length guarded against `BRIEFING_STEP_COUNT`). `briefingStep` is ephemeral (not persisted); a mid-briefing server restart resets it to 0. On a large-screen venue, a Synthesia AI-avatar welcome video (outgoing manager, room-wide, one audio source) can play before the walkthrough; it points teams to the handover document.
 
 **Handover document**: a persistent "Handover" button in the team header (all phases, `HandoverModal` in the team page) opens a read-only formal handover document as a full-screen modal. Static client-side content (`HANDOVER_SECTIONS` + bracketed placeholders in the modal), identical for every team, so no server state and no sync. Currently placeholder copy (lorem + bracketed guidance) to be replaced with final copy before go-live. Narrative-wise this is the "unreliable narrator" the SME frame calls for: it reflects the outgoing manager's view and is not a reliable ground truth, so teams should read it against what they see on the floor. Dismiss via close button, backdrop, or Escape.
 
@@ -204,7 +204,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 - Env vars: `PORT` (auto), `CLIENT_ORIGIN` (Vercel URL, no trailing slash)
 - Auto-deploys on push to `main`
 
-**In-memory state caveat**: any server restart clears all active sessions. Queue deploys for between sessions.
+**Persistence caveat**: sessions are snapshotted to disk (`PERSISTENCE_DIR`, a mounted Render disk at `/var/data`) and restored on boot, so game data survives a restart. A restart still drops all live socket connections (teams/facilitator must reconnect) and resets ephemeral state like `briefingStep` to 0. Still queue deploys for between sessions to avoid the reconnect disruption. If `PERSISTENCE_DIR` is unset it falls back to a relative `./.persistence/sessions` on ephemeral storage - confirm the boot log line `[persistence] using directory ...` points at `/var/data` in prod.
 
 ---
 
@@ -221,13 +221,18 @@ A pen test report is required once the sim is fully built. Notes on how to run i
 **Coverage - three parts**:
 1. Dependency CVEs: `npm audit --workspaces --include-workspace-root` (and/or `npx snyk test`).
 2. Automated web scan: OWASP ZAP Automated Scan against `http://localhost:5173` and `http://localhost:3001`, then Report -> Generate Report (HTML/PDF). Free, one comprehensive report. Note: ZAP does NOT test the WebSocket layer.
-3. Access-control & logic testing (manual, highest value - no scanner finds these). Use `socket.io-client` as an attacker client against the local server.
+3. Access-control & logic testing (manual, highest value - no scanner finds these). A committed adversarial suite lives at [pentest.mjs](pentest.mjs): build shared, start the server locally, then `npm run pentest` (or `PENTEST_URL=... npm run pentest`). It drives the server as a hostile `socket.io-client` and asserts every gate below. Run it after touching any socket handler or validation.
 
-**Known logic/auth findings to confirm and fix** (spotted during review, treat as build hardening not "discoveries"):
-- `facilitator:start_briefing / start_round / end_round / briefing_step / next_phase` take only `sessionId` and never check the facilitator token or `socket.data.role` (contrast `facilitator:join`, which does check the token). Any client knowing a session ID can drive the game (including scrubbing the briefing walkthrough). Fix: verify role + token on every `facilitator:*` handler.
-- `team:submit_decision` does not verify `socket.data.teamId === teamId`, so a client can submit for another team. Fix: check ownership.
-- `decision` payloads are not validated server-side (e.g. allocations that don't total 100, out-of-range values). Fix: validate against a schema. In-memory state means one crash wipes all live sessions.
-- Session code/ID guessability - check enumeration resistance on join/rejoin.
+**Known logic/auth findings - now FIXED and guarded by [pentest.mjs](pentest.mjs)** (were build-hardening gaps, hardened 2026-09-10 in `server/src/index.ts` + `session.ts`):
+- Facilitator events (`start_briefing / start_round / end_round / briefing_step / next_phase`) are role-gated via `requireFacilitator` (the socket must have authenticated as this session's facilitator). A participant who knows the session id can no longer drive the room.
+- `team:submit_decision` / `team:ping` are ownership-gated via `requireTeamOwner` (`socket.data.teamId === teamId`).
+- Per-team session tokens: `session:join` mints a random token, stores only its SHA-256 hash on the team, returns the raw token once; `session:rejoin` requires a matching token (legacy pre-token sessions allowed through). Client keeps it in sessionStorage.
+- `decision` payloads are validated server-side (`sanitizeDecision`): enums, allocation finite / in-range / totals 100, ids must reference the live round. Rejected outright otherwise.
+- Rate limit (40 events / 5s per socket), per-socket session-creation cap, per-handler try/catch, and `uncaughtException`/`unhandledRejection` backstops. Explicit 1MB `maxHttpBufferSize`.
+- Headers: server sends nosniff, X-Frame-Options DENY, HSTS, a locked-down default CSP (report route overrides with its own), no `X-Powered-By`; client sets a full CSP + security headers in `client/next.config.mjs` (CSP `connect-src` is pinned to `NEXT_PUBLIC_SERVER_URL` - verify it on a Vercel preview, easy to relax if a screen breaks). CORS allowlists `CLIENT_ORIGIN` + localhost (falls back permissive only if `CLIENT_ORIGIN` is unset - keep it set in prod).
+- Session id is `nanoid(10)` and the 5-char join code only works during lobby/briefing, so enumeration is not the exposure; the auth gates above are.
+
+**Dependency audit status** (2026-09-10): `npm audit fix` patched the shippable runtime advisories (the `ws` / `socket.io-parser` socket-layer DoS/memory issues, `nanoid`), lockfile-only. Deliberately left: `next`/`postcss` (needs a Next 14->16 major), `qs` via express (needs express 5 major; query surface is tiny), and `esbuild` (dev-server file-read on Windows; we use tsx's transform API, not esbuild's dev server) - all build-time / dev-only or breaking-major with low real exposure. Re-run `npm audit` every few months and apply non-breaking fixes.
 
 **Infrastructure security (shared responsibility model)**: the hosting layer is the providers' responsibility, evidenced with their compliance docs, not pen tested by us. Include a short section in the report citing Vercel (`vercel.com/security`, SOC 2 Type II) and Render (`render.com/security`, SOC 2 Type II); grab the actual SOC 2 reports/certificates from their Trust Centers if the client is formal. Suggested framing: infrastructure security is handled by the hosting providers under a shared responsibility model; both maintain SOC 2 Type II certification.
 
@@ -270,7 +275,7 @@ Magenta = ACT, cyan = READ, lime = live data-fill. That mapping is the whole poi
 
 ## Open items / ideas not built
 
-- Persistence (currently all in-memory). Obvious next step if running multi-day cohorts or wanting a post-session report.
+- Persistence: done (disk-backed session snapshots restored on boot; see the Deployment section). A hosted database would be the next step only for multi-day cohorts or a persistent post-session report store.
 - Authentication for the facilitator route.
 - Post-session debrief export (PDF / email).
 - More moment / issue / disruption scenarios for variety across repeat facilitation.

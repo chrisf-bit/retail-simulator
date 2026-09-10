@@ -43,8 +43,11 @@ export default function LandingPage() {
     setError(null);
     const socket = getSocket();
     setSubmitting(true);
-    const onJoined = ({ sessionId, teamId }: { sessionId: string; teamId: string }) => {
+    const onJoined = ({ sessionId, teamId, token }: { sessionId: string; teamId: string; token?: string }) => {
       sessionStorage.setItem(`team:${sessionId}`, teamId);
+      // Per-team session token: proves ownership on rejoin so no other client can
+      // hijack this team. Returned once at join; kept alongside the teamId.
+      if (token) sessionStorage.setItem(`teamtoken:${sessionId}`, token);
       router.push(`/team/${sessionId}`);
     };
     const onErr = (e: { message: string }) => {

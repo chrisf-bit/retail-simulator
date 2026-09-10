@@ -13,7 +13,8 @@
     "dev:client": "npm --workspace client run dev",
     "build": "npm --workspace client run build",
     "typecheck": "npm --workspace shared run typecheck && npm --workspace server run typecheck && npm --workspace client run typecheck",
-    "start:server": "npm --workspace server run start"
+    "start:server": "npm --workspace server run start",
+    "pentest": "node pentest.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"

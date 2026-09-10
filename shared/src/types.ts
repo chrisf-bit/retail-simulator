@@ -167,6 +167,10 @@ export interface TeamFull {
   hidden: HiddenDrivers;
   history: RoundHistoryEntry[];
   lastSeenAt: number;
+  // SHA-256 of the raw team session token, set on join. Gates rejoin and
+  // decision submission so one client cannot act as another team. Server-side
+  // only: never copied into TeamPublic, so it is not serialised to clients.
+  sessionTokenHash?: string;
 }
 
 export interface RoundHistoryEntry {

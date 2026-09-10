@@ -213,7 +213,8 @@ export default function TeamPlayerPage() {
       return;
     }
     setTeamId(stored);
-    const rejoin = () => socket.emit("session:rejoin", { sessionId, teamId: stored });
+    const token = sessionStorage.getItem(`teamtoken:${sessionId}`) ?? undefined;
+    const rejoin = () => socket.emit("session:rejoin", { sessionId, teamId: stored, token });
     rejoin();
     // Re-announce ourselves whenever Socket.IO reconnects after a drop.
     socket.on("connect", rejoin);

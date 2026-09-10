@@ -43,10 +43,13 @@ You need:
 - Between two and eight teams. Four is the sweet spot. More teams means a busier
   debrief but a richer room.
 
-A word of warning worth taking seriously: the game holds everything in memory on
-the server. If the server restarts mid-session, every live session is wiped and
-you cannot get it back. Do not let anyone deploy an update while you are running.
-Run your session start to finish on a stable build.
+A word on stability: the game saves each session to disk, so the data survives a
+server restart. If the server does restart mid-session (for example a redeploy),
+the game is not lost - but every laptop drops its live connection and has to
+reconnect (the facilitator reopens their link, teams refresh their page). That is
+disruptive in the moment even though nothing is lost, so it is still best to avoid
+deploying updates while a session is running. Run start to finish on a stable
+build where you can.
 
 
 -------------------------------------------------------------------------------
@@ -388,9 +391,11 @@ follow-up material.
 - A team cannot join. Check they are typing the exact five-character code, in
   capitals, and that the session is still open. Codes are case-insensitive on
   entry but must match.
-- Nobody can do anything and the codes stop working. That usually means the server
-  has restarted and the session is gone. There is no recovery; you start a fresh
-  session. This is why nobody should deploy or restart anything during a live run.
+- Everything freezes and nobody can act for a minute. The server may be restarting
+  (for example a redeploy). The session data is saved to disk and comes back, but
+  everyone has to reconnect: you reopen your dashboard link, teams refresh their
+  page. Give it a minute, then reconnect. This is why it is still best not to
+  deploy or restart anything during a live run.
 - Do not point security scanners at the live site during a session. If you are
   doing any technical testing, that is a separate, offline exercise.
 
