@@ -386,7 +386,7 @@ function phaseScript(phase: SessionPhase, roundNumber: number, teams: TeamFull[]
       return {
         headline: "Brief the room (5 minutes)",
         talkTrack: [
-          `Frame the context: each team runs a retail store across ${ROUND_COUNT} shifts of five minutes each.`,
+          `Frame the context: each team runs a retail store across ${ROUND_COUNT} shifts of eight minutes each.`,
           "Walk through the decision panel live. Emphasise: there are no right answers, only revealing ones.",
           "Flag the hidden drivers (trust, capability, safety risk, leadership consistency). They shape score without showing.",
           "Remind them: decisions lock when the timer hits zero. Deliberation vs speed is itself a choice.",

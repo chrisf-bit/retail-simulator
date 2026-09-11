@@ -126,7 +126,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 ## Game mechanics
 
-**Cadence**: 8 shifts x 5 minutes each. Round count is `ROUND_COUNT` in `shared/src/constants.ts`; duration is `ROUND_DURATION_MS`.
+**Cadence**: 8 shifts x 8 minutes each. Round count is `ROUND_COUNT` in `shared/src/constants.ts`; duration is `ROUND_DURATION_MS`.
 
 **Flow**: lobby -> briefing -> shift (x8) -> debrief.
 

@@ -10,7 +10,7 @@ import type {
 } from "./types";
 
 export const ROUND_COUNT = 8;
-export const ROUND_DURATION_MS = 5 * 60 * 1000;
+export const ROUND_DURATION_MS = 8 * 60 * 1000;
 
 // Disruptions are no longer guaranteed. Each shift has a fixed chance of a
 // disruption striking; when it does, it lands at a random point within the
