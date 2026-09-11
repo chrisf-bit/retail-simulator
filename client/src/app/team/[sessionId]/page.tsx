@@ -566,36 +566,36 @@ function MetricsHud({
           <div className="flex items-center gap-1.5 text-[12px] text-white/65">
             <Activity className="h-3.5 w-3.5 text-teal-400/70" /> Live performance
           </div>
-          <div className="mt-1.5 flex w-fit rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
+          <div className="mt-1.5 flex w-full rounded-full bg-white/5 p-0.5 ring-1 ring-white/10">
             <button
               type="button"
               onClick={() => onViewChange("values")}
               className={cn(
-                "press flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition-colors",
+                "press flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors",
                 view === "values" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
               )}
               aria-label="Values"
             >
-              <BarChart3 className="h-3.5 w-3.5" />
+              <BarChart3 className="h-3.5 w-3.5" /> Values
             </button>
             <button
               type="button"
               onClick={() => onViewChange("trends")}
               className={cn(
-                "press flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition-colors",
+                "press flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors",
                 view === "trends" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
               )}
               aria-label="Trends"
             >
-              <LineChart className="h-3.5 w-3.5" />
+              <LineChart className="h-3.5 w-3.5" /> Trends
             </button>
           </div>
           <button
             type="button"
             onClick={onOpenMetrics}
-            className="press mt-1.5 flex w-fit items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[12px] text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:text-white"
+            className="press mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[12px] text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:text-white"
           >
-            <LayoutGrid className="h-3.5 w-3.5 text-teal-300" /> All 10
+            <LayoutGrid className="h-3.5 w-3.5 text-teal-300" /> All 10 metrics
           </button>
         </div>
 
