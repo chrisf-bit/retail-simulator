@@ -12,13 +12,22 @@ const PORT = Number(process.env.PORT ?? 3001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
-// Fail-closed CORS: allow only CLIENT_ORIGIN (production) plus the local dev
-// origins. Never "*". If CLIENT_ORIGIN is unset, only localhost works - that is
-// the safe failure, and it forces the env var to be set in prod.
+// Fail-closed CORS: allow only the configured production origin(s) plus the
+// local dev origins. Never "*". CLIENT_ORIGIN may hold a single origin or a
+// comma-separated list (e.g. a custom domain running alongside the vercel.app
+// URL during a cut-over), each trimmed of stray whitespace / trailing slashes.
+// If it is unset, only localhost works - the safe failure, and it forces the
+// env var to be set in prod.
 const DEV_ORIGINS = ["http://localhost:5173", "http://localhost:5174", "http://localhost:4173"];
-const corsOrigin: string[] = [CLIENT_ORIGIN, ...DEV_ORIGINS].filter((o): o is string => !!o);
-if (!CLIENT_ORIGIN) {
+const PROD_ORIGINS = (CLIENT_ORIGIN ?? "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/+$/, ""))
+  .filter((o) => o.length > 0);
+const corsOrigin: string[] = [...PROD_ORIGINS, ...DEV_ORIGINS];
+if (PROD_ORIGINS.length === 0) {
   console.warn("[cors] CLIENT_ORIGIN not set - only localhost origins allowed. Set it in production.");
+} else {
+  console.log(`[cors] allowed production origins: ${PROD_ORIGINS.join(", ")}`);
 }
 
 // Per-socket rate limit: sliding window, sized to comfortably clear heartbeats
