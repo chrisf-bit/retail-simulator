@@ -46,6 +46,19 @@ function pick<T>(pool: T[], seed: string): T {
   return pool[h % pool.length];
 }
 
+/**
+ * Walk a pool by round so a single team never hears the same question twice in
+ * a session (as long as the pool is at least ROUND_COUNT long). The per-team
+ * hash offset means two teams on the same shift still land on different wording,
+ * while each team's own sequence steps cleanly through the pool.
+ */
+function pickForRound<T>(pool: T[], teamId: string, roundNumber: number): T {
+  let h = 5381;
+  for (let i = 0; i < teamId.length; i++) h = ((h << 5) + h + teamId.charCodeAt(i)) >>> 0;
+  const offset = h % pool.length;
+  return pool[(offset + roundNumber) % pool.length];
+}
+
 // A move of this size (0-100 metric scale) counts as the shift's real story.
 // Below it, the shift read as broadly flat and we anchor on the flattest metric.
 const SIGNIFICANT_MOVE = 4;
@@ -58,7 +71,11 @@ const SIGNIFICANT_MOVE = 4;
  * so two teams that land on the same metric still get different wording, and the
  * question is specific to that team's own movement rather than generic.
  */
-function significantMoveQuestion(metricDelta: Partial<Record<MetricKey, number>>, seed: string): string {
+function significantMoveQuestion(
+  metricDelta: Partial<Record<MetricKey, number>>,
+  teamId: string,
+  roundNumber: number,
+): string {
   const byMagnitude = METRIC_KEYS.map((key) => ({ key, delta: metricDelta[key] ?? 0 })).sort(
     (a, b) => Math.abs(b.delta) - Math.abs(a.delta),
   );
@@ -67,34 +84,53 @@ function significantMoveQuestion(metricDelta: Partial<Record<MetricKey, number>>
 
   if (biggest && Math.abs(biggest.delta) >= SIGNIFICANT_MOVE) {
     const name = METRIC_LABELS[biggest.key];
+    const d = Math.round(biggest.delta);
     if (biggest.delta > 0) {
-      return pick(
+      return pickForRound(
         [
-          `${name} moved up the most this shift (+${Math.round(biggest.delta)}). What do you think lifted it?`,
-          `Your biggest gain this shift was ${name} (+${Math.round(biggest.delta)}). Was that where you were aiming?`,
+          `${name} moved up the most this shift (+${d}). What do you think lifted it?`,
+          `Your biggest gain this shift was ${name} (+${d}). Was that where you were aiming?`,
           `${name} climbed harder than anything else this shift. Which decision do you think drove that?`,
+          `Of everything on the board, ${name} responded best (+${d}). What were you doing that it rewarded?`,
+          `${name} is up ${d}. If you handed that result to another team to repeat, what would you tell them to do?`,
+          `You pushed ${name} up ${d}. Deliberate target, or a side effect of something else you were chasing?`,
+          `${name} rose while the rest held roughly still. What did that cost you elsewhere, if anything?`,
+          `${name} gained ${d}. How much of that is your call, and how much the shift you happened to be dealt?`,
         ],
-        seed + ":mover-up",
+        teamId,
+        roundNumber,
       );
     }
-    return pick(
+    return pickForRound(
       [
-        `${name} fell the most this shift (${Math.round(biggest.delta)}). What do you think pulled it down?`,
-        `Your sharpest drop this shift was ${name} (${Math.round(biggest.delta)}). Did you see it coming?`,
+        `${name} fell the most this shift (${d}). What do you think pulled it down?`,
+        `Your sharpest drop this shift was ${name} (${d}). Did you see it coming?`,
         `${name} took the biggest hit this shift. What would you do to protect it next time?`,
+        `${name} slid ${d} while your attention was elsewhere. What was pulling you away from it?`,
+        `${name} is down ${d}. At what point in the shift do you think it started to go?`,
+        `You lost ${d} on ${name}. A price you chose to pay, or one that caught you out?`,
+        `${name} dropped further than anything else this shift. What signal do you think you missed?`,
+        `${name} fell ${d}. What would you have needed to notice earlier to hold it?`,
       ],
-      seed + ":mover-down",
+      teamId,
+      roundNumber,
     );
   }
 
   const name = METRIC_LABELS[flattest.key];
-  return pick(
+  return pickForRound(
     [
       `Nothing moved far this shift - ${name} least of all. Was holding steady the shift you intended?`,
       `${name} barely shifted this round. What would it have taken to move it?`,
       `This shift left ${name} almost where it started. Is that a win here, or a missed opportunity?`,
+      `${name} sat still while you worked. Were you protecting it, or just not reaching it?`,
+      `${name} is roughly where it began. If you had wanted to move it, what would you have done differently?`,
+      `The needle on ${name} hardly moved this shift. Did it need to?`,
+      `${name} held flat. Was that a steady hand, or a stall you did not intend?`,
+      `You left ${name} untouched this shift. What kept taking priority over it?`,
     ],
-    seed + ":flat",
+    teamId,
+    roundNumber,
   );
 }
 
@@ -173,7 +209,7 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
       teamId: team.id,
       teamName: team.name,
       observations: observations.slice(0, 4),
-      questions: [significantMoveQuestion(latest.metricDelta, seed)],
+      questions: [significantMoveQuestion(latest.metricDelta, team.id, roundNumber)],
       strengthNote: team.strength,
       riskNote: team.risk,
     };
@@ -259,7 +295,7 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     teamId: team.id,
     teamName: team.name,
     observations: observations.slice(0, 3),
-    questions: [significantMoveQuestion(latest.metricDelta, seed)],
+    questions: [significantMoveQuestion(latest.metricDelta, team.id, roundNumber)],
     strengthNote: team.strength,
     riskNote: team.risk,
   };
