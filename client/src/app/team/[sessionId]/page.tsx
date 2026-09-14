@@ -1650,15 +1650,15 @@ function BriefingWalkthrough({ step }: { step: number }) {
   // then keep a gentle oscillation running so the sliders stay alive.
   const [alloc, setAlloc] = useState<ResourceAllocation>(ZERO_ALLOC);
   useEffect(() => {
-    if (s < 5) {
+    if (s < 6) {
       setAlloc(ZERO_ALLOC);
       return;
     }
-    if (s > 5) {
+    if (s > 6) {
       setAlloc(DEMO_ALLOC);
       return;
     }
-    // s === 5 (Team tab): glide from empty to a valid 100% split.
+    // s === 6 (Team tab): glide from empty to a valid 100% split.
     setAlloc(ZERO_ALLOC);
     const frames = 12;
     let i = 0;
@@ -1699,25 +1699,26 @@ function BriefingWalkthrough({ step }: { step: number }) {
   // On the metrics step, alternate the HUD values by a small nudge each beat so
   // the health bars keep gliding up and down instead of settling once.
   const metricsShown =
-    s === 0 ? DEMO_METRICS_BEFORE : s === 1 && beat % 2 === 1 ? DEMO_METRICS_WOBBLED : DEMO_METRICS_AFTER;
+    s <= 1 ? DEMO_METRICS_BEFORE : s === 2 && beat % 2 === 1 ? DEMO_METRICS_WOBBLED : DEMO_METRICS_AFTER;
   const demoTeam: TeamPublic = {
     ...DEMO_TEAM_BASE,
     metrics: metricsShown as TeamPublic["metrics"],
-    lastMetricDelta: s >= 1 ? DEMO_DELTA : undefined,
+    lastMetricDelta: s >= 2 ? DEMO_DELTA : undefined,
   };
 
-  // Step map (11 steps): 0 welcome, 1 HUD, 2 all-ten-metrics, 3 Context,
-  // 4 Focus, 5 Team, 6 Issue, 7 People, 8 Confidence, 9 Disruption, 10 ready.
-  const priority: Priority | null = s >= 4 ? "customer" : null;
-  const action: ActionApproach | null = s >= 4 ? "adapt_local" : null;
-  const leadership: LeadershipStyle | null = s >= 5 ? "coaching" : null;
-  const primaryIssueId = s >= 6 ? DEMO_ISSUES[0].id : null;
-  const momentResponseId = s >= 7 ? DEMO_MOMENT_RESPONSE : null;
-  const confidence: ConfidenceLevel | null = s >= 8 ? "measured" : null;
-  const showDisruption = s === 9;
+  // Step map (12 steps): 0 welcome, 1 Handover, 2 HUD, 3 all-ten-metrics,
+  // 4 Context, 5 Focus, 6 Team, 7 Issue, 8 People, 9 Confidence,
+  // 10 Disruption, 11 ready.
+  const priority: Priority | null = s >= 5 ? "customer" : null;
+  const action: ActionApproach | null = s >= 5 ? "adapt_local" : null;
+  const leadership: LeadershipStyle | null = s >= 6 ? "coaching" : null;
+  const primaryIssueId = s >= 7 ? DEMO_ISSUES[0].id : null;
+  const momentResponseId = s >= 8 ? DEMO_MOMENT_RESPONSE : null;
+  const confidence: ConfidenceLevel | null = s >= 9 ? "measured" : null;
+  const showDisruption = s === 10;
   const allocTotal = alloc.shop_floor + alloc.backroom + alloc.customer_service + alloc.problem_resolution;
 
-  const demoTab: TabId = s >= 4 && s <= 8 ? (((s - 3) as TabId)) : s >= 9 ? 5 : 1;
+  const demoTab: TabId = s >= 5 && s <= 9 ? (((s - 4) as TabId)) : s >= 10 ? 5 : 1;
 
   const demoTabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
@@ -1727,10 +1728,10 @@ function BriefingWalkthrough({ step }: { step: number }) {
     5: !!confidence,
   };
 
-  const allBright = s === 0 || s === 10;
-  const hudActive = allBright || s === 1 || s === 2;
-  const contextActive = allBright || s === 3 || s === 9;
-  const decideActive = allBright || (s >= 4 && s <= 9);
+  const allBright = s === 0 || s === 11;
+  const hudActive = allBright || s === 2 || s === 3;
+  const contextActive = allBright || s === 4 || s === 10;
+  const decideActive = allBright || (s >= 5 && s <= 10);
 
   const dim = (active: boolean) =>
     active ? "opacity-100" : "opacity-40 saturate-[0.6]";
@@ -1744,8 +1745,10 @@ function BriefingWalkthrough({ step }: { step: number }) {
 
   return (
     <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
-      {/* Step 2: the full ten-metric view, presented in lockstep with the room. */}
-      {s === 2 ? <MetricsModal team={demoTeam} presentation /> : null}
+      {/* Step 1: the handover document, presented in lockstep with the room. */}
+      {s === 1 ? <HandoverModal presentation /> : null}
+      {/* Step 3: the full ten-metric view, presented in lockstep with the room. */}
+      {s === 3 ? <MetricsModal team={demoTeam} presentation /> : null}
       <div className={cn("transition-all duration-500", dim(hudActive), glowData(hudActive))}>
         <MetricsHud team={demoTeam} view="values" onViewChange={noop} onOpenMetrics={noop} />
       </div>
@@ -2219,14 +2222,18 @@ function MetricDetailCard({ team, metric }: { team: TeamPublic; metric: MetricKe
   );
 }
 
-function HandoverModal({ onClose }: { onClose: () => void }) {
+// `presentation` mode is the facilitator-driven briefing view: the room is
+// stepped onto the handover together, so it renders read-only with no close
+// affordances (no backdrop click, no Escape, no buttons).
+function HandoverModal({ onClose, presentation = false }: { onClose?: () => void; presentation?: boolean }) {
   useEffect(() => {
+    if (presentation) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, presentation]);
 
   return (
     <div
@@ -2234,7 +2241,7 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="handover-title"
-      onClick={onClose}
+      onClick={presentation ? undefined : onClose}
     >
       <div
         className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/25"
@@ -2256,14 +2263,16 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close handover"
-            className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {presentation ? null : (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close handover"
+              className="press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         {/* Document body (scrolls internally - a modal is not the page) */}
@@ -2300,11 +2309,13 @@ function HandoverModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Footer */}
-        <div className="flex shrink-0 justify-end border-t border-white/10 px-6 py-3">
-          <Button variant="quiet" size="sm" onClick={onClose}>
-            Close handover
-          </Button>
-        </div>
+        {presentation ? null : (
+          <div className="flex shrink-0 justify-end border-t border-white/10 px-6 py-3">
+            <Button variant="quiet" size="sm" onClick={onClose}>
+              Close handover
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

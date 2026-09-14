@@ -10,6 +10,11 @@ export const BRIEFING_STEPS: Array<{ title: string; body: string; teamsSee: stri
     teamsSee: "The full screen, at rest.",
   },
   {
+    title: "Read the handover",
+    body: "The outgoing manager left you a handover to get you started. Open it any time from the Handover button in the header. It is worth a read before your first shift, and you can come back to it whenever you need to.",
+    teamsSee: "The handover document opens over the screen.",
+  },
+  {
     title: "Read your store",
     body: "The HUD across the top is your live scoreboard. Five goals, each with a health bar and a trend. Lime is healthy, magenta is under pressure, red needs you. Watch it move as decisions land.",
     teamsSee: "The metrics HUD lights up and the bars move.",
