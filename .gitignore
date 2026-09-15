@@ -2,6 +2,10 @@ node_modules
 .next
 dist
 build
+
+# Next.js auto-generates these agent-instruction files on `next dev`; not committed
+client/AGENTS.md
+client/CLAUDE.md
 .env
 .env.local
 .DS_Store

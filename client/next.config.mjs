@@ -53,7 +53,6 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@sim/shared"],
-  eslint: { ignoreDuringBuilds: true },
   // Suppress the X-Powered-By: Next.js header (framework version disclosure).
   poweredByHeader: false,
   async headers() {
