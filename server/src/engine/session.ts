@@ -200,11 +200,26 @@ function sanitizeDecision(input: unknown, round: RoundState): Omit<Decision, "su
   }
   if (sum !== 100) return null;
 
-  let primaryIssueId: string | undefined;
-  if (d.primaryIssueId !== undefined && d.primaryIssueId !== null) {
-    if (typeof d.primaryIssueId !== "string") return null;
-    if (!round.issues.some((i) => i.id === d.primaryIssueId)) return null;
-    primaryIssueId = d.primaryIssueId;
+  // Issue effort: a map of issue id -> integer percent, totalling 100 across the
+  // round's live issues. Every key must reference a live issue; values must be
+  // finite and in range. Required whenever the round actually has issues (the
+  // Issue tab is a mandatory allocation now); rejected outright otherwise.
+  let issueEffort: Record<string, number> | undefined;
+  if (round.issues.length > 0) {
+    if (!d.issueEffort || typeof d.issueEffort !== "object") return null;
+    const effortRec = d.issueEffort as Record<string, unknown>;
+    const clean: Record<string, number> = {};
+    let effortSum = 0;
+    for (const key of Object.keys(effortRec)) {
+      if (!round.issues.some((i) => i.id === key)) return null;
+      const v = effortRec[key];
+      if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 100) return null;
+      const iv = Math.round(v);
+      clean[key] = iv;
+      effortSum += iv;
+    }
+    if (effortSum !== 100) return null;
+    issueEffort = clean;
   }
 
   let momentResponseId: string | undefined;
@@ -220,7 +235,7 @@ function sanitizeDecision(input: unknown, round: RoundState): Omit<Decision, "su
     leadership: d.leadership as LeadershipStyle,
     allocation: cleanAlloc,
     confidence: d.confidence as ConfidenceLevel,
-    primaryIssueId,
+    issueEffort,
     momentResponseId,
   };
 }

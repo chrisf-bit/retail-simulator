@@ -125,29 +125,61 @@ function issueFitBonus(
     trust: fitScore > 0 ? +1 : -1,
   };
 
-  if (decision.primaryIssueId) {
-    const chosen = issues.find((i) => i.id === decision.primaryIssueId);
-    if (chosen) {
-      const severityWeight = chosen.severity === "high" ? 6 : chosen.severity === "medium" ? 4 : 2;
-      const aligned = chosen.tags.includes(decision.priority);
-      if (aligned) {
-        metric.availability = (metric.availability ?? 0) + severityWeight;
-        metric.csat = (metric.csat ?? 0) + Math.ceil(severityWeight / 2);
-        hidden.trust = (hidden.trust ?? 0) + 2;
-        hidden.capability = (hidden.capability ?? 0) + 2;
-        if (chosen.tags.includes("safety_loss")) {
-          metric.shrink = (metric.shrink ?? 0) + severityWeight;
-          hidden.safety_risk = (hidden.safety_risk ?? 0) - severityWeight;
-        }
-      } else {
-        metric.availability = (metric.availability ?? 0) + Math.floor(severityWeight / 2);
-        hidden.leadership_consistency = (hidden.leadership_consistency ?? 0) - 2;
-      }
-    }
-  } else {
+  // Proportional-effort model: teams spread up to 100% of their attention across
+  // the active issues (issue id -> percent). Each issue contributes in proportion
+  // to the share placed on it, so concentrating share on a high-severity,
+  // on-priority issue approaches a single focused response, while spreading thin
+  // dilutes every bonus. Accumulate as fractions, then round once (the confidence
+  // multiplier only rounds when it isn't 1.0, so an unrounded fraction here would
+  // otherwise leak into the metric on a Measured shift).
+  const effort = decision.issueEffort ?? {};
+  const totalEffort = Object.values(effort).reduce((acc, v) => acc + (Number.isFinite(v) ? v : 0), 0);
+
+  if (totalEffort <= 0) {
+    // No effort directed at any issue reads as leaving the floor unmanaged.
     hidden.leadership_consistency = (hidden.leadership_consistency ?? 0) - 1;
     metric.availability = (metric.availability ?? 0) - 1;
+    return { metric, hidden };
   }
+
+  let availabilityAcc = 0;
+  let csatAcc = 0;
+  let shrinkAcc = 0;
+  let trustAcc = 0;
+  let capabilityAcc = 0;
+  let safetyRiskAcc = 0;
+  let consistencyAcc = 0;
+
+  for (const issue of issues) {
+    const share = (effort[issue.id] ?? 0) / 100; // fraction 0..1
+    if (share <= 0) continue;
+    const severityWeight = issue.severity === "high" ? 6 : issue.severity === "medium" ? 4 : 2;
+    const aligned = issue.tags.includes(decision.priority);
+    if (aligned) {
+      availabilityAcc += severityWeight * share;
+      csatAcc += (severityWeight / 2) * share;
+      trustAcc += 2 * share;
+      capabilityAcc += 2 * share;
+      if (issue.tags.includes("safety_loss")) {
+        shrinkAcc += severityWeight * share;
+        safetyRiskAcc += -severityWeight * share;
+      }
+    } else {
+      // Effort spent on an off-priority issue still steadies the floor a little,
+      // but reads as inconsistent with the stated priority.
+      availabilityAcc += (severityWeight / 2) * share;
+      consistencyAcc += -2 * share;
+    }
+  }
+
+  metric.availability = (metric.availability ?? 0) + Math.round(availabilityAcc);
+  metric.csat = (metric.csat ?? 0) + Math.round(csatAcc);
+  if (Math.round(shrinkAcc) !== 0) metric.shrink = (metric.shrink ?? 0) + Math.round(shrinkAcc);
+  hidden.trust = (hidden.trust ?? 0) + Math.round(trustAcc);
+  hidden.capability = (hidden.capability ?? 0) + Math.round(capabilityAcc);
+  if (Math.round(safetyRiskAcc) !== 0) hidden.safety_risk = (hidden.safety_risk ?? 0) + Math.round(safetyRiskAcc);
+  if (Math.round(consistencyAcc) !== 0)
+    hidden.leadership_consistency = (hidden.leadership_consistency ?? 0) + Math.round(consistencyAcc);
 
   return { metric, hidden };
 }

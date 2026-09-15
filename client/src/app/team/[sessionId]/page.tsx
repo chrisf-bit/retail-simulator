@@ -28,7 +28,6 @@ import {
   Shield,
   ShieldCheck,
   ShoppingBag,
-  Shuffle,
   Sparkles,
   Store,
   Target,
@@ -155,7 +154,7 @@ const ALLOCATION_LABELS: Array<{
   icon: React.ComponentType<{ className?: string }>;
 }> = [
   { key: "shop_floor", label: "Shop floor", icon: Store },
-  { key: "backroom", label: "Backroom", icon: ClipboardList },
+  { key: "backroom", label: "Back office processes", icon: ClipboardList },
   { key: "customer_service", label: "Customer service", icon: ShoppingBag },
   { key: "problem_resolution", label: "Problem resolution", icon: Wrench },
 ];
@@ -193,11 +192,10 @@ export default function TeamPlayerPage() {
     customer_service: 0,
     problem_resolution: 0,
   });
-  const [primaryIssueId, setPrimaryIssueId] = useState<string | null>(null);
-  // The Issue tab is an explicit either/or: target one issue, or deliberately
-  // spread effort. `spreadEffort` records the "stay broad" choice so it reads as
-  // a decision, not a skip. On the wire, spread === no primary issue.
-  const [spreadEffort, setSpreadEffort] = useState(false);
+  // The Issue tab is a set of sliders: spread up to 100% of effort across the
+  // active issues (issue id -> percent). Must total 100 to be complete, like the
+  // Team resource allocation. Reset to empty each round (keys are per-round).
+  const [issueEffort, setIssueEffort] = useState<Record<string, number>>({});
   const [momentResponseId, setMomentResponseId] = useState<string | null>(null);
   const [confidence, setConfidence] = useState<ConfidenceLevel | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>(1);
@@ -248,8 +246,7 @@ export default function TeamPlayerPage() {
     setAction(null);
     setLeadership(null);
     setAllocation({ shop_floor: 0, backroom: 0, customer_service: 0, problem_resolution: 0 });
-    setPrimaryIssueId(null);
-    setSpreadEffort(false);
+    setIssueEffort({});
     setMomentResponseId(null);
     setConfidence(null);
     setActiveTab(1);
@@ -275,10 +272,12 @@ export default function TeamPlayerPage() {
   const allocationTotal =
     allocation.shop_floor + allocation.backroom + allocation.customer_service + allocation.problem_resolution;
 
-  const hasIssues = (state.round?.issues?.length ?? 0) > 0;
-  // Issue tab is decided when there are no issues to target, or the player has
-  // made an explicit choice (targeted one, or chosen to spread effort).
-  const issueDecided = !hasIssues || spreadEffort || !!primaryIssueId;
+  const roundIssues = state.round?.issues ?? [];
+  const hasIssues = roundIssues.length > 0;
+  // Issue tab is decided when there are no issues, or the effort sliders total
+  // 100% across the active issues (mirrors the resource-allocation rule).
+  const issueEffortTotal = roundIssues.reduce((acc, i) => acc + (issueEffort[i.id] ?? 0), 0);
+  const issueDecided = !hasIssues || issueEffortTotal === 100;
   const tabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
     2: !!leadership && allocationTotal === 100,
@@ -302,7 +301,11 @@ export default function TeamPlayerPage() {
       leadership,
       allocation,
       confidence,
-      primaryIssueId: primaryIssueId ?? undefined,
+      // Send only the live issues' shares, so a stale key from a prior round can
+      // never ride along.
+      issueEffort: hasIssues
+        ? Object.fromEntries(roundIssues.map((i) => [i.id, issueEffort[i.id] ?? 0]))
+        : undefined,
       momentResponseId: momentResponseId ?? undefined,
     };
     socket.emit("team:submit_decision", { sessionId, teamId, decision });
@@ -359,7 +362,7 @@ export default function TeamPlayerPage() {
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
             <ZoneLabel label="Context" tone="data" />
             <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
-              <IssuesContextPanel issues={state.round?.issues ?? []} primaryIssueId={primaryIssueId} />
+              <IssuesContextPanel issues={state.round?.issues ?? []} issueEffort={issueEffort} />
               <AlertsPanel alerts={state.round?.alerts ?? []} disruption={state.round?.disruption} />
             </div>
           </aside>
@@ -381,10 +384,8 @@ export default function TeamPlayerPage() {
                 setAllocation={setAllocation}
                 confidence={confidence}
                 setConfidence={setConfidence}
-                primaryIssueId={primaryIssueId}
-                setPrimaryIssueId={setPrimaryIssueId}
-                spreadEffort={spreadEffort}
-                setSpreadEffort={setSpreadEffort}
+                issueEffort={issueEffort}
+                setIssueEffort={setIssueEffort}
                 momentResponseId={momentResponseId}
                 setMomentResponseId={setMomentResponseId}
                 issues={state.round?.issues ?? []}
@@ -689,13 +690,13 @@ function DataHeader({
   );
 }
 
-function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; primaryIssueId: string | null }) {
+function IssuesContextPanel({ issues, issueEffort }: { issues: Issue[]; issueEffort: Record<string, number> }) {
   return (
     <DataCard className="flex min-h-0 flex-col p-3">
       <DataHeader icon={AlertTriangle} title="Active issues" />
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {issues.slice(0, 3).map((i) => {
-          const targeted = primaryIssueId === i.id;
+          const share = issueEffort[i.id] ?? 0;
           return (
             <div key={i.id} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5 xl:p-2.5">
               <div className="mb-0.5 flex items-start justify-between gap-2">
@@ -705,9 +706,9 @@ function IssuesContextPanel({ issues, primaryIssueId }: { issues: Issue[]; prima
                   </div>
                   <h4 className="text-sm font-semibold text-white xl:text-[13px]">{i.title}</h4>
                 </div>
-                {targeted ? (
+                {share > 0 ? (
                   <Pill tone="info" strong>
-                    <Target className="h-3 w-3" /> Targeted
+                    <Target className="h-3 w-3" /> {share}%
                   </Pill>
                 ) : (
                   <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">{i.severity}</Pill>
@@ -773,10 +774,8 @@ function DecisionPanel({
   setAllocation,
   confidence,
   setConfidence,
-  primaryIssueId,
-  setPrimaryIssueId,
-  spreadEffort,
-  setSpreadEffort,
+  issueEffort,
+  setIssueEffort,
   momentResponseId,
   setMomentResponseId,
   issues,
@@ -799,10 +798,8 @@ function DecisionPanel({
   setAllocation: (a: ResourceAllocation) => void;
   confidence: ConfidenceLevel | null;
   setConfidence: (c: ConfidenceLevel) => void;
-  primaryIssueId: string | null;
-  setPrimaryIssueId: (id: string | null) => void;
-  spreadEffort: boolean;
-  setSpreadEffort: (v: boolean) => void;
+  issueEffort: Record<string, number>;
+  setIssueEffort: (e: Record<string, number>) => void;
   momentResponseId: string | null;
   setMomentResponseId: (id: string) => void;
   issues: Issue[];
@@ -873,10 +870,8 @@ function DecisionPanel({
         {activeTab === 3 ? (
           <IssueStep
             issues={issues}
-            primaryIssueId={primaryIssueId}
-            setPrimaryIssueId={setPrimaryIssueId}
-            spreadEffort={spreadEffort}
-            setSpreadEffort={setSpreadEffort}
+            issueEffort={issueEffort}
+            setIssueEffort={setIssueEffort}
             disabled={!inputsActive}
           />
         ) : null}
@@ -1061,7 +1056,7 @@ function TeamStep({
       <div>
         <StepHeader
           title="Leadership style"
-          narrative="How will you lead your team through this shift?"
+          narrative="How will you predominantly lead your team through this shift?"
           instruction="Choose one of the options below."
         />
         <div className="mt-3">
@@ -1127,39 +1122,27 @@ function TeamStep({
 
 function IssueStep({
   issues,
-  primaryIssueId,
-  setPrimaryIssueId,
-  spreadEffort,
-  setSpreadEffort,
+  issueEffort,
+  setIssueEffort,
   disabled,
 }: {
   issues: Issue[];
-  primaryIssueId: string | null;
-  setPrimaryIssueId: (id: string | null) => void;
-  spreadEffort: boolean;
-  setSpreadEffort: (v: boolean) => void;
+  issueEffort: Record<string, number>;
+  setIssueEffort: (e: Record<string, number>) => void;
   disabled: boolean;
 }) {
   return (
     <div>
       <StepHeader
-        title="Target an issue"
-        narrative="Targeting one issue that matches your priority sharpens its impact. Spreading effort keeps you broad, but a targeted store leads more consistently."
-        instruction="Target one issue, or choose to spread effort. Either is a decision."
+        title="Spread your effort"
+        narrative="Split your attention across the active issues. Concentrate on one to sharpen its impact, or share it out - either is a decision, as long as it fits your priority."
+        instruction="Distribute 100% across the issues below."
       />
       <div className="mt-4">
-        <IssuePicker
+        <IssueEffortSliders
           issues={issues}
-          value={primaryIssueId}
-          spreadEffort={spreadEffort}
-          onTarget={(id) => {
-            setSpreadEffort(false);
-            setPrimaryIssueId(id);
-          }}
-          onSpread={() => {
-            setPrimaryIssueId(null);
-            setSpreadEffort(true);
-          }}
+          effort={issueEffort}
+          setEffort={setIssueEffort}
           disabled={disabled}
         />
       </div>
@@ -1294,88 +1277,70 @@ function RadioGrid<T extends string>({
   );
 }
 
-function IssuePicker({
+function IssueEffortSliders({
   issues,
-  value,
-  spreadEffort,
-  onTarget,
-  onSpread,
+  effort,
+  setEffort,
   disabled,
 }: {
   issues: Issue[];
-  value: string | null;
-  spreadEffort: boolean;
-  onTarget: (id: string | null) => void;
-  onSpread: () => void;
+  effort: Record<string, number>;
+  setEffort: (e: Record<string, number>) => void;
   disabled: boolean;
 }) {
   if (issues.length === 0) {
-    return <p className="text-[12px] text-white/65">No active issues this shift. Nothing to target.</p>;
+    return <p className="text-[12px] text-white/65">No active issues this shift. Nothing to spread effort across.</p>;
   }
+  const total = issues.reduce((acc, i) => acc + (effort[i.id] ?? 0), 0);
   return (
-    <div className="space-y-2">
-      {issues.map((i) => {
-        const active = value === i.id;
-        return (
-          <button
-            key={i.id}
-            type="button"
-            disabled={disabled}
-            onClick={() => onTarget(active ? null : i.id)}
+    <div className="rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+          <div
             className={cn(
-              "press w-full rounded-xl px-4 py-3 text-left transition-colors",
-              active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
-                : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
-              disabled && "cursor-not-allowed opacity-40",
+              "h-full transition-all duration-300",
+              total === 100
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-300"
+                : "bg-gradient-to-r from-brand-600 to-brand-300",
             )}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h4 className="text-sm font-semibold">{i.title}</h4>
-                <p className={cn("mt-0.5 text-[12px]", active ? "text-white/85" : "text-white/55")}>{i.description}</p>
-              </div>
-              <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">
-                {i.severity}
-              </Pill>
-            </div>
-            {active ? (
-              <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-white/90">
-                <Target className="h-3 w-3" /> Targeting this - tap again to clear
-              </div>
-            ) : null}
-          </button>
-        );
-      })}
-
-      {/* First-class "stay broad" choice, so not-targeting is a visible decision. */}
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onSpread}
-        className={cn(
-          "press w-full rounded-xl px-4 py-3 text-left transition-colors",
-          spreadEffort
-            ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
-            : "bg-white/[0.04] text-white/80 ring-1 ring-dashed ring-white/20 hover:bg-white/[0.08]",
-          disabled && "cursor-not-allowed opacity-40",
-        )}
-      >
-        <div className="flex items-start gap-3">
-          <Shuffle className={cn("mt-0.5 h-4 w-4 shrink-0", spreadEffort ? "text-white" : "text-white/65")} />
-          <div className="min-w-0">
-            <h4 className="text-sm font-semibold">Spread effort evenly</h4>
-            <p className={cn("mt-0.5 text-[12px]", spreadEffort ? "text-white/85" : "text-white/55")}>
-              Stay broad - target no single issue. Simpler, but a small cost to leadership consistency.
-            </p>
-          </div>
+            style={{ width: `${Math.min(100, total)}%` }}
+          />
         </div>
-        {spreadEffort ? (
-          <div className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-white/90">
-            <CheckCircle2 className="h-3 w-3" /> Staying broad this shift
-          </div>
-        ) : null}
-      </button>
+        <span className={cn("num text-sm font-semibold", total === 100 ? "text-emerald-300" : "text-brand-300")}>
+          {total}%
+        </span>
+      </div>
+      <div className="space-y-3">
+        {issues.map((i) => {
+          const value = effort[i.id] ?? 0;
+          return (
+            <div key={i.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h4 className="text-[13px] font-semibold text-white/90">{i.title}</h4>
+                  <p className="mt-0.5 text-[12px] text-white/55">{i.description}</p>
+                </div>
+                <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">
+                  {i.severity}
+                </Pill>
+              </div>
+              <div className="mt-2 flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={value}
+                  disabled={disabled}
+                  onChange={(e) => setEffort({ ...effort, [i.id]: Number(e.target.value) })}
+                  className="flex-1 accent-brand-500"
+                />
+                <span className="w-12 text-right num text-sm font-medium text-white/85">{value}%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1712,7 +1677,11 @@ function BriefingWalkthrough({ step }: { step: number }) {
   const priority: Priority | null = s >= 5 ? "customer" : null;
   const action: ActionApproach | null = s >= 5 ? "adapt_local" : null;
   const leadership: LeadershipStyle | null = s >= 6 ? "coaching" : null;
-  const primaryIssueId = s >= 7 ? DEMO_ISSUES[0].id : null;
+  // Demo effort spread: concentrated on the first (lead) issue, totalling 100.
+  const issueEffort: Record<string, number> =
+    s >= 7
+      ? { [DEMO_ISSUES[0].id]: 60, [DEMO_ISSUES[1].id]: 25, [DEMO_ISSUES[2].id]: 15 }
+      : {};
   const momentResponseId = s >= 8 ? DEMO_MOMENT_RESPONSE : null;
   const confidence: ConfidenceLevel | null = s >= 9 ? "measured" : null;
   const showDisruption = s === 10;
@@ -1723,7 +1692,7 @@ function BriefingWalkthrough({ step }: { step: number }) {
   const demoTabComplete: Record<TabId, boolean> = {
     1: !!priority && !!action,
     2: !!leadership && allocTotal === 100,
-    3: !!primaryIssueId,
+    3: Object.values(issueEffort).reduce((a, b) => a + b, 0) === 100,
     4: !!momentResponseId,
     5: !!confidence,
   };
@@ -1763,7 +1732,7 @@ function BriefingWalkthrough({ step }: { step: number }) {
         >
           <ZoneLabel label="Context" tone="data" />
           <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
-            <IssuesContextPanel issues={DEMO_ISSUES} primaryIssueId={primaryIssueId} />
+            <IssuesContextPanel issues={DEMO_ISSUES} issueEffort={issueEffort} />
             <AlertsPanel alerts={DEMO_ALERTS} disruption={showDisruption ? DEMO_DISRUPTION : undefined} />
           </div>
         </aside>
@@ -1792,10 +1761,8 @@ function BriefingWalkthrough({ step }: { step: number }) {
               setAllocation={noop}
               confidence={confidence}
               setConfidence={noop}
-              primaryIssueId={primaryIssueId}
-              setPrimaryIssueId={noop}
-              spreadEffort={false}
-              setSpreadEffort={noop}
+              issueEffort={issueEffort}
+              setIssueEffort={noop}
               momentResponseId={momentResponseId}
               setMomentResponseId={noop}
               issues={DEMO_ISSUES}

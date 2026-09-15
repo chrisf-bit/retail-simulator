@@ -122,7 +122,12 @@ export interface Decision {
   leadership: LeadershipStyle;
   allocation: ResourceAllocation;
   confidence: ConfidenceLevel;
-  primaryIssueId?: string;
+  // Effort spread across the active issues: issue id -> integer percent. The
+  // shares total 100 across the shift's live issues (the Issue tab is a set of
+  // sliders, not a single pick). Concentrating share on one issue approaches a
+  // focused response; spreading thin dilutes each. Optional so demo/synthetic
+  // decisions can omit it.
+  issueEffort?: Record<string, number>;
   momentResponseId?: string;
   submittedAt: number;
 }

@@ -447,7 +447,7 @@ export const ALERT_BANK: Omit<Alert, "id" | "timestamp">[] = [
   },
   {
     kind: "operational",
-    title: "Handheld scanner battery bank empty",
+    title: "Colleague handset battery bank empty",
     message: "Backroom team losing scan time waiting for replacements.",
     icon: "battery_low",
   },

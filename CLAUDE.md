@@ -142,7 +142,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 |---|---|---|
 | 1. Focus | Priority focus, Action approach | Both |
 | 2. Team | Leadership style, Resource allocation (4 sliders, must total 100%) | Both |
-| 3. Issue | Primary issue from the 3 active issues | Optional |
+| 3. Issue | Effort spread across the 3 active issues (sliders, must total 100%) | Required |
 | 4. People | Response to a named direct report's situation | Required when a moment is present |
 | 5. Confidence | Cautious x0.75 / Measured x1.00 / Confident x1.35 | Required |
 
@@ -167,7 +167,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 ### Server
 
 - `server/src/engine/session.ts`: session state machine, round lifecycle, public-state serialisation.
-- `server/src/engine/scoring.ts`: decision-to-delta mapping (priority, action, leadership, allocation, primary-issue bonus, people-moment archetype effects, confidence multiplier, disruption impact).
+- `server/src/engine/scoring.ts`: decision-to-delta mapping (priority, action, leadership, allocation, proportional issue-effort bonus, people-moment archetype effects, confidence multiplier, disruption impact).
 - `server/src/engine/scenarios.ts`: issue / alert / disruption banks.
 - `server/src/engine/moments.ts`: 6 people-moment scenarios.
 - `server/src/engine/insights.ts`: facilitator coaching. Per-team observations / considerations / questions, room-wide patterns, per-phase talk tracks.

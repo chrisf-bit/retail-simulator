@@ -216,11 +216,16 @@ function analyseTeam(team: TeamFull): { strengths: string[]; development: string
     development.push(`Did not respond to ${momentSkips} people moments. Silence is itself a signal to a direct report.`);
   }
 
-  const primaryPicks = h.filter((r) => r.decision.primaryIssueId).length;
-  if (primaryPicks === rounds && rounds >= 3) {
-    strengths.push(`Named a primary issue in every shift. Focus pays back when the room is noisy.`);
-  } else if (primaryPicks === 0 && rounds >= 3) {
-    development.push(`Did not name a primary issue in any shift. Spreading attention evenly is often a form of avoidance.`);
+  const topEffortShare = (effort?: Record<string, number>): number => {
+    if (!effort) return 0;
+    const vals = Object.values(effort).filter((v) => Number.isFinite(v));
+    return vals.length ? Math.max(0, ...vals) : 0;
+  };
+  const concentratedShifts = h.filter((r) => topEffortShare(r.decision.issueEffort) >= 50).length;
+  if (concentratedShifts === rounds && rounds >= 3) {
+    strengths.push(`Concentrated effort on a lead issue in every shift. Focus pays back when the room is noisy.`);
+  } else if (concentratedShifts === 0 && rounds >= 3) {
+    development.push(`Never concentrated effort on a lead issue. Spreading attention evenly is often a form of avoidance.`);
   }
 
   // --- Allocation tells ---

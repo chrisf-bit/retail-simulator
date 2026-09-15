@@ -40,9 +40,9 @@ export const BRIEFING_STEPS: Array<{ title: string; body: string; teamsSee: stri
     teamsSee: "The Team tab; sliders glide to a 100% split.",
   },
   {
-    title: "Target an issue",
-    body: "Issue lets you point your effort at one thing that matters, or deliberately stay broad. Targeting sharpens your impact, and either way it is a real choice.",
-    teamsSee: "The Issue tab, with one issue targeted.",
+    title: "Spread your effort",
+    body: "Issue lets you split your attention across what is live in the store. Load up on one thing to sharpen your impact, or share it out. Concentrating pays off, but it has to fit your priority.",
+    teamsSee: "The Issue tab; effort sliders spread across the issues.",
   },
   {
     title: "Handle the people moment",

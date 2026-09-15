@@ -23,6 +23,15 @@ import {
   ROUND_COUNT,
 } from "@sim/shared";
 
+// The largest share (%) of issue effort a decision placed on any single issue.
+// A high top share reads as concentrating on a lead issue; a low one as
+// spreading thinly. 0 when no effort was directed at all.
+function topEffortShare(effort?: Record<string, number>): number {
+  if (!effort) return 0;
+  const vals = Object.values(effort).filter((v) => Number.isFinite(v));
+  return vals.length ? Math.max(0, ...vals) : 0;
+}
+
 export function generateInsights(
   teams: TeamFull[],
   phase: SessionPhase,
@@ -181,7 +190,7 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
         d.allocation.shop_floor === maxAlloc
           ? "shop floor"
           : d.allocation.backroom === maxAlloc
-            ? "backroom"
+            ? "back office processes"
             : d.allocation.customer_service === maxAlloc
               ? "customer service"
               : "problem resolution";
@@ -194,8 +203,11 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     } else {
       observations.push("Did not respond to the people moment.");
     }
-    if (!d.primaryIssueId) {
-      observations.push("Did not pick a primary issue to target.");
+    const topShare = topEffortShare(d.issueEffort);
+    if (topShare === 0) {
+      observations.push("Directed no effort at the active issues.");
+    } else if (topShare < 50) {
+      observations.push("Spread effort thinly across the issues rather than concentrating on one.");
     }
     const bigMover = Object.entries(latest.metricDelta)
       .map(([k, v]) => [k, v ?? 0] as const)
@@ -284,11 +296,11 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     observations.push(`Did not respond to ${momentSkips} of ${roundsPlayed} people moments.`);
   }
 
-  const primaryPicks = history.filter((h) => h.decision.primaryIssueId).length;
-  if (primaryPicks === 0) {
-    observations.push("Have not picked a primary issue to target in any shift.");
-  } else if (primaryPicks === roundsPlayed) {
-    observations.push(`Picked a primary issue in every shift (${primaryPicks}/${roundsPlayed}).`);
+  const concentratedShifts = history.filter((h) => topEffortShare(h.decision.issueEffort) >= 50).length;
+  if (concentratedShifts === 0) {
+    observations.push("Have not concentrated effort on a lead issue in any shift.");
+  } else if (concentratedShifts === roundsPlayed) {
+    observations.push(`Concentrated effort on a lead issue in every shift (${concentratedShifts}/${roundsPlayed}).`);
   }
 
   return {
