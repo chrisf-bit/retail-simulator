@@ -33,7 +33,7 @@ import {
   HIDDEN_KEYS,
   MIN_TEAMS,
   ROUND_COUNT,
-  ROUND_DURATION_MS,
+  roundDurationMs,
   METRIC_DEFS,
   metricBaselineNorm,
   metricNormFromReal,
@@ -518,12 +518,14 @@ export class Session {
     const alerts = buildAlerts(this.usedAlertTitles);
     for (const a of alerts) this.usedAlertTitles.add(a.title);
 
+    const durationMs = roundDurationMs(nextNumber);
+
     this.round = {
       number: nextNumber,
       phase: "active",
       startedAt: now,
-      endsAt: now + ROUND_DURATION_MS,
-      durationMs: ROUND_DURATION_MS,
+      endsAt: now + durationMs,
+      durationMs,
       issues,
       alerts,
       moment,
@@ -537,7 +539,7 @@ export class Session {
     this.phase = "round";
 
     if (this.roundTimer) clearTimeout(this.roundTimer);
-    this.roundTimer = setTimeout(() => this.endRound(), ROUND_DURATION_MS);
+    this.roundTimer = setTimeout(() => this.endRound(), durationMs);
 
     if (this.disruptionTimer) clearTimeout(this.disruptionTimer);
     this.disruptionScheduledAt = undefined;
@@ -545,7 +547,7 @@ export class Session {
     // lands at a random point within the opening window of the shift - the same
     // moment for every team, since it is scheduled once here on the shared round.
     if (Math.random() < DISRUPTION_CHANCE) {
-      const disruptionDelay = Math.random() * ROUND_DURATION_MS * DISRUPTION_WINDOW;
+      const disruptionDelay = Math.random() * durationMs * DISRUPTION_WINDOW;
       this.disruptionScheduledAt = now + disruptionDelay;
       this.disruptionTimer = setTimeout(() => this.triggerDisruption(), disruptionDelay);
     }

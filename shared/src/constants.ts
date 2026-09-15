@@ -11,6 +11,14 @@ import type {
 
 export const ROUND_COUNT = 8;
 export const ROUND_DURATION_MS = 8 * 60 * 1000;
+// Shift 1 runs longer so teams can settle in, look around the screen and read
+// the handover before the pace picks up. Later shifts use ROUND_DURATION_MS.
+export const FIRST_ROUND_DURATION_MS = 12 * 60 * 1000;
+
+// Per-shift duration: the opening shift is extended, the rest are standard.
+export function roundDurationMs(roundNumber: number): number {
+  return roundNumber === 1 ? FIRST_ROUND_DURATION_MS : ROUND_DURATION_MS;
+}
 
 // Disruptions are no longer guaranteed. Each shift has a fixed chance of a
 // disruption striking; when it does, it lands at a random point within the
