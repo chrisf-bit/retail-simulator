@@ -9,8 +9,15 @@
  * `name` drives both the tint and the accessible label.
  */
 
-// On-palette accents only (no new hues): magenta, cyan, lime, emerald.
+"use client";
+
+import { useIsDark } from "../lib/theme";
+
+// On-palette accents only (no new hues): magenta, cyan, lime, emerald. Bright
+// tints for the dark theme; darker equivalents of the same hues for light, so
+// the storefront reads clearly on a light background rather than washing out.
 const TEAM_TINTS = ["#e879f9", "#22d3ee", "#c8e83a", "#34d399"] as const;
+const TEAM_TINTS_LIGHT = ["#86198f", "#0891b2", "#6a850c", "#0f764a"] as const;
 
 function hash(name: string): number {
   const s = name.trim().toLowerCase();
@@ -21,8 +28,9 @@ function hash(name: string): number {
   return h;
 }
 
-export function tintFor(name: string): string {
-  return TEAM_TINTS[hash(name) % TEAM_TINTS.length];
+export function tintFor(name: string, dark = true): string {
+  const palette = dark ? TEAM_TINTS : TEAM_TINTS_LIGHT;
+  return palette[hash(name) % palette.length];
 }
 
 // Bespoke storefront glyph. Stroke-only (no fills) so a single `color` tints
@@ -79,7 +87,8 @@ export function TeamCrest({
   tone?: "light" | "dark" | "lead";
   className?: string;
 }) {
-  const color = tone === "lead" ? "#f7f8fa" : tintFor(name);
+  const dark = useIsDark();
+  const color = tone === "lead" ? "#f7f8fa" : tintFor(name, dark);
   return (
     <StorefrontMark
       size={size}

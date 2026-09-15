@@ -42,7 +42,15 @@ These are absolute. Do not deviate without an explicit reason.
 
 ### Palette
 
-All-dark, Under-Pressure-inspired. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
+Dark by default, Under-Pressure-inspired. The product is **Plumfield Stores**, a fictitious chain - deliberately *not* Sainsbury's. Do not reintroduce orange or any Sainsbury's cue.
+
+**Theming (light/dark).** The team and facilitator views support an opt-in light theme via a per-device toggle (Sun/Moon in the header, remembered in `localStorage`; `useTheme`/`useIsDark` in `client/src/lib/theme.ts`; a pre-paint script in `layout.tsx` avoids a flash). Dark is the default and the design's home; light is a re-skin, not a redesign. It works through CSS variables in `globals.css` (`:root` dark, `:root[data-theme="light"]` light) wired into `tailwind.config.ts`:
+- `white` is variable (`--white`): on-surface foreground + white-alpha overlays flip to dark-on-light automatically, so most `text-white` / `bg-white/[a]` / `ring-white/[a]` need no change.
+- `surface-*` tiers, the brand `500/600` fill (a deeper plum on light, not bright pink), the accent text tints (`brand/teal/lime/emerald/rose` `300/400`, darkened for readability), and `surface-inset` (recessed slider blocks + panel top/tail chrome) are all variable.
+- `oncolor` (`#ffffff`, theme-independent): use for text/icons that sit on a vivid accent fill (magenta CTA, selected tiles, disruption/rose banners) so they stay white in both themes. **Do not** use `text-white` on a coloured fill - it will go dark on light.
+- Presentational components that hardcode on-dark colours (Sparkline, ShiftRibbon, TeamCrest tints) combine their `onDark` prop with `useIsDark()`.
+- Disruption art (`DisruptionScene`) keeps a pinned dark stage in both themes so the dark, orange-accented imagery reads as intentional.
+- Because every variable's dark value equals the original hex and `oncolor` = white, the dark theme is unchanged.
 
 Three accents. Magenta and cyan are **semantic zone signals** (not decoration); lime is a reserved data-fill accent. Keep them mapped:
 

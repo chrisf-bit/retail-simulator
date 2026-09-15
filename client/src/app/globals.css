@@ -2,8 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens. The UI is dark by default (the Under-Pressure design); a light
+ * theme swaps these variables via [data-theme="light"] on <html>. Values are
+ * space-separated RGB triples so Tailwind's `rgb(var(--x) / <alpha-value>)` can
+ * apply opacity (text-white/70, bg-white/[0.04], etc.).
+ *
+ * Structural tokens (--white, --surface-*) carry the bulk of the swap: --white
+ * is the on-surface foreground / overlay base, so text-white and white-alpha
+ * overlays flip to dark-on-light automatically. Accent text shades (300/400)
+ * darken on light so eyebrows/labels stay readable; the vivid 500/600 accents
+ * (magenta CTA, etc.) are left literal so they pop on both.
+ */
 :root {
   color-scheme: dark;
+
+  /* On-surface foreground + overlay base (drives text-white, white/alpha). */
+  --white: 255 255 255;
+
+  /* Stepped dark surfaces. */
+  --surface-base: 11 10 18;
+  --surface-stage: 20 16 25;
+  --surface-panel: 26 22 34;
+  --surface-panelElev: 36 29 49;
+  --surface-data: 22 18 31;
+  --surface-console: 13 10 21;
+  --surface-decide: 30 20 40;
+  /* Recessed band: slider insets and panel top/tail chrome. Deep violet-black,
+     close to the old black/20 overlay so the dark theme is unchanged. */
+  --surface-inset: 20 13 27;
+
+  /* Magenta ACT fill (CTA, active tab, banner). Vivid on dark; a deeper plum on
+     light so it reads as brand plum, not bright pink. */
+  --brand-500: 208 51 224;
+  --brand-600: 179 28 196;
+
+  /* Accent text tints - bright on dark. */
+  --brand-300: 240 171 252;
+  --brand-400: 232 121 249;
+  --teal-300: 103 232 249;
+  --teal-400: 34 211 238;
+  --lime-300: 226 245 107;
+  --lime-400: 200 232 58;
+  --emerald-300: 110 231 183;
+  --emerald-400: 52 211 153;
+  --rose-300: 253 164 175;
+  --rose-400: 251 113 133;
+
+  /* Page background wash tuned per theme. */
+  --page-wash-teal: 0.06;
+  --page-wash-brand: 0.08;
+  --page-bg: 11 10 18;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Foreground/overlay flips to dark ink, so on-surface text and white-alpha
+     overlays become dark-on-light without touching consumer classes. */
+  --white: 23 24 26;
+
+  /* Light surface tiers: page is a soft off-white, cards step up to white. */
+  --surface-base: 238 240 245;
+  --surface-stage: 233 235 241;
+  --surface-panel: 255 255 255;
+  --surface-panelElev: 248 249 252;
+  --surface-data: 255 255 255;
+  --surface-console: 235 238 244;
+  --surface-decide: 251 245 254;
+  /* Recessed control block: a soft plum-tinted inset, not a grey wash. */
+  --surface-inset: 243 236 248;
+
+  /* ACT fill drops to a deep Plumfield plum on light so it reads as brand, not
+     bright pink. */
+  --brand-500: 134 25 143;
+  --brand-600: 112 26 117;
+
+  /* Accent text tints - darkened so they read on light surfaces. */
+  --brand-300: 179 28 196;
+  --brand-400: 179 28 196;
+  --teal-300: 8 145 178;
+  --teal-400: 8 145 178;
+  --lime-300: 106 133 12;
+  --lime-400: 106 133 12;
+  --emerald-300: 15 118 74;
+  --emerald-400: 15 118 74;
+  --rose-300: 190 24 60;
+  --rose-400: 190 24 60;
+
+  --page-wash-teal: 0.10;
+  --page-wash-brand: 0.10;
+  --page-bg: 238 240 245;
 }
 
 html,
@@ -13,14 +102,14 @@ body {
 
 body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
-  /* Deep violet-black field with a faint magenta/cyan wash so panels read as
-     elevated against a tinted ground, not flat grey. */
+  /* Tinted field (magenta/cyan wash) so panels read as elevated against a
+     tinted ground, not flat grey. Colour follows the active theme. */
   background:
-    radial-gradient(90% 60% at 100% 0%, rgba(34, 211, 238, 0.06), transparent 60%),
-    radial-gradient(90% 70% at 0% 0%, rgba(208, 51, 224, 0.08), transparent 55%),
-    #0b0a12;
+    radial-gradient(90% 60% at 100% 0%, rgba(34, 211, 238, var(--page-wash-teal)), transparent 60%),
+    radial-gradient(90% 70% at 0% 0%, rgba(208, 51, 224, var(--page-wash-brand)), transparent 55%),
+    rgb(var(--page-bg));
   background-attachment: fixed;
-  color: #f0f1f3;
+  color: rgb(var(--white));
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -48,7 +137,7 @@ textarea {
   height: 6px;
 }
 .quiet-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.16);
+  background-color: rgb(var(--white) / 0.16);
   border-radius: 3px;
 }
 .quiet-scroll::-webkit-scrollbar-track {

@@ -37,7 +37,7 @@ import type {
   TeamPublic,
 } from "@sim/shared";
 import { BASELINE_WEEKS, BRIEFING_STEP_COUNT, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
-import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline } from "@/components/ui";
+import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline, ThemeToggle } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
@@ -165,7 +165,7 @@ export default function FacilitatorPage() {
               <Button
                 size="lg"
                 variant="quiet"
-                className="!bg-white/20 !text-white hover:!bg-white/30"
+                className="!bg-oncolor/20 !text-oncolor hover:!bg-oncolor/30"
                 onClick={() => socket.emit(primary.event, { sessionId })}
               >
                 <primary.icon className="h-4 w-4" /> {primary.label}
@@ -214,7 +214,7 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-oncolor">
           <Activity className="h-5 w-5" />
         </div>
         <div>
@@ -239,12 +239,13 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
         <div
           className={cn(
             "flex items-center gap-2.5 rounded-full px-4 py-1.5",
-            urgent ? "bg-risk text-white" : "bg-surface-panel ring-1 ring-white/10",
+            urgent ? "bg-risk text-oncolor" : "bg-surface-panel ring-1 ring-white/10",
           )}
         >
-          <Clock className={cn("h-4 w-4", urgent ? "text-white" : "text-white/60")} />
-          <span className={cn("num text-2xl font-semibold text-white")}>{formatClock(timeLeftMs)}</span>
+          <Clock className={cn("h-4 w-4", urgent ? "text-oncolor" : "text-white/60")} />
+          <span className={cn("num text-2xl font-semibold", urgent ? "text-oncolor" : "text-white")}>{formatClock(timeLeftMs)}</span>
         </div>
+        <ThemeToggle />
         <FullscreenToggle />
       </div>
     </header>
@@ -282,18 +283,18 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                 key={row.teamId}
                 className={cn(
                   "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
-                  isLead ? "bg-brand-500 text-white" : "bg-white/5",
+                  isLead ? "bg-brand-500 text-oncolor" : "bg-white/5",
                 )}
               >
-                <div className={cn("col-span-2 num text-base font-semibold", isLead ? "text-white" : "text-white/70")}>
+                <div className={cn("col-span-2 num text-base font-semibold", isLead ? "text-oncolor" : "text-white/70")}>
                   #{row.rank}
                 </div>
                 <div className="col-span-5 flex min-w-0 items-center gap-2">
                   <ConnectionDot status={status} />
                   <TeamCrest name={row.name} size={20} tone={isLead ? "lead" : "light"} />
-                  <span className={cn("truncate text-sm font-semibold", "text-white")}>{row.name}</span>
+                  <span className={cn("truncate text-sm font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
                 </div>
-                <div className={cn("col-span-2 text-right num text-base font-semibold text-white")}>
+                <div className={cn("col-span-2 text-right num text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>
                   {row.score}
                 </div>
                 <div className="col-span-3 flex justify-end">
@@ -323,7 +324,7 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
             {allIn ? "All teams joined" : `Waiting for teams (${joined} / ${expected})`}
           </div>
         </div>
-        <div className="rounded-2xl bg-brand-500 px-4 py-2 text-center text-white">
+        <div className="rounded-2xl bg-brand-500 px-4 py-2 text-center text-oncolor">
           <div className="text-[12px] font-medium uppercase tracking-wider opacity-80">Share code</div>
           <div className="num text-2xl font-semibold tracking-[0.3em]">{state.code}</div>
         </div>
@@ -641,7 +642,7 @@ function ControlBar({
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {disrupted ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-risk px-3 py-1.5 text-[12px] font-semibold text-white">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-risk px-3 py-1.5 text-[12px] font-semibold text-oncolor">
             <AlertTriangle className="h-3.5 w-3.5" /> Disruption live
           </span>
         ) : null}
@@ -698,7 +699,7 @@ function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: stri
         className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/25"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-surface-inset px-6 py-4">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
               <KeyRound className="h-4 w-4" />
@@ -754,7 +755,7 @@ function NotAuthorisedScreen() {
     <div className="flex h-full w-full items-center justify-center p-6">
       <Card tone="data" className="max-w-md p-8 text-center">
         <div className="mb-3 flex justify-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-risk text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-risk text-oncolor">
             <AlertTriangle className="h-5 w-5" />
           </div>
         </div>

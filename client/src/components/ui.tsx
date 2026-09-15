@@ -1,7 +1,8 @@
 "use client";
 
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Moon, Sun } from "lucide-react";
+import { useIsDark, useTheme } from "../lib/theme";
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");
@@ -69,8 +70,8 @@ export function StepBadge({
 }) {
   const tones = {
     neutral: "bg-ink-100 text-ink-600",
-    brand: "bg-brand-500 text-white",
-    ok: "bg-ok text-white",
+    brand: "bg-brand-500 text-oncolor",
+    ok: "bg-ok text-oncolor",
   };
   const sizes = {
     sm: "h-6 w-6 text-xs",
@@ -116,11 +117,11 @@ export function Button({
     xl: "px-6 py-3 text-sm",
   };
   const variants = {
-    primary: "bg-brand-500 text-white hover:bg-brand-600",
-    secondary: "bg-ink-900 text-white hover:bg-ink-800",
+    primary: "bg-brand-500 text-oncolor hover:bg-brand-600",
+    secondary: "bg-ink-900 text-oncolor hover:bg-ink-800",
     quiet: "bg-ink-100 text-ink-900 hover:bg-ink-200",
     ghost: "text-ink-700 hover:bg-ink-100",
-    danger: "bg-risk text-white hover:brightness-110",
+    danger: "bg-risk text-oncolor hover:brightness-110",
   };
   return (
     <button
@@ -160,11 +161,11 @@ export function Pill({
     info: "bg-brand-500/20 text-brand-300",
   };
   const bold = {
-    neutral: "bg-ink-900 text-white",
-    ok: "bg-ok text-white",
-    warn: "bg-brand-500 text-white",
-    risk: "bg-risk text-white",
-    info: "bg-brand-500 text-white",
+    neutral: "bg-ink-900 text-oncolor",
+    ok: "bg-ok text-oncolor",
+    warn: "bg-brand-500 text-oncolor",
+    risk: "bg-risk text-oncolor",
+    info: "bg-brand-500 text-oncolor",
   };
   const palette = strong ? bold : surface === "dark" ? softDark : softLight;
   return (
@@ -236,10 +237,10 @@ export function PhaseGuide({
   action?: ReactNode;
 }) {
   const tones = {
-    info: "bg-brand-500 text-white",
-    ok: "bg-ok text-white",
-    warn: "bg-brand-500 text-white",
-    risk: "bg-risk text-white",
+    info: "bg-brand-500 text-oncolor",
+    ok: "bg-ok text-oncolor",
+    warn: "bg-brand-500 text-oncolor",
+    risk: "bg-risk text-oncolor",
   };
   return (
     <div
@@ -282,6 +283,9 @@ export function Sparkline({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number>(minWidth);
+  // onDark reflects "on a dark surface" as written for the all-dark UI; those
+  // surfaces are light under the light theme, so only treat as dark when both.
+  const dark = onDark && useIsDark();
 
   useEffect(() => {
     const el = hostRef.current;
@@ -296,10 +300,10 @@ export function Sparkline({
     return () => ro.disconnect();
   }, []);
 
-  const gridColor = onDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
-  const gridStrongColor = onDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)";
-  const axisColor = onDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
-  const axisLabel = onDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)";
+  const gridColor = dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
+  const gridStrongColor = dark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)";
+  const axisColor = dark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)";
+  const axisLabel = dark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)";
 
   // Reserve a small left gutter for y-axis labels (0/100) and a small top
   // gutter so the 100 label isn't clipped. Line is drawn in the remaining box.
@@ -319,7 +323,7 @@ export function Sparkline({
   const toX = (i: number, n: number) => gutterLeft + (i * plotW) / Math.max(1, n - 1);
 
   if (values.length < 2) {
-    const stroke = onDark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
+    const stroke = dark ? "rgba(255,255,255,0.25)" : "#c6c7cc";
     return (
       <div ref={hostRef} style={{ width: "100%", height, display: "block" }}>
         <svg width={width} height={height} className="overflow-visible">
@@ -334,9 +338,9 @@ export function Sparkline({
   const first = values[0];
   const goingUp = last > first;
   const good = inverted ? !goingUp : goingUp;
-  const neutral = onDark ? "#9a9ba0" : "#76777c";
-  const up = onDark ? "#34d399" : "#0f9d58";
-  const down = onDark ? "#fb7185" : "#d93f5a";
+  const neutral = dark ? "#9a9ba0" : "#76777c";
+  const up = dark ? "#34d399" : "#0f9d58";
+  const down = dark ? "#fb7185" : "#d93f5a";
   const stroke = last === first ? neutral : good ? up : down;
   const lastX = toX(values.length - 1, values.length);
   const lastY = toY(last);
@@ -388,7 +392,7 @@ export function Sparkline({
           strokeLinejoin="round"
           points={points}
         />
-        <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={onDark ? "#222326" : "white"} strokeWidth={1} />
+        <circle cx={lastX} cy={lastY} r={2.5} fill={stroke} stroke={dark ? "#222326" : "white"} strokeWidth={1} />
       </svg>
     </div>
   );
@@ -422,10 +426,11 @@ export function ShiftRibbon({
 }) {
   const items = Array.from({ length: total }, (_, i) => i + 1);
   const cur = current ?? 0;
-  const pastBg = onDark ? "bg-white/40" : "bg-ink-900";
-  const pastText = onDark ? "text-ink-900" : "text-white";
-  const futureBg = onDark ? "bg-white/10" : "bg-ink-100";
-  const futureText = onDark ? "text-white/65" : "text-ink-400";
+  const dark = onDark && useIsDark();
+  const pastBg = dark ? "bg-white/40" : "bg-ink-900";
+  const pastText = dark ? "text-ink-900" : "text-oncolor";
+  const futureBg = dark ? "bg-white/10" : "bg-ink-100";
+  const futureText = dark ? "text-white/65" : "text-ink-400";
   const sizes = size === "sm"
     ? { pill: "h-5 min-w-5 px-1.5", text: "text-[12px]", gap: "gap-1" }
     : { pill: "h-6 min-w-6 px-2", text: "text-[12px]", gap: "gap-1.5" };
@@ -442,7 +447,7 @@ export function ShiftRibbon({
               sizes.pill,
               sizes.text,
               isCurrent
-                ? "bg-brand-500 text-white"
+                ? "bg-brand-500 text-oncolor"
                 : isPast
                   ? cn(pastBg, pastText)
                   : cn(futureBg, futureText),
@@ -453,6 +458,30 @@ export function ShiftRibbon({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Light/dark theme toggle. Per-device, remembered in localStorage (see
+ * lib/theme). Styled to sit in the team and facilitator headers. Shows the icon
+ * for the theme you would switch TO.
+ */
+export function ThemeToggle({ className }: { className?: string }) {
+  const { theme, toggle } = useTheme();
+  const toLight = theme === "dark";
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={toLight ? "Switch to light theme" : "Switch to dark theme"}
+      aria-label={toLight ? "Switch to light theme" : "Switch to dark theme"}
+      className={cn(
+        "press flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white",
+        className,
+      )}
+    >
+      {toLight ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
   );
 }
 

@@ -5,6 +5,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // On-surface foreground / overlay base. Driven by --white so that
+        // text-white, bg-white/[a], ring-white/[a] and border-white/[a] flip to
+        // dark-on-light under [data-theme="light"] with no consumer changes.
+        white: "rgb(var(--white) / <alpha-value>)",
+        // Always-white, theme-independent. Use for text/icons that sit on a
+        // vivid accent fill (magenta CTA, selected tiles, disruption banner) and
+        // must stay white in both themes.
+        oncolor: "#ffffff",
         ink: {
           950: "#050506",
           900: "#17181a",
@@ -25,10 +33,12 @@ const config: Config = {
           50: "#fdf4ff",
           100: "#fae8ff",
           200: "#f5d0fe",
-          300: "#f0abfc",
-          400: "#e879f9",
-          500: "#d033e0",
-          600: "#b31cc4",
+          // 300/400 are the on-surface text/icon tints; 500/600 the ACT fill.
+          // All variable so they darken to plum on light.
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
           700: "#86198f",
           800: "#701a75",
           900: "#4a044e",
@@ -37,31 +47,43 @@ const config: Config = {
         // data icons and structural bars. Paired with magenta (ACT) so the dark
         // UI reads as two distinct zones.
         teal: {
-          300: "#67e8f9",
-          400: "#22d3ee",
+          300: "rgb(var(--teal-300) / <alpha-value>)",
+          400: "rgb(var(--teal-400) / <alpha-value>)",
           500: "#06b6d4",
           600: "#0891b2",
         },
         // Lime: the third accent, reserved for live metric fills / healthy
         // readouts (the bright bars on the HUD). Never an interactive control.
         lime: {
-          300: "#e2f56b",
-          400: "#c8e83a",
+          300: "rgb(var(--lime-300) / <alpha-value>)",
+          400: "rgb(var(--lime-400) / <alpha-value>)",
           500: "#a3cf18",
           600: "#84a80f",
         },
+        // Status text tints (ok / risk). Override the 300/400 rungs of the
+        // default emerald/rose scales so status copy stays readable on light.
+        emerald: {
+          300: "rgb(var(--emerald-300) / <alpha-value>)",
+          400: "rgb(var(--emerald-400) / <alpha-value>)",
+        },
+        rose: {
+          300: "rgb(var(--rose-300) / <alpha-value>)",
+          400: "rgb(var(--rose-400) / <alpha-value>)",
+        },
         surface: {
-          base: "#0b0a12",     // page, deep violet-black
-          stage: "#141019",
-          raised: "#ffffff",
+          // Stepped tiers, variable-driven so the whole hierarchy swaps per
+          // theme. Hierarchy comes from stepped elevation + a per-zone accent
+          // tint - not from being flat grey.
+          base: "rgb(var(--surface-base) / <alpha-value>)",     // page
+          stage: "rgb(var(--surface-stage) / <alpha-value>)",
+          raised: "#ffffff",   // genuine white surface (theme-independent)
           muted: "#f4f5f7",
-          panel: "#1a1622",    // default elevated dark card
-          panelElev: "#241d31",// inner raised tiles
-          // Design-system tiers. Hierarchy comes from stepped elevation + a
-          // per-zone accent tint - not from being flat grey.
-          data: "#16121f",     // READ zone (issues / alerts / leaderboard), cyan accent
-          console: "#0d0a15",  // deepest field, the metrics HUD
-          decide: "#1e1428",   // ACT zone (decision panel), magenta-warm, raised
+          panel: "rgb(var(--surface-panel) / <alpha-value>)",   // default elevated card
+          panelElev: "rgb(var(--surface-panelElev) / <alpha-value>)", // inner raised tiles
+          data: "rgb(var(--surface-data) / <alpha-value>)",     // READ zone, cyan accent
+          console: "rgb(var(--surface-console) / <alpha-value>)", // metrics HUD field
+          decide: "rgb(var(--surface-decide) / <alpha-value>)", // ACT zone, magenta-warm
+          inset: "rgb(var(--surface-inset) / <alpha-value>)", // recessed control block (sliders)
         },
         ok: "#0f9d58",
         warn: "#d033e0",

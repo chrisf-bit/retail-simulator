@@ -80,7 +80,7 @@ import {
   metricDisplayShort,
   metricTargetLabel,
 } from "@sim/shared";
-import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRibbon, Sparkline } from "@/components/ui";
+import { Bar, Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, ShiftRibbon, Sparkline, ThemeToggle } from "@/components/ui";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { DisruptionScene } from "@/components/DisruptionScene";
@@ -470,6 +470,7 @@ function TeamHeader({
         <HeaderStat icon={Trophy} title="Score">
           <span className="num text-2xl font-semibold">{team.score}</span>
         </HeaderStat>
+        <ThemeToggle />
         <FullscreenToggle size="lg" />
       </div>
     </header>
@@ -494,10 +495,10 @@ function HeaderStat({
       title={title}
       className={cn(
         "flex h-12 items-center gap-2.5 rounded-full px-5",
-        tone === "risk" ? "bg-risk text-white" : "bg-surface-panel text-white ring-1 ring-white/10",
+        tone === "risk" ? "bg-risk text-oncolor" : "bg-surface-panel text-white ring-1 ring-white/10",
       )}
     >
-      <Icon className={cn("h-4 w-4 shrink-0", tone === "risk" ? "text-white" : "text-white/55")} />
+      <Icon className={cn("h-4 w-4 shrink-0", tone === "risk" ? "text-oncolor" : "text-white/55")} />
       {children}
     </div>
   );
@@ -573,7 +574,7 @@ function MetricsHud({
               onClick={() => onViewChange("values")}
               className={cn(
                 "press flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors",
-                view === "values" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
+                view === "values" ? "bg-white text-surface-base" : "text-white/60 hover:text-white/90",
               )}
               aria-label="Values"
             >
@@ -584,7 +585,7 @@ function MetricsHud({
               onClick={() => onViewChange("trends")}
               className={cn(
                 "press flex flex-1 items-center justify-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] transition-colors",
-                view === "trends" ? "bg-white text-ink-900" : "text-white/60 hover:text-white/90",
+                view === "trends" ? "bg-white text-surface-base" : "text-white/60 hover:text-white/90",
               )}
               aria-label="Trends"
             >
@@ -730,7 +731,7 @@ function AlertsPanel({ alerts, disruption }: { alerts: Alert[]; disruption?: Dis
       <DataHeader icon={BellRing} title="Alerts" />
       <div className="quiet-scroll min-h-0 flex-1 space-y-1.5 overflow-auto pr-0.5">
         {disruption ? (
-          <div className="rounded-xl bg-risk p-3 text-white shadow-[0_0_18px_-6px_rgba(244,63,107,0.8)] xl:p-2.5">
+          <div className="rounded-xl bg-risk p-3 text-oncolor shadow-[0_0_18px_-6px_rgba(244,63,107,0.8)] xl:p-2.5">
             <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide xl:text-[12px]">
               <AlertTriangle className="h-3.5 w-3.5" /> Disruption
             </div>
@@ -929,7 +930,7 @@ function TabButton({
       className={cn(
         "press flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all",
         active
-          ? "bg-brand-500 text-white shadow-[0_0_18px_-6px_rgba(208,51,224,0.9)]"
+          ? "bg-brand-500 text-oncolor shadow-[0_0_18px_-6px_rgba(208,51,224,0.9)]"
           : "text-white/55 hover:bg-white/[0.06] hover:text-white/85",
       )}
     >
@@ -937,7 +938,7 @@ function TabButton({
         <span
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-            active ? "bg-white/20 text-white" : "bg-ok text-white",
+            active ? "bg-oncolor/20 text-oncolor" : "bg-ok text-oncolor",
           )}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -946,13 +947,13 @@ function TabButton({
         <span
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold",
-            active ? "bg-white/20 text-white" : "bg-white/10 text-white/60",
+            active ? "bg-oncolor/20 text-oncolor" : "bg-white/10 text-white/60",
           )}
         >
           {step}
         </span>
       )}
-      <span className={cn("truncate text-[13px]", active ? "font-semibold tracking-tight text-white" : "font-medium")}>
+      <span className={cn("truncate text-[13px]", active ? "font-semibold tracking-tight text-oncolor" : "font-medium")}>
         {label}
       </span>
     </button>
@@ -1076,7 +1077,7 @@ function TeamStep({
           narrative="Where does your team's time go across the store?"
           instruction="Distribute 100% across the four areas."
         />
-        <div className="mt-3 rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
+        <div className="mt-3 rounded-xl bg-surface-inset p-3 ring-1 ring-white/10">
           <div className="mb-3 flex items-center gap-3">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
               <div
@@ -1214,16 +1215,16 @@ function ConfidenceStep({
               className={cn(
                 "press flex flex-col items-start gap-2 rounded-xl p-4 text-left transition-colors",
                 active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-oncolor shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
             >
               <div className="flex items-center gap-2">
-                <Icon className={cn("h-4 w-4", active ? "text-white" : "text-white/65")} />
+                <Icon className={cn("h-4 w-4", active ? "text-oncolor" : "text-white/65")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
-              <span className={cn("text-[12px] leading-snug", active ? "text-white/85" : "text-white/55")}>
+              <span className={cn("text-[12px] leading-snug", active ? "text-oncolor/85" : "text-white/55")}>
                 {CONFIDENCE_DESCRIPTIONS[opt]}
               </span>
             </button>
@@ -1263,12 +1264,12 @@ function RadioGrid<T extends string>({
             className={cn(
               "press flex items-center gap-3 rounded-xl px-4 py-3.5 text-left text-base font-medium transition-colors xl:py-2.5 xl:text-sm",
               active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-oncolor shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
               disabled && "cursor-not-allowed opacity-40",
             )}
           >
-            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-white" : "text-white/65")} /> : null}
+            {Icon ? <Icon className={cn("h-5 w-5 shrink-0", active ? "text-oncolor" : "text-white/65")} /> : null}
             <span className="truncate">{labels[opt]}</span>
           </button>
         );
@@ -1293,7 +1294,7 @@ function IssueEffortSliders({
   }
   const total = issues.reduce((acc, i) => acc + (effort[i.id] ?? 0), 0);
   return (
-    <div className="rounded-xl bg-black/20 p-3 ring-1 ring-white/10">
+    <div className="rounded-xl bg-surface-inset p-3 ring-1 ring-white/10">
       <div className="mb-3 flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
           <div
@@ -1387,7 +1388,7 @@ function MomentBlock({
               className={cn(
                 "press rounded-xl px-4 py-3 text-left text-[13px] leading-snug transition-colors",
                 active
-                ? "bg-brand-500 text-white shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
+                ? "bg-brand-500 text-oncolor shadow-[0_0_20px_-6px_rgba(208,51,224,0.9)] ring-1 ring-brand-400/40"
                 : "bg-white/[0.04] text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]",
                 disabled && "cursor-not-allowed opacity-40",
               )}
@@ -1796,7 +1797,7 @@ function ResultsPanel({
     <div className="flex flex-1 items-center justify-center overflow-hidden p-5">
       <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-1 ring-teal-500/12">
         {/* Scorecard banner */}
-        <div className="flex items-center gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+        <div className="flex items-center gap-4 border-b border-white/10 bg-surface-inset px-6 py-4">
           <TeamCrest name={team.name} size={44} tone="light" />
           <div className="min-w-0 flex-1">
             <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">
@@ -1831,8 +1832,8 @@ function ResultsPanel({
               <span className="text-sm text-white/55">total {team.score}</span>
             </div>
           </div>
-          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Rank</div>
+          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Rank</div>
             <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
           </div>
         </div>
@@ -1895,7 +1896,7 @@ function ResultsPanel({
         </div>
 
         {/* Footer: filed-away chrome */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-black/20 px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
+        <div className="flex items-center justify-between border-t border-white/10 bg-surface-inset px-6 py-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
           <span>Shift {shiftN} of {totalRounds}</span>
           <span>Your facilitator will move on when the room is ready</span>
         </div>
@@ -1911,8 +1912,8 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
         <h2 className="text-3xl font-semibold tracking-tighter text-white">Session complete</h2>
         <p className="mt-2 text-sm text-white/55">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-brand-500 p-5 text-white shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-white/80">Final rank</div>
+          <div className="rounded-2xl bg-brand-500 p-5 text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
+            <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Final rank</div>
             <div className="num text-5xl font-semibold">#{rank}</div>
           </div>
           <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
@@ -1967,7 +1968,10 @@ function DisruptionModal({
     >
       <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-surface-data text-white shadow-panel ring-2 ring-risk/70">
         {disruption.scene ? (
-          <div className="bg-surface-console">
+          // Pinned dark in both themes: the disruption art is dark, orange-accented
+          // photography, so it keeps its signature dark stage rather than floating
+          // on a light card. This is the "alarm" imagery reading through the theme.
+          <div className="bg-[#0d0a15]">
             <DisruptionScene name={disruption.scene} />
           </div>
         ) : null}
@@ -2078,7 +2082,7 @@ function MetricsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-surface-inset px-6 py-4">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
               <LayoutGrid className="h-4 w-4" />
@@ -2215,7 +2219,7 @@ function HandoverModal({ onClose, presentation = false }: { onClose?: () => void
         onClick={(e) => e.stopPropagation()}
       >
         {/* Document header */}
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-black/20 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 bg-surface-inset px-6 py-4">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-500/15 text-teal-300 ring-1 ring-teal-500/25">
               <FileText className="h-4 w-4" />
