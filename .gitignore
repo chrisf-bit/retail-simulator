@@ -10,3 +10,8 @@ build
 coverage
 *.tsbuildinfo
 .persistence/
+
+# Pen test / security-assessment artifacts (local evidence + generated report)
+.pentest/
+pentest-evidence/
+*Penetration Test Report*.docx
