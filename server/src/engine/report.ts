@@ -25,9 +25,9 @@ const LOWER_IS_BETTER: Record<string, boolean> = {
 
 function crestSvg(teamName: string, size = 44): string {
   const c = crestFor(teamName);
-  const stroke = "#17181a";
+  const stroke = "#1a1420";
   const fill = "#ffffff";
-  const accent = "#ee6a00";
+  const accent = "#b31cc4"; // Plumfield plum (was Sainsbury's orange)
   return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">${shape(c.shape, stroke, fill)}${accentShape(c.accent, c.shape, accent)}${iconShape(c.icon, stroke)}</svg>`;
 }
 
@@ -114,6 +114,52 @@ function deltaDirection(before: number, after: number, inverted: boolean): "up" 
   const improved = inverted ? delta < 0 : delta > 0;
   return improved ? "up" : "down";
 }
+
+// A small inline arrow so status is never colour-alone (a colour-blind reader
+// gets the shape too). up = improved, down = declined, flat = held.
+function arrowSvg(dir: "up" | "down" | "flat"): string {
+  const a = `class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
+  if (dir === "up") return `<svg ${a}><path d="M12 19V5M6 11l6-6 6 6"/></svg>`;
+  if (dir === "down") return `<svg ${a}><path d="M12 5v14M6 13l6 6 6-6"/></svg>`;
+  return `<svg ${a}><path d="M5 12h14"/></svg>`;
+}
+
+// The movement cell: arrow + word + signed delta. Words carry the meaning; the
+// arrow and colour reinforce it.
+function movementCell(before: number, after: number, inverted: boolean): string {
+  const dir = deltaDirection(before, after, inverted);
+  const label = dir === "up" ? "Improved" : dir === "down" ? "Declined" : "Held";
+  return `<span class="delta ${dir}">${arrowSvg(dir)}<span class="delta-word">${label}</span> <span class="num delta-num">(${signed(after - before)})</span></span>`;
+}
+
+// A thin 0-100 value bar for the end-state figure. tone maps to an accent var.
+function valueBar(value: number, tone: "read" | "data" | "plum" | "risk"): string {
+  const pct = Math.max(2, Math.min(100, Math.round(value)));
+  return `<span class="vbar"><span class="vbar-fill tone-${tone}" style="width:${pct}%"></span></span>`;
+}
+
+// Per-team cumulative score sparkline, pure inline SVG (CSP allows no scripts).
+function sparkSvg(values: number[]): string {
+  if (values.length < 2) return "";
+  const w = 128;
+  const h = 34;
+  const pad = 3;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const rng = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = pad + (i * (w - 2 * pad)) / (values.length - 1);
+    const y = h - pad - ((v - min) / rng) * (h - 2 * pad);
+    return [x, y] as const;
+  });
+  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  const [lx, ly] = pts[pts.length - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none" aria-hidden="true"><path d="${d}" stroke="var(--plum)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.6" fill="var(--plum)"/></svg>`;
+}
+
+// Icons for the two coaching columns (strengths / development).
+const CHECK_ICON = `<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>`;
+const AIM_ICON = `<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>`;
 
 function analyseTeam(team: TeamFull): { strengths: string[]; development: string[] } {
   const strengths: string[] = [];
@@ -256,17 +302,16 @@ function kpiRow(
   start: number,
   final: number,
   inverted: boolean,
+  tone: "data" | "plum" | "risk",
+  hint?: string,
 ): string {
-  const dir = deltaDirection(start, final, inverted);
-  const dirClass = dir === "up" ? "up" : dir === "down" ? "down" : "flat";
-  const dirLabel = dir === "up" ? "Improved" : dir === "down" ? "Declined" : "Held";
   return `
     <tr>
-      <td class="label">${escapeHtml(label)}</td>
+      <td class="label">${escapeHtml(label)}${hint ? `<span class="hint">${escapeHtml(hint)}</span>` : ""}</td>
       <td class="num">${baseline}</td>
       <td class="num">${start}</td>
-      <td class="num">${final}</td>
-      <td class="delta ${dirClass}">${dirLabel} (${signed(final - start)})</td>
+      <td class="num end">${final}${valueBar(final, tone)}</td>
+      <td class="movement">${movementCell(start, final, inverted)}</td>
     </tr>
   `.trim();
 }
@@ -281,12 +326,13 @@ function teamKpiTable(team: TeamFull, baseline: TrendSeries): string {
       start[k],
       team.metrics[k],
       !!LOWER_IS_BETTER[k],
+      "data",
     ),
   ).join("\n");
   return `
-    <table class="kpi">
+    <table class="kpi read">
       <thead>
-        <tr><th>Indicator</th><th>Baseline (16w ago)</th><th>Session start</th><th>Session end</th><th>Movement</th></tr>
+        <tr><th>Indicator</th><th class="num">Baseline (16w ago)</th><th class="num">Session start</th><th class="num">Session end</th><th>Movement</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -298,23 +344,20 @@ function teamHiddenTable(team: TeamFull, baseline: TrendSeries): string {
   const start = team.history[0].hiddenAfter;
   const rows = HIDDEN_KEYS.map((k) => {
     const inverted = !!LOWER_IS_BETTER[k];
-    const dir = deltaDirection(start[k], team.hidden[k], inverted);
-    const dirClass = dir === "up" ? "up" : dir === "down" ? "down" : "flat";
-    const dirLabel = dir === "up" ? "Improved" : dir === "down" ? "Declined" : "Held";
-    return `
-      <tr>
-        <td class="label">${escapeHtml(HIDDEN_LABELS[k])}</td>
-        <td class="num">${baseline[k][0] ?? 0}</td>
-        <td class="num">${start[k]}</td>
-        <td class="num">${team.hidden[k]}</td>
-        <td class="delta ${dirClass}">${dirLabel} (${signed(team.hidden[k] - start[k])})</td>
-      </tr>
-    `.trim();
+    return kpiRow(
+      HIDDEN_LABELS[k],
+      baseline[k][0] ?? 0,
+      start[k],
+      team.hidden[k],
+      inverted,
+      inverted ? "risk" : "plum",
+      inverted ? "Lower is better" : undefined,
+    );
   }).join("\n");
   return `
-    <table class="kpi">
+    <table class="kpi hidden">
       <thead>
-        <tr><th>Hidden driver</th><th>Baseline</th><th>Start</th><th>End</th><th>Movement</th></tr>
+        <tr><th>Hidden driver</th><th class="num">Baseline</th><th class="num">Start</th><th class="num">End</th><th>Movement</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -339,9 +382,9 @@ function shiftLogTable(team: TeamFull): string {
     })
     .join("\n");
   return `
-    <table class="log">
+    <table class="log read">
       <thead>
-        <tr><th>Shift</th><th>Priority</th><th>Leadership</th><th>Action</th><th>Confidence</th><th>Score</th></tr>
+        <tr><th class="num">Shift</th><th>Priority</th><th>Leadership</th><th>Action</th><th>Confidence</th><th class="num">Score</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
@@ -350,37 +393,48 @@ function shiftLogTable(team: TeamFull): string {
 
 function teamSection(team: TeamFull, rank: number, baseline: TrendSeries): string {
   const { strengths, development } = analyseTeam(team);
-  const strengthsList = strengths.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
-  const developmentList = development.map((s) => `<li>${escapeHtml(s)}</li>`).join("");
+  const strengthsList = strengths
+    .map((s) => `<li>${CHECK_ICON}<span>${escapeHtml(s)}</span></li>`)
+    .join("");
+  const developmentList = development
+    .map((s) => `<li>${AIM_ICON}<span>${escapeHtml(s)}</span></li>`)
+    .join("");
+
+  // Cumulative score trajectory for the header sparkline.
+  let running = 0;
+  const trail = team.history.map((h) => (running += h.roundScore));
+  const spark = sparkSvg(trail);
+
   return `
     <section class="team">
       <header class="team-header">
         <div class="rank">#${rank}</div>
         <div class="crest">${crestSvg(team.name, 48)}</div>
-        <div>
+        <div class="team-id">
           <h2>${escapeHtml(team.name)}</h2>
           <p class="sub">Final score <strong class="num">${signed(team.score)}</strong> over ${team.history.length} shift${team.history.length === 1 ? "" : "s"}.</p>
         </div>
+        ${spark ? `<div class="team-spark">${spark}<span class="spark-cap">Score trajectory</span></div>` : ""}
       </header>
 
       <div class="cols">
-        <div class="col">
+        <div class="col coach-did">
           <h3>Strengths</h3>
           <ul class="bullets">${strengthsList}</ul>
         </div>
-        <div class="col">
+        <div class="col coach-dev">
           <h3>Development focus</h3>
           <ul class="bullets">${developmentList}</ul>
         </div>
       </div>
 
-      <h3>Metric trajectory</h3>
+      <h3 class="read-label">Metric trajectory</h3>
       ${teamKpiTable(team, baseline)}
 
-      <h3>Hidden drivers</h3>
+      <h3 class="read-label">Hidden drivers</h3>
       ${teamHiddenTable(team, baseline)}
 
-      <h3>Shift by shift</h3>
+      <h3 class="read-label">Shift by shift</h3>
       ${shiftLogTable(team)}
     </section>
   `.trim();
@@ -391,14 +445,15 @@ export function generateReport(session: Session): string {
   const ranked = [...teams].sort((a, b) => b.score - a.score);
   const generatedAt = Date.now();
   const shiftsPlayed = teams[0]?.history.length ?? 0;
+  const topTeam = ranked[0]?.name ?? "-";
 
   const leaderboardRows = ranked
     .map(
       (t, i) => `
-        <tr>
-          <td class="num">${i + 1}</td>
+        <tr class="${i === 0 ? "lead" : ""}">
+          <td class="num rank-cell">${i + 1}</td>
           <td><div class="team-cell"><span class="crest-small">${crestSvg(t.name, 22)}</span>${escapeHtml(t.name)}</div></td>
-          <td class="num">${signed(t.score)}</td>
+          <td class="num score-cell">${signed(t.score)}</td>
         </tr>
       `.trim(),
     )
@@ -411,18 +466,32 @@ export function generateReport(session: Session): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Retail Leadership Simulation - Session ${escapeHtml(session.code)}</title>
+<title>Plumfield Stores - Session report - ${escapeHtml(session.code)}</title>
 <style>
   :root {
-    --brand: #ee6a00;
-    --ink-900: #17181a;
-    --ink-700: #3a3c40;
-    --ink-500: #6b6f75;
-    --ink-300: #c7c9cd;
-    --ink-100: #eef0f3;
-    --ink-50: #f7f8fa;
+    /* Plumfield palette on a white/print ground. Magenta = ACT, cyan = READ,
+       lime = data-fill. No orange, no Sainsbury's cue. */
+    --plum: #b31cc4;
+    --plum-600: #9a17aa;
+    --plum-soft: #faeffc;
+    --plum-line: #ecd2f1;
+    --cyan: #0e7490;
+    --cyan-soft: #eef6f9;
+    --cyan-line: #cfe5eb;
+    --lime: #7e9c14;
     --ok: #0f9d58;
-    --risk: #b8324a;
+    --ok-soft: #e9f6ef;
+    --risk: #e11d48;
+    --risk-soft: #fdeaef;
+    --ink-900: #1a1420;
+    --ink-700: #40384a;
+    --ink-500: #6d6578;
+    --ink-300: #c9c4d1;
+    --ink-100: #ece9f1;
+    --ink-50: #f8f6fb;
+    --line: #e7e3ee;
+    --r-card: 16px;
+    --r-tile: 12px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -430,18 +499,21 @@ export function generateReport(session: Session): string {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--ink-900);
     background: #fff;
-    font-size: 13px;
+    font-size: 13.5px;
     line-height: 1.5;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .page {
-    max-width: 900px;
+    max-width: 920px;
     margin: 0 auto;
-    padding: 32px 40px 80px;
+    padding: 34px 42px 80px;
   }
   header.top {
-    border-bottom: 2px solid var(--ink-900);
-    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 18px;
     margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
@@ -451,35 +523,37 @@ export function generateReport(session: Session): string {
   header.top .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: var(--ink-700);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
+    gap: 11px;
   }
-  header.top .brand .dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background: var(--brand);
-    border-radius: 3px;
+  header.top .brand .mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--plum);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex: none;
   }
+  header.top .brand .mark svg { width: 18px; height: 18px; }
+  header.top .brand .name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+  header.top .brand .sub { font-size: 12px; color: var(--ink-500); }
   header.top h1 {
-    margin: 6px 0 0;
+    margin: 12px 0 0;
     font-size: 28px;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
   header.top .meta {
     text-align: right;
     color: var(--ink-500);
     font-size: 12px;
     font-weight: 500;
-    line-height: 1.4;
+    line-height: 1.5;
   }
   header.top .meta .code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--ink-900);
     letter-spacing: 0.08em;
@@ -488,21 +562,21 @@ export function generateReport(session: Session): string {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    margin-bottom: 28px;
+    margin-bottom: 26px;
   }
   .summary .stat {
-    background: var(--ink-50);
-    border: 1px solid var(--ink-100);
-    border-radius: 10px;
+    background: var(--cyan-soft);
+    border: 1px solid var(--cyan-line);
+    border-radius: var(--r-tile);
     padding: 14px 16px;
   }
   .summary .stat .label {
     text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    color: var(--ink-500);
-    font-weight: 500;
-    margin-bottom: 4px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--cyan);
+    font-weight: 600;
+    margin-bottom: 5px;
   }
   .summary .stat .value {
     font-size: 22px;
@@ -513,8 +587,8 @@ export function generateReport(session: Session): string {
   h2 {
     font-size: 18px;
     font-weight: 600;
-    letter-spacing: -0.015em;
-    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+    margin: 0 0 3px;
   }
   h3 {
     font-size: 12px;
@@ -524,96 +598,157 @@ export function generateReport(session: Session): string {
     color: var(--ink-500);
     margin: 20px 0 8px;
   }
+  h3.read-label { color: var(--cyan); }
   p { margin: 0 0 8px; }
   .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 12.5px;
     margin-bottom: 4px;
   }
   table.kpi th, table.kpi td,
   table.log th, table.log td,
   table.leaderboard th, table.leaderboard td {
-    padding: 8px 10px;
+    padding: 9px 11px;
     border-bottom: 1px solid var(--ink-100);
     text-align: left;
     vertical-align: middle;
   }
   table th {
-    font-size: 10px;
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     color: var(--ink-500);
-    font-weight: 500;
+    font-weight: 600;
     border-bottom: 1px solid var(--ink-300);
   }
+  table.read th { color: var(--cyan); border-bottom-color: var(--cyan-line); }
   table .num { text-align: right; }
   table th.num { text-align: right; }
-  table td.delta { font-weight: 500; }
-  table td.delta.up { color: var(--ok); }
-  table td.delta.down { color: var(--risk); }
-  table td.delta.flat { color: var(--ink-500); }
-  table.leaderboard { margin-bottom: 24px; max-width: 480px; }
+  td.label { font-weight: 500; }
+  td.label .hint {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-500);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-top: 1px;
+  }
+  td.end { text-align: right; white-space: nowrap; }
+  .vbar {
+    display: block;
+    height: 5px;
+    width: 78px;
+    max-width: 100%;
+    margin-left: auto;
+    margin-top: 5px;
+    border-radius: 999px;
+    background: var(--ink-100);
+    overflow: hidden;
+  }
+  .vbar-fill { display: block; height: 100%; border-radius: 999px; }
+  .tone-data { background: var(--lime); }
+  .tone-plum { background: var(--plum); }
+  .tone-risk { background: var(--risk); }
+  .tone-read { background: var(--cyan); }
+  td.movement { white-space: nowrap; }
+  .delta { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
+  .delta .arrow { width: 13px; height: 13px; }
+  .delta.up { color: var(--ok); }
+  .delta.down { color: var(--risk); }
+  .delta.flat { color: var(--ink-500); }
+  .delta .delta-num { font-weight: 500; color: var(--ink-500); }
+  table.leaderboard { margin-bottom: 8px; max-width: 520px; }
+  table.leaderboard tr.lead td { background: var(--plum-soft); }
+  table.leaderboard .rank-cell { color: var(--ink-500); font-weight: 600; width: 48px; }
+  table.leaderboard tr.lead .rank-cell { color: var(--plum-600); }
+  table.leaderboard .score-cell { font-weight: 600; }
   section.team {
-    margin-top: 32px;
-    padding-top: 28px;
-    border-top: 1px solid var(--ink-100);
+    margin-top: 30px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  section.team:first-of-type {
-    border-top: none;
-    padding-top: 0;
-  }
+  section.team:first-of-type { border-top: none; padding-top: 4px; }
   section.team .team-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
     gap: 16px;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
   section.team .team-header .rank {
     font-size: 22px;
     font-weight: 600;
-    color: var(--brand);
+    color: var(--plum-600);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
-    min-width: 40px;
+    min-width: 36px;
   }
   section.team .team-header .crest { line-height: 0; }
+  section.team .team-id h2 { margin: 0; }
   .team-cell { display: inline-flex; align-items: center; gap: 8px; }
   .crest-small { line-height: 0; display: inline-flex; }
-  section.team .sub { color: var(--ink-500); font-size: 12px; }
+  section.team .sub { color: var(--ink-500); font-size: 12.5px; margin: 2px 0 0; }
+  .team-spark { text-align: right; }
+  .team-spark .spark { display: block; margin-left: auto; }
+  .team-spark .spark-cap {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-500);
+    margin-top: 2px;
+  }
   .cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-top: 12px;
+    gap: 14px;
+    margin-top: 14px;
   }
+  .col { border-radius: var(--r-tile); padding: 14px 16px; }
+  .col h3 { margin-top: 0; }
+  .coach-did { background: var(--ok-soft); }
+  .coach-did h3 { color: var(--ok); }
+  .coach-dev { background: var(--plum-soft); }
+  .coach-dev h3 { color: var(--plum-600); }
   ul.bullets {
-    padding-left: 18px;
+    list-style: none;
+    padding: 0;
     margin: 0;
+    display: grid;
+    gap: 9px;
   }
   ul.bullets li {
-    margin-bottom: 6px;
+    display: grid;
+    grid-template-columns: 17px 1fr;
+    gap: 9px;
+    align-items: start;
+    font-size: 13px;
+    line-height: 1.45;
     color: var(--ink-700);
   }
+  ul.bullets .cico { width: 15px; height: 15px; margin-top: 2px; }
+  .coach-did .cico { color: var(--ok); }
+  .coach-dev .cico { color: var(--plum-600); }
   footer.bottom {
-    margin-top: 48px;
+    margin-top: 44px;
     padding-top: 16px;
-    border-top: 1px solid var(--ink-100);
-    font-size: 11px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
     color: var(--ink-500);
     display: flex;
     justify-content: space-between;
+    gap: 16px;
   }
   .print-hint {
-    margin: 24px 0 0;
+    margin: 18px 0 0;
     padding: 12px 16px;
-    background: var(--ink-50);
-    border: 1px solid var(--ink-100);
-    border-radius: 10px;
-    font-size: 12px;
+    background: var(--plum-soft);
+    border: 1px solid var(--plum-line);
+    border-radius: var(--r-tile);
+    font-size: 12.5px;
     color: var(--ink-700);
   }
   @media print {
@@ -628,7 +763,13 @@ export function generateReport(session: Session): string {
   <div class="page">
     <header class="top">
       <div>
-        <div class="brand"><span class="dot"></span>Retail Leadership Simulation</div>
+        <div class="brand">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg></span>
+          <span>
+            <span class="name">Plumfield Stores</span><br>
+            <span class="sub">Leadership simulation</span>
+          </span>
+        </div>
         <h1>Session report</h1>
       </div>
       <div class="meta">
@@ -640,13 +781,13 @@ export function generateReport(session: Session): string {
     <div class="summary">
       <div class="stat"><div class="label">Teams</div><div class="value num">${teams.length}</div></div>
       <div class="stat"><div class="label">Shifts played</div><div class="value num">${shiftsPlayed}</div></div>
-      <div class="stat"><div class="label">Session started</div><div class="value" style="font-size:13px;">${escapeHtml(formatDate(session.createdAt))}</div></div>
+      <div class="stat"><div class="label">Top team</div><div class="value">${escapeHtml(topTeam)}</div></div>
     </div>
 
-    <h3>Final standings</h3>
-    <table class="leaderboard">
+    <h3 class="read-label">Final standings</h3>
+    <table class="leaderboard read">
       <thead>
-        <tr><th>Rank</th><th>Team</th><th class="num">Score</th></tr>
+        <tr><th class="num">Rank</th><th>Team</th><th class="num">Score</th></tr>
       </thead>
       <tbody>${leaderboardRows}</tbody>
     </table>
