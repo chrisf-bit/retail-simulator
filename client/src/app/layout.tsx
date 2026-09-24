@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className="h-full">
-        <div id="app-root" className="h-screen w-screen overflow-hidden">
+        <div id="app-root" className="h-screen w-screen overflow-x-hidden overflow-y-auto xl:overflow-hidden">
           {children}
         </div>
       </body>
