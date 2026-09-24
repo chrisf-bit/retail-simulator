@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 // Apply the saved theme before first paint so there is no dark->light flash on
 // load. Runs inline in <head>; defaults to dark when nothing is stored.
-const themeInit = `(function(){try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.setAttribute("data-theme","light");}catch(e){}})();`;
+const themeInit = `(function(){try{var t=localStorage.getItem("theme");if(t==="light"&&location.pathname!=="/")document.documentElement.setAttribute("data-theme","light");}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

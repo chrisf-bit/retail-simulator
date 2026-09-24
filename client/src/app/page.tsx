@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Monitor, Plus, Store, Users } from "lucide-react";
 import { DEFAULT_EXPECTED_TEAMS, MAX_TEAMS, MIN_TEAMS, ROUND_COUNT } from "@sim/shared";
@@ -17,6 +17,22 @@ export default function LandingPage() {
   const [expectedTeams, setExpectedTeams] = useState<number>(DEFAULT_EXPECTED_TEAMS);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // The splash and create/join screens are always dark, whatever the saved
+  // per-device theme is. Force dark while this page is mounted, then restore the
+  // stored preference on leave. localStorage is never written here, so the
+  // facilitator/team toggle keeps whatever the user chose.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.removeAttribute("data-theme");
+    return () => {
+      try {
+        if (localStorage.getItem("theme") === "light") root.setAttribute("data-theme", "light");
+      } catch {
+        // storage unavailable: nothing to restore
+      }
+    };
+  }, []);
 
   function createFacilitator() {
     const socket = getSocket();
