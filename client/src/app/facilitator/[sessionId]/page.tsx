@@ -281,8 +281,8 @@ function FacilitatorHeader({
           className={cn(
             "press flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors",
             showRank
-              ? "bg-brand-500/20 text-brand-200 ring-brand-400/30"
-              : "bg-surface-panel text-white/60 ring-white/10 hover:text-white/90",
+              ? "bg-brand-500 text-oncolor ring-brand-500 shadow-[0_0_18px_-6px_rgba(208,51,224,0.9)]"
+              : "bg-surface-panel text-white/65 ring-white/10 hover:bg-white/[0.06] hover:text-white",
           )}
         >
           <Hash className="h-4 w-4" />
