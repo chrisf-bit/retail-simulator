@@ -358,7 +358,7 @@ export default function TeamPlayerPage() {
         <main className="flex min-h-0 flex-1 flex-col gap-3 p-4 pt-3">
           <MetricsHud team={team} view={kpiView} onViewChange={setKpiView} onOpenMetrics={() => setMetricsOpen(true)} />
 
-          <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
+          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(300px,1fr)_1.5fr] lg:items-start xl:min-h-0 xl:flex-1 xl:items-stretch xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
           <aside className="flex flex-col gap-3 xl:min-h-0 xl:overflow-hidden">
             <ZoneLabel label="Context" tone="data" />
             <div className="flex flex-col gap-3 xl:grid xl:min-h-0 xl:flex-1 xl:grid-rows-2">
@@ -435,7 +435,7 @@ function TeamHeader({
   const clock = formatClock(timeLeftMs);
   const urgent = timeLeftMs < 60_000 && phase === "round";
   return (
-    <header className="flex shrink-0 items-center justify-between gap-4 px-5 pt-4">
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 pt-4">
       <div className="flex items-center gap-3">
         <TeamCrest name={team.name} size={44} tone="light" />
         <div>
@@ -449,7 +449,7 @@ function TeamHeader({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
         <button
           type="button"
           onClick={onOpenHandover}
@@ -555,7 +555,7 @@ function MetricsHud({
         className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-white/[0.04] blur-2xl animate-hudScan"
       />
 
-      <div className="relative grid grid-cols-6 items-stretch gap-3">
+      <div className="relative flex flex-col gap-3 lg:grid lg:grid-cols-6 lg:items-stretch">
         {/* Console title / status */}
         <div className="flex flex-col justify-center gap-1 pl-2 pr-1">
           <div className="flex items-center gap-2">
@@ -602,7 +602,7 @@ function MetricsHud({
         </div>
 
         {/* Readouts: hairline-divided cells */}
-        <div className="col-span-5 grid grid-cols-5 gap-px overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10">
+        <div className="grid grid-cols-5 gap-px overflow-hidden rounded-xl bg-white/10 ring-1 ring-white/10 lg:col-span-5">
           {GOAL_KEYS.map((g) => (
             <GoalReadout key={g} team={team} goal={g} view={view} />
           ))}
@@ -1723,7 +1723,7 @@ function BriefingWalkthrough({ step }: { step: number }) {
         <MetricsHud team={demoTeam} view="values" onViewChange={noop} onOpenMetrics={noop} />
       </div>
 
-      <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(300px,1fr)_1.5fr] lg:items-start xl:min-h-0 xl:flex-1 xl:items-stretch xl:grid-cols-[minmax(320px,1fr)_1.5fr]">
         <aside
           className={cn(
             "flex flex-col gap-3 transition-all duration-500 xl:min-h-0 xl:overflow-hidden",
