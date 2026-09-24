@@ -179,6 +179,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 - `server/src/engine/scenarios.ts`: issue / alert / disruption banks.
 - `server/src/engine/moments.ts`: 6 people-moment scenarios.
 - `server/src/engine/insights.ts`: facilitator coaching. Per-team observations / considerations / questions, room-wide patterns, per-phase talk tracks.
+- `server/src/engine/report.ts`: end-of-session printable HTML report generator (`generateReport(session)`). Self-contained (inline `<style>` + inline SVG, no scripts). Leaderboard, per-team strengths/development (from `analyseTeam`), metric + hidden-driver trajectories, shift log. Plumfield-branded, light for print. Served at `GET /api/sessions/:id/report.html?token=` (facilitator-token-gated) in `index.ts`; opened by the facilitator "Download report" button in debrief/finished.
 - `server/src/index.ts`: Socket.IO event routing.
 
 ### Client
@@ -280,6 +281,7 @@ Magenta = ACT, cyan = READ, lime = live data-fill. That mapping is the whole poi
 - "Your decisions" (plural) because the panel asks for multiple steps.
 - Decision tab 5 is called **Confidence**, not "Stake". Gambling connotations are out.
 - Persona ranks use store-realistic titles (Duty Manager, Assistant Manager, Shift Supervisor, Team Leader). No "Deputy".
+- External source content (client L&D packs etc.) must be genericised to the Plumfield world before it lands in the app. Strip real chain / system / department names - no "Sainsbury's", "Main Bank", "AskHR"/"MyHR", "GM&C", etc. See the Palette rule (deliberately not Sainsbury's).
 
 ---
 
@@ -287,6 +289,6 @@ Magenta = ACT, cyan = READ, lime = live data-fill. That mapping is the whole poi
 
 - Persistence: done (disk-backed session snapshots restored on boot; see the Deployment section). A hosted database would be the next step only for multi-day cohorts or a persistent post-session report store.
 - Authentication for the facilitator route.
-- Post-session debrief export (PDF / email).
+- Post-session debrief report: BUILT (`server/src/engine/report.ts`, see Architecture). Restyled to Plumfield 2026-09-18. Remaining idea: automated email delivery or a persistent post-session store; PDF is browser print-to-PDF for now.
 - More moment / issue / disruption scenarios for variety across repeat facilitation.
 - Facilitator ability to seed team names or pre-configure a cohort.
