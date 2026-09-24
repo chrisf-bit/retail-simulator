@@ -15,6 +15,7 @@ import {
   Copy,
   Eye,
   Flag,
+  Hash,
   HelpCircle,
   KeyRound,
   Layers,
@@ -77,6 +78,18 @@ export default function FacilitatorPage() {
   const { state, socket, connected, offsetMs, error } = useSessionState();
   const [notAuthorised, setNotAuthorised] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
+
+  // Facilitator preference: show or hide the rank badge on the team cards.
+  // Some facilitators run the room developmentally and prefer to play down the
+  // competition. Remembered per device.
+  const [showRank, setShowRank] = useState(true);
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem("facilitator:showRank") : null;
+    if (v !== null) setShowRank(v === "1");
+  }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem("facilitator:showRank", showRank ? "1" : "0");
+  }, [showRank]);
 
   const token = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -153,7 +166,12 @@ export default function FacilitatorPage() {
       {recovery ? (
         <RecoveryModal teamName={recoveryTeamName} url={recovery.url} onClose={() => setRecovery(null)} />
       ) : null}
-      <FacilitatorHeader state={state} timeLeftMs={timeLeft} />
+      <FacilitatorHeader
+        state={state}
+        timeLeftMs={timeLeft}
+        showRank={showRank}
+        onToggleRank={() => setShowRank((v) => !v)}
+      />
 
       <div className="shrink-0 px-5 pt-5">
         <PhaseGuide
@@ -189,7 +207,7 @@ export default function FacilitatorPage() {
         ) : (
           <>
             <div className="min-h-0 xl:min-h-0">
-              <CoachingGrid state={state} reveal={revealPhase} onReissue={reissue} />
+              <CoachingGrid state={state} reveal={revealPhase} showRank={showRank} onReissue={reissue} />
             </div>
             <div className="flex min-h-0 flex-col xl:min-h-0">
               <Leaderboard state={state} />
@@ -201,7 +219,17 @@ export default function FacilitatorPage() {
   );
 }
 
-function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; timeLeftMs: number }) {
+function FacilitatorHeader({
+  state,
+  timeLeftMs,
+  showRank,
+  onToggleRank,
+}: {
+  state: SessionStatePublic;
+  timeLeftMs: number;
+  showRank: boolean;
+  onToggleRank: () => void;
+}) {
   const phaseText: Record<string, string> = {
     lobby: "Lobby",
     briefing: "Briefing",
@@ -245,6 +273,21 @@ function FacilitatorHeader({ state, timeLeftMs }: { state: SessionStatePublic; t
           <Clock className={cn("h-4 w-4", urgent ? "text-oncolor" : "text-white/60")} />
           <span className={cn("num text-2xl font-semibold", urgent ? "text-oncolor" : "text-white")}>{formatClock(timeLeftMs)}</span>
         </div>
+        <button
+          type="button"
+          onClick={onToggleRank}
+          aria-pressed={showRank}
+          title={showRank ? "Hide team rank on the coaching cards" : "Show team rank on the coaching cards"}
+          className={cn(
+            "press flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors",
+            showRank
+              ? "bg-brand-500/20 text-brand-200 ring-brand-400/30"
+              : "bg-surface-panel text-white/60 ring-white/10 hover:text-white/90",
+          )}
+        >
+          <Hash className="h-4 w-4" />
+          Rank {showRank ? "on" : "off"}
+        </button>
         <ThemeToggle />
         <FullscreenToggle />
       </div>
@@ -396,10 +439,12 @@ function columnsForTeams(n: number): number {
 function CoachingGrid({
   state,
   reveal,
+  showRank,
   onReissue,
 }: {
   state: SessionStatePublic;
   reveal: boolean;
+  showRank: boolean;
   onReissue: (teamId: string) => void;
 }) {
   if (state.teams.length === 0) return null;
@@ -424,6 +469,7 @@ function CoachingGrid({
             team={t}
             insight={insightsByTeam.get(t.id)}
             rank={rankByTeam.get(t.id)}
+            showRank={showRank}
             reveal={reveal}
             onReissue={onReissue}
           />
@@ -437,12 +483,14 @@ function CoachingCard({
   team,
   insight,
   rank,
+  showRank,
   reveal,
   onReissue,
 }: {
   team: TeamPublic;
   insight: TeamInsight | undefined;
   rank?: number;
+  showRank: boolean;
   reveal: boolean;
   onReissue: (teamId: string) => void;
 }) {
@@ -452,7 +500,7 @@ function CoachingCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
-          {rank ? (
+          {showRank && rank ? (
             <span className="num shrink-0 text-[13px] font-semibold text-white/65">#{rank}</span>
           ) : null}
           <TeamCrest name={team.name} size={20} tone="light" />

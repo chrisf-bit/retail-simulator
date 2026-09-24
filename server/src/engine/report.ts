@@ -103,9 +103,17 @@ function formatDate(ts: number): string {
   });
 }
 
+// Cap any displayed figure at two decimal places. Integers print clean (no
+// trailing ".00"); anything fractional is rounded to 2dp rather than shown at
+// full float precision.
+function fmt(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  return String(Math.round(n * 100) / 100);
+}
+
 function signed(n: number): string {
-  if (n > 0) return `+${Math.round(n)}`;
-  return `${Math.round(n)}`;
+  const r = Math.round(n * 100) / 100;
+  return r > 0 ? `+${r}` : `${r}`;
 }
 
 function deltaDirection(before: number, after: number, inverted: boolean): "up" | "down" | "flat" {
@@ -161,6 +169,38 @@ function sparkSvg(values: number[]): string {
 const CHECK_ICON = `<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>`;
 const AIM_ICON = `<svg class="cico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>`;
 
+// Metric-movement lines used to read the same ("...a genuine shift.") on every
+// row. Vary the sentence by size of the move and rotate structure by position so
+// a team with several movers does not get a wall of identical phrasing.
+function sizeWord(delta: number): string {
+  const d = Math.abs(delta);
+  return d >= 15 ? "big" : d >= 8 ? "clear" : "modest";
+}
+
+function describeMetricGain(label: string, before: number, after: number, seq: number): string {
+  const size = sizeWord(after - before);
+  const variants = [
+    `${label} climbed from ${before} to ${after}, a ${size} gain across the session.`,
+    `A ${size} lift on ${label}, ${before} up to ${after}.`,
+    `${label} ended at ${after}, up from ${before} at the start.`,
+    `They grew ${label} from ${before} to ${after} over the eight shifts.`,
+    `${label} moved the right way, ${before} to ${after}.`,
+  ];
+  return variants[seq % variants.length];
+}
+
+function describeMetricDrop(label: string, before: number, after: number, seq: number): string {
+  const size = sizeWord(after - before);
+  const variants = [
+    `${label} slipped from ${before} to ${after}. Worth unpacking what was traded for it.`,
+    `A ${size} drop on ${label}, ${before} down to ${after}.`,
+    `${label} ended at ${after}, down from ${before} at the start.`,
+    `Ground was lost on ${label}, ${before} to ${after}.`,
+    `${label} drifted the wrong way over the session, ${before} to ${after}.`,
+  ];
+  return variants[seq % variants.length];
+}
+
 function analyseTeam(team: TeamFull): { strengths: string[]; development: string[] } {
   const strengths: string[] = [];
   const development: string[] = [];
@@ -177,6 +217,8 @@ function analyseTeam(team: TeamFull): { strengths: string[]; development: string
   // --- Metric movement across the session ---
   const firstMetrics = h[0].metricsAfter;
   const lastMetrics = h[rounds - 1].metricsAfter;
+  let gainSeq = 0;
+  let dropSeq = 0;
   for (const k of METRIC_KEYS) {
     const inverted = !!LOWER_IS_BETTER[k];
     const before = firstMetrics[k];
@@ -184,13 +226,9 @@ function analyseTeam(team: TeamFull): { strengths: string[]; development: string
     const improved = inverted ? after < before - 3 : after > before + 3;
     const worsened = inverted ? after > before + 3 : after < before - 3;
     if (improved) {
-      strengths.push(
-        `${METRIC_SHORT[k]} moved from ${before} to ${after} across the session, a genuine shift.`,
-      );
+      strengths.push(describeMetricGain(METRIC_SHORT[k], before, after, gainSeq++));
     } else if (worsened) {
-      development.push(
-        `${METRIC_SHORT[k]} drifted from ${before} to ${after} across the session. Worth unpacking what was traded for that.`,
-      );
+      development.push(describeMetricDrop(METRIC_SHORT[k], before, after, dropSeq++));
     }
   }
 
@@ -308,9 +346,9 @@ function kpiRow(
   return `
     <tr>
       <td class="label">${escapeHtml(label)}${hint ? `<span class="hint">${escapeHtml(hint)}</span>` : ""}</td>
-      <td class="num">${baseline}</td>
-      <td class="num">${start}</td>
-      <td class="num end">${final}${valueBar(final, tone)}</td>
+      <td class="num">${fmt(baseline)}</td>
+      <td class="num">${fmt(start)}</td>
+      <td class="num end">${fmt(final)}${valueBar(final, tone)}</td>
       <td class="movement">${movementCell(start, final, inverted)}</td>
     </tr>
   `.trim();
