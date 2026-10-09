@@ -78,13 +78,14 @@
   --brand-500: 134 25 143;
   --brand-600: 112 26 117;
 
-  /* Accent text tints - darkened so they read on light surfaces. */
-  --brand-300: 179 28 196;
-  --brand-400: 179 28 196;
-  --teal-300: 8 145 178;
-  --teal-400: 8 145 178;
-  --lime-300: 106 133 12;
-  --lime-400: 106 133 12;
+  /* Accent text tints - darkened so they read on light surfaces. Tuned to clear
+     WCAG 2.1 AA: accent text hits >=4.5:1 on white cards, data-fills >=3:1. */
+  --brand-300: 162 28 175;
+  --brand-400: 162 28 175;
+  --teal-300: 14 116 144;
+  --teal-400: 14 116 144;
+  --lime-300: 99 124 11;
+  --lime-400: 99 124 11;
   --emerald-300: 15 118 74;
   --emerald-400: 15 118 74;
   --rose-300: 190 24 60;

@@ -16,8 +16,10 @@ import { useIsDark } from "../lib/theme";
 // On-palette accents only (no new hues): magenta, cyan, lime, emerald. Bright
 // tints for the dark theme; darker equivalents of the same hues for light, so
 // the storefront reads clearly on a light background rather than washing out.
+// The light cyan/lime are deepened (from #0891b2 / #6a850c) so the thin 2px
+// stroke clears a comfortable WCAG 1.4.11 non-text margin on white cards.
 const TEAM_TINTS = ["#e879f9", "#22d3ee", "#c8e83a", "#34d399"] as const;
-const TEAM_TINTS_LIGHT = ["#86198f", "#0891b2", "#6a850c", "#0f764a"] as const;
+const TEAM_TINTS_LIGHT = ["#86198f", "#0e7490", "#5c720a", "#0f764a"] as const;
 
 function hash(name: string): number {
   const s = name.trim().toLowerCase();

@@ -635,7 +635,7 @@ function GoalReadout({
         >
           <Icon className={cn("h-4 w-4", tone.text)} />
         </span>
-        <span className="min-w-0 truncate text-[12px] font-medium uppercase tracking-wide text-white/55">
+        <span className="min-w-0 truncate text-[12px] font-medium uppercase tracking-wide text-white/65">
           {GOAL_SHORT[goal]}
         </span>
         <span className={cn("ml-auto h-2.5 w-2.5 shrink-0 rounded-full", tone.dot)} />
@@ -931,7 +931,7 @@ function TabButton({
         "press flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 transition-all",
         active
           ? "bg-brand-500 text-oncolor shadow-[0_0_18px_-6px_rgba(208,51,224,0.9)]"
-          : "text-white/55 hover:bg-white/[0.06] hover:text-white/85",
+          : "text-white/65 hover:bg-white/[0.06] hover:text-white/85",
       )}
     >
       {done ? (
@@ -977,7 +977,7 @@ function StepHeader({
         <h2 className="text-xl font-semibold tracking-tight text-white xl:text-lg">{title}</h2>
         {optional ? <Pill tone="neutral" surface="dark">Optional</Pill> : null}
       </div>
-      <p className="mt-0.5 text-sm text-white/55 xl:text-[13px]">{narrative}</p>
+      <p className="mt-0.5 text-sm text-white/65 xl:text-[13px]">{narrative}</p>
       <p className="mt-1 text-sm font-medium text-white/80 xl:text-[12px]">{instruction}</p>
     </div>
   );
@@ -1224,7 +1224,7 @@ function ConfidenceStep({
                 <Icon className={cn("h-4 w-4", active ? "text-oncolor" : "text-white/65")} />
                 <span className="text-sm font-semibold">{CONFIDENCE_LABELS[opt]}</span>
               </div>
-              <span className={cn("text-[12px] leading-snug", active ? "text-oncolor/85" : "text-white/55")}>
+              <span className={cn("text-[12px] leading-snug", active ? "text-oncolor/85" : "text-white/65")}>
                 {CONFIDENCE_DESCRIPTIONS[opt]}
               </span>
             </button>
@@ -1319,7 +1319,7 @@ function IssueEffortSliders({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h4 className="text-[13px] font-semibold text-white/90">{i.title}</h4>
-                  <p className="mt-0.5 text-[12px] text-white/55">{i.description}</p>
+                  <p className="mt-0.5 text-[12px] text-white/65">{i.description}</p>
                 </div>
                 <Pill tone={SEVERITY_TONES[i.severity]} surface="dark">
                   {i.severity}
@@ -1824,12 +1824,12 @@ function ResultsPanel({
               <span
                 className={cn(
                   "inline-flex h-8 w-8 items-center justify-center rounded-full",
-                  movement > 0 ? "bg-emerald-500/20 text-emerald-300" : movement < 0 ? "bg-rose-500/20 text-rose-300" : "bg-white/10 text-white/55",
+                  movement > 0 ? "bg-emerald-500/20 text-emerald-300" : movement < 0 ? "bg-rose-500/20 text-rose-300" : "bg-white/10 text-white/65",
                 )}
               >
                 <MovementArrow className="h-4 w-4" />
               </span>
-              <span className="text-sm text-white/55">total {team.score}</span>
+              <span className="text-sm text-white/65">total {team.score}</span>
             </div>
           </div>
           <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
@@ -1846,7 +1846,7 @@ function ResultsPanel({
           <div className="grid grid-cols-5 gap-2">
             {METRIC_KEYS.map((k) => (
               <div key={k} className="rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/10">
-                <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/55">{METRIC_SHORT[k]}</div>
+                <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between gap-1">
                   <span className="num truncate text-sm font-semibold text-white">{metricDisplayShort(k, team.metrics?.[k] ?? 0)}</span>
                   <Delta value={team.lastMetricDelta?.[k]} onDark />
@@ -1867,7 +1867,7 @@ function ResultsPanel({
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
                 <div key={h} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
-                  <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/55">
+                  <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">
                     {HIDDEN_LABELS[h]}
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
@@ -1910,7 +1910,7 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
     <div className="flex flex-1 items-center justify-center p-6">
       <DataCard className="max-w-xl p-10 text-center">
         <h2 className="text-3xl font-semibold tracking-tighter text-white">Session complete</h2>
-        <p className="mt-2 text-sm text-white/55">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
+        <p className="mt-2 text-sm text-white/65">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-brand-500 p-5 text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
             <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Final rank</div>
@@ -2092,7 +2092,7 @@ function MetricsModal({
               <h2 id="metrics-title" className="text-lg font-semibold tracking-tight text-white">
                 Five goals, ten measures
               </h2>
-              <div className="mt-1 text-[12px] text-white/55">
+              <div className="mt-1 text-[12px] text-white/65">
                 The full picture behind the HUD. Live values against baseline and target.
               </div>
             </div>
@@ -2129,7 +2129,7 @@ function MetricsModal({
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold tracking-tight text-white">{GOAL_LABELS[g]}</div>
-                    <div className="text-[12px] text-white/50">
+                    <div className="text-[12px] text-white/65">
                       {metrics.length} measure{metrics.length === 1 ? "" : "s"}
                     </div>
                   </div>
@@ -2150,7 +2150,7 @@ function MetricsModal({
 
         {/* Footer */}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-6 py-3">
-          <div className="flex items-center gap-1.5 text-[12px] text-white/50">
+          <div className="flex items-center gap-1.5 text-[12px] text-white/65">
             <Sparkles className="h-3.5 w-3.5 shrink-0 text-teal-300/70" /> Read-only. Your decisions move these each shift.
           </div>
           {presentation ? (
@@ -2229,7 +2229,7 @@ function HandoverModal({ onClose, presentation = false }: { onClose?: () => void
               <h2 id="handover-title" className="text-lg font-semibold tracking-tight text-white">
                 Plumfield Northgate - Manager handover
               </h2>
-              <div className="mt-1 text-[12px] text-white/55">
+              <div className="mt-1 text-[12px] text-white/65">
                 Prepared by Ray Dolan · For the incoming manager · Your first week
               </div>
             </div>
@@ -2275,7 +2275,7 @@ function HandoverModal({ onClose, presentation = false }: { onClose?: () => void
           <div className="mt-6 border-t border-white/10 pt-4 text-[13px] leading-relaxed text-white/70">
             <p>You have inherited a good store and a good team. My advice: hit the ground running, make a couple of visible calls in your first week so they know who is in charge, and do not overthink it. Trust your gut over the dashboards. You will be grand.</p>
             <p className="mt-2 font-semibold text-white">Ray Dolan</p>
-            <p className="text-[12px] text-white/55">Outgoing Store Manager, Plumfield Northgate</p>
+            <p className="text-[12px] text-white/65">Outgoing Store Manager, Plumfield Northgate</p>
           </div>
         </div>
 

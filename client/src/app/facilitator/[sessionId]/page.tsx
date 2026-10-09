@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  BellRing,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -26,20 +27,29 @@ import {
   Play,
   PlayCircle,
   Download,
+  Store,
   Square,
   Trophy,
   X,
 } from "lucide-react";
 import type { Socket } from "socket.io-client";
 import type {
+  Alert,
+  DisruptionEvent,
   Goal,
+  Issue,
+  RoundState,
   SessionStatePublic,
+  Severity,
   TeamInsight,
+  TeamMoment,
   TeamPublic,
 } from "@sim/shared";
 import { BASELINE_WEEKS, BRIEFING_STEP_COUNT, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
 import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline, ThemeToggle } from "@/components/ui";
+import { ScenarioIcon } from "@/lib/scenarioIcons";
 import { TeamCrest } from "@/components/TeamCrest";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { FullscreenToggle } from "@/components/FullscreenToggle";
 import { formatClock, useCountdown, useSessionState } from "@/lib/useSession";
 import { facilitatorGuidance } from "@/lib/guidance";
@@ -158,6 +168,11 @@ export default function FacilitatorPage() {
   const guidance = facilitatorGuidance(state);
   const primary = getPrimaryAction(state);
   const revealPhase = state.phase === "round_results" || state.phase === "debrief" || state.phase === "finished";
+  // While the clock is running the coaching cards are half-empty (deltas and
+  // hidden drivers are withheld until reveal), so the left column instead
+  // mirrors exactly what the teams are facing this shift. It flips back to the
+  // coaching cards the moment the shift resolves.
+  const liveShift = state.round?.phase === "active" || state.round?.phase === "disrupted";
   const reissue = (teamId: string) => socket.emit("facilitator:reissue_team_token", { sessionId, teamId });
   const recoveryTeamName = recovery ? state.teams.find((t) => t.id === recovery.teamId)?.name ?? "Team" : "";
 
@@ -207,7 +222,11 @@ export default function FacilitatorPage() {
         ) : (
           <>
             <div className="min-h-0 xl:min-h-0">
-              <CoachingGrid state={state} reveal={revealPhase} showRank={showRank} onReissue={reissue} />
+              {liveShift && state.round ? (
+                <ShiftScenarioPanel round={state.round} />
+              ) : (
+                <CoachingGrid state={state} reveal={revealPhase} showRank={showRank} onReissue={reissue} />
+              )}
             </div>
             <div className="flex min-h-0 flex-col xl:min-h-0">
               <Leaderboard state={state} />
@@ -329,15 +348,15 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                   isLead ? "bg-brand-500 text-oncolor" : "bg-white/5",
                 )}
               >
-                <div className={cn("col-span-2 num text-base font-semibold", isLead ? "text-oncolor" : "text-white/70")}>
+                <div className={cn("col-span-2 num text-lg font-semibold", isLead ? "text-oncolor" : "text-white/70")}>
                   #{row.rank}
                 </div>
                 <div className="col-span-5 flex min-w-0 items-center gap-2">
                   <ConnectionDot status={status} />
-                  <TeamCrest name={row.name} size={20} tone={isLead ? "lead" : "light"} />
-                  <span className={cn("truncate text-sm font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
+                  <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
+                  <span className={cn("truncate text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
                 </div>
-                <div className={cn("col-span-2 text-right num text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>
+                <div className={cn("col-span-2 text-right num text-lg font-semibold", isLead ? "text-oncolor" : "text-white")}>
                   {row.score}
                 </div>
                 <div className="col-span-3 flex justify-end">
@@ -409,21 +428,21 @@ function JoinProgress({ state }: { state: SessionStatePublic }) {
 function MovementPill({ value }: { value: number }) {
   if (value === 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-white/65">
-        <Minus className="h-3 w-3" />0
+      <span className="inline-flex items-center gap-1 text-sm text-white/65">
+        <Minus className="h-3.5 w-3.5" />0
       </span>
     );
   }
   if (value > 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-1.5 py-0.5 text-xs font-semibold text-emerald-300">
-        <ArrowUp className="h-3 w-3" />+{value}
+      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 px-1.5 py-0.5 text-sm font-semibold text-emerald-300">
+        <ArrowUp className="h-3.5 w-3.5" />+{value}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-lg bg-rose-500/20 px-1.5 py-0.5 text-xs font-semibold text-rose-300">
-      <ArrowDown className="h-3 w-3" />
+    <span className="inline-flex items-center gap-1 rounded-lg bg-rose-500/20 px-1.5 py-0.5 text-sm font-semibold text-rose-300">
+      <ArrowDown className="h-3.5 w-3.5" />
       {value}
     </span>
   );
@@ -434,6 +453,155 @@ function columnsForTeams(n: number): number {
   if (n <= 4) return 2;
   if (n <= 9) return 3;
   return 4;
+}
+
+const SEVERITY_TONES: Record<Severity, "neutral" | "warn" | "risk"> = {
+  low: "neutral",
+  medium: "warn",
+  high: "risk",
+};
+
+// Live-shift situational awareness for the facilitator. A pure READ-zone mirror
+// of what every team is looking at this shift - issues, alerts, the people
+// moment, and the disruption once it fires. Descriptive only: no "right answer"
+// (no bestArchetype) and no response options, so the facilitator reads the room
+// without holding the scoring. Replaces the coaching grid while the clock runs.
+function ShiftScenarioPanel({ round }: { round: RoundState }) {
+  const issues = round.issues.slice(0, 3);
+  const alerts = round.alerts.slice(0, 2);
+  const moment = round.moment;
+  const disruption = round.disruption;
+  return (
+    <Card tone="data" className="flex h-full min-h-0 flex-col p-4">
+      <SectionTitle
+        tone="data"
+        icon={<Store className="h-4 w-4" />}
+        title="What teams are facing"
+        subtitle="Live this shift - identical for every team"
+      />
+      <div className="grid min-h-0 flex-1 grid-rows-[auto_1fr] gap-4">
+        <section>
+          <ScenarioLabel icon={<AlertTriangle className="h-3.5 w-3.5" />} text="Active issues" />
+          <div className="grid grid-cols-3 gap-2.5">
+            {issues.map((i) => (
+              <IssueTile key={i.id} issue={i} />
+            ))}
+          </div>
+        </section>
+
+        <div className="grid min-h-0 grid-cols-2 gap-4">
+          <section className="flex min-h-0 flex-col">
+            <ScenarioLabel icon={<BellRing className="h-3.5 w-3.5" />} text="Alerts" />
+            <div className="quiet-scroll min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-0.5">
+              {disruption ? (
+                <DisruptionTile disruption={disruption} />
+              ) : (
+                <p className="rounded-xl bg-white/[0.04] px-3 py-2.5 text-[13px] text-white/65 ring-1 ring-white/5">
+                  No disruption this shift so far.
+                </p>
+              )}
+              {alerts.map((a) => (
+                <AlertTile key={a.id} alert={a} />
+              ))}
+              {alerts.length === 0 && !disruption ? (
+                <p className="text-[13px] text-white/65">No alerts.</p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="flex min-h-0 flex-col">
+            <ScenarioLabel icon={<MessageCircleQuestion className="h-3.5 w-3.5" />} text="People moment" />
+            <div className="quiet-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
+              {moment ? (
+                <MomentTile moment={moment} />
+              ) : (
+                <p className="text-[13px] text-white/65">No people moment this shift.</p>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ScenarioLabel({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="mb-2 flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-wide text-teal-300">
+      <span className="text-teal-300">{icon}</span>
+      {text}
+    </div>
+  );
+}
+
+function IssueTile({ issue }: { issue: Issue }) {
+  return (
+    <div className="flex min-w-0 flex-col rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5">
+      <div className="mb-1.5 flex items-start justify-between gap-2">
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70">
+          <ScenarioIcon name={issue.icon} className="h-4 w-4" />
+        </div>
+        <Pill tone={SEVERITY_TONES[issue.severity]} surface="dark">
+          {issue.severity}
+        </Pill>
+      </div>
+      <h4 className="text-sm font-semibold leading-snug text-white">{issue.title}</h4>
+      <p className="mt-1 text-[13px] leading-snug text-white/70">{issue.description}</p>
+    </div>
+  );
+}
+
+function AlertTile({ alert }: { alert: Alert }) {
+  return (
+    <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5">
+      <div className="flex items-start gap-2">
+        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70">
+          <ScenarioIcon name={alert.icon} className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-medium uppercase tracking-wide text-white/60">
+            {alert.kind === "head_office" ? "Head office" : "Operational"}
+          </div>
+          <h4 className="text-sm font-semibold leading-snug text-white">{alert.title}</h4>
+          <p className="mt-0.5 text-[13px] leading-snug text-white/70">{alert.message}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DisruptionTile({ disruption }: { disruption: DisruptionEvent }) {
+  return (
+    <div className="rounded-xl bg-risk p-3 text-oncolor shadow-[0_0_18px_-6px_rgba(244,63,107,0.8)]">
+      <div className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide">
+        <AlertTriangle className="h-3.5 w-3.5" /> Disruption live
+      </div>
+      <h4 className="text-sm font-semibold leading-snug">{disruption.title}</h4>
+      <p className="mt-0.5 text-[13px] leading-snug opacity-90">{disruption.message}</p>
+    </div>
+  );
+}
+
+function MomentTile({ moment }: { moment: TeamMoment }) {
+  return (
+    <div className="rounded-xl bg-white/[0.04] p-3.5 ring-1 ring-white/10">
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/15">
+          <PersonaAvatar name={moment.persona.name} size={44} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-white">{moment.persona.name}</div>
+          <div className="text-[12px] text-white/60">
+            {moment.persona.role} · {moment.persona.tenure}
+          </div>
+        </div>
+      </div>
+      <p className="mt-2.5 text-[13px] leading-snug text-white/75">{moment.situation}</p>
+      <p className="mt-2 flex items-start gap-1.5 text-[13px] italic leading-snug text-brand-300">
+        <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0" /> {moment.prompt}
+      </p>
+    </div>
+  );
 }
 
 function CoachingGrid({
@@ -451,6 +619,11 @@ function CoachingGrid({
   const insightsByTeam = new Map(state.insights.teams.map((i) => [i.teamId, i]));
   const rankByTeam = new Map(state.leaderboard.map((r) => [r.teamId, r.rank]));
   const cols = columnsForTeams(state.teams.length);
+  // Dense layout kicks in once the grid goes to 3+ columns (10+ teams). Below
+  // that there is room to size the metric readouts up for an across-the-room
+  // glance; at high team counts we step back toward the floor so the no-scroll
+  // rule holds.
+  const dense = cols >= 3;
   return (
     <Card tone="data" className="flex h-full min-h-0 flex-col p-3">
       <SectionTitle
@@ -471,6 +644,7 @@ function CoachingGrid({
             rank={rankByTeam.get(t.id)}
             showRank={showRank}
             reveal={reveal}
+            dense={dense}
             onReissue={onReissue}
           />
         ))}
@@ -485,6 +659,7 @@ function CoachingCard({
   rank,
   showRank,
   reveal,
+  dense,
   onReissue,
 }: {
   team: TeamPublic;
@@ -492,6 +667,7 @@ function CoachingCard({
   rank?: number;
   showRank: boolean;
   reveal: boolean;
+  dense: boolean;
   onReissue: (teamId: string) => void;
 }) {
   const question = insight?.questions?.[0];
@@ -501,10 +677,12 @@ function CoachingCard({
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
           {showRank && rank ? (
-            <span className="num shrink-0 text-[13px] font-semibold text-white/65">#{rank}</span>
+            <span className="num shrink-0 text-sm font-semibold text-white/65">#{rank}</span>
           ) : null}
-          <TeamCrest name={team.name} size={20} tone="light" />
-          <span className="truncate text-sm font-semibold tracking-tight text-white">{team.name}</span>
+          <TeamCrest name={team.name} size={dense ? 20 : 24} tone="light" />
+          <span className={cn("truncate font-semibold tracking-tight text-white", dense ? "text-sm" : "text-base")}>
+            {team.name}
+          </span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button
@@ -515,7 +693,7 @@ function CoachingCard({
           >
             <KeyRound className="h-3 w-3" />
           </button>
-          <span className="rounded-full bg-white/10 px-2 py-0.5 num text-[13px] font-semibold text-white">
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 num text-sm font-semibold text-white">
             {team.score}
           </span>
           {team.submitted ? (
@@ -533,7 +711,7 @@ function CoachingCard({
           <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-brand-300">
             <MessageCircleQuestion className="h-3 w-3" /> Ask them
           </div>
-          <p className="text-[13px] italic leading-snug text-white/90">&ldquo;{question}&rdquo;</p>
+          <p className={cn("italic leading-snug text-white/90", dense ? "text-[13px]" : "text-sm")}>&ldquo;{question}&rdquo;</p>
         </div>
       ) : null}
 
@@ -552,11 +730,11 @@ function CoachingCard({
                 {GOAL_SHORT[g]}
               </div>
               <div className="mt-0.5 flex items-baseline justify-between gap-1">
-                <span className="num text-sm font-semibold text-white">{value}</span>
+                <span className={cn("num font-semibold text-white", dense ? "text-lg" : "text-2xl")}>{value}</span>
                 <Delta value={delta} onDark />
               </div>
               <div className="mt-1">
-                <Sparkline values={series} height={26} onDark baselinePoints={BASELINE_WEEKS} />
+                <Sparkline values={series} height={dense ? 14 : 18} onDark baselinePoints={BASELINE_WEEKS} />
               </div>
             </div>
           );
@@ -696,7 +874,7 @@ function ControlBar({
         ) : null}
         <div className="rounded-xl bg-white/5 px-3 py-1.5 text-center ring-1 ring-white/10">
           <div className="text-[12px] font-medium uppercase tracking-wider text-white/65">Submitted</div>
-          <div className="num text-sm font-semibold text-white">
+          <div className="num text-lg font-semibold text-white">
             {submitted}/{state.teams.length}
           </div>
         </div>
@@ -706,7 +884,7 @@ function ControlBar({
         <p className="w-full border-t border-white/10 pt-2.5 text-[13px] leading-snug text-white/70">
           {stepInfo.body}
           {lastStep ? (
-            <span className="text-white/50"> Walkthrough done - start Shift 1 from the banner above.</span>
+            <span className="text-white/65"> Walkthrough done - start Shift 1 from the banner above.</span>
           ) : null}
         </p>
       ) : null}
@@ -755,7 +933,7 @@ function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: stri
             <div>
               <div className="text-[12px] font-medium uppercase tracking-[0.14em] text-teal-300">Recovery link</div>
               <h2 id="recovery-title" className="text-lg font-semibold tracking-tight text-white">{teamName}</h2>
-              <div className="mt-1 text-[12px] text-white/55">
+              <div className="mt-1 text-[12px] text-white/65">
                 Open this link on the team&apos;s device to restore their place. It replaces any earlier link for this team.
               </div>
             </div>
@@ -789,7 +967,7 @@ function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: stri
               )}
             </Button>
           </div>
-          <p className="mt-3 text-[12px] leading-snug text-white/50">
+          <p className="mt-3 text-[12px] leading-snug text-white/65">
             Send it to the team however is easiest - paste it into their browser, or share it over chat. No codes to type.
           </p>
         </div>

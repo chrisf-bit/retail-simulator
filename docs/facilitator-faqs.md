@@ -37,7 +37,7 @@ There is a leaderboard, but winning is not the point. The value is in the debrie
 people take away about their own leadership. Keep the room focused on that, not the score.
 
 **How long does it take?**
-Eight shifts: the first runs twelve minutes so teams can settle in, the rest are eight minutes
+Eight shifts: the first runs eight minutes so teams can settle in, the rest are six minutes
 each. Add the briefing and the debriefs and a typical session runs to roughly half a day,
 depending on how many teams you have and how deep you go in the conversations.
 

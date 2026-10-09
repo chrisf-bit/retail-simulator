@@ -134,7 +134,7 @@ The team round view leads with a full-width console **HUD** band under the heade
 
 ## Game mechanics
 
-**Cadence**: 8 shifts. Shift 1 runs 12 minutes (`FIRST_ROUND_DURATION_MS`) so teams can settle in, look around and read the handover; shifts 2-8 are 8 minutes each (`ROUND_DURATION_MS`). Per-shift duration comes from `roundDurationMs(roundNumber)` in `shared/src/constants.ts`. Round count is `ROUND_COUNT`.
+**Cadence**: 8 shifts. Shift 1 runs 8 minutes (`FIRST_ROUND_DURATION_MS`) so teams can settle in, look around and read the handover; shifts 2-8 are 6 minutes each (`ROUND_DURATION_MS`). Per-shift duration comes from `roundDurationMs(roundNumber)` in `shared/src/constants.ts`. Round count is `ROUND_COUNT`.
 
 **Flow**: lobby -> briefing -> shift (x8) -> debrief.
 
