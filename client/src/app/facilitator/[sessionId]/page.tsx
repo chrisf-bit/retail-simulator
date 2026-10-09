@@ -479,47 +479,46 @@ function ShiftScenarioPanel({ round }: { round: RoundState }) {
         title="What teams are facing"
         subtitle="Live this shift - identical for every team"
       />
-      <div className="grid min-h-0 flex-1 grid-rows-[auto_1fr] gap-4">
-        <section>
+      <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
+        <section className="flex min-h-0 flex-col">
           <ScenarioLabel icon={<AlertTriangle className="h-3.5 w-3.5" />} text="Active issues" />
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="quiet-scroll min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-0.5">
             {issues.map((i) => (
               <IssueTile key={i.id} issue={i} />
             ))}
+            {issues.length === 0 ? <p className="text-[13px] text-white/65">No active issues.</p> : null}
           </div>
         </section>
 
-        <div className="grid min-h-0 grid-cols-2 gap-4">
-          <section className="flex min-h-0 flex-col">
-            <ScenarioLabel icon={<BellRing className="h-3.5 w-3.5" />} text="Alerts" />
-            <div className="quiet-scroll min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-0.5">
-              {disruption ? (
-                <DisruptionTile disruption={disruption} />
-              ) : (
-                <p className="rounded-xl bg-white/[0.04] px-3 py-2.5 text-[13px] text-white/65 ring-1 ring-white/5">
-                  No disruption this shift so far.
-                </p>
-              )}
-              {alerts.map((a) => (
-                <AlertTile key={a.id} alert={a} />
-              ))}
-              {alerts.length === 0 && !disruption ? (
-                <p className="text-[13px] text-white/65">No alerts.</p>
-              ) : null}
-            </div>
-          </section>
+        <section className="flex min-h-0 flex-col">
+          <ScenarioLabel icon={<BellRing className="h-3.5 w-3.5" />} text="Alerts" />
+          <div className="quiet-scroll min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden pr-0.5">
+            {disruption ? (
+              <DisruptionTile disruption={disruption} />
+            ) : (
+              <p className="rounded-xl bg-white/[0.04] px-3 py-2.5 text-[13px] text-white/65 ring-1 ring-white/5">
+                No disruption this shift so far.
+              </p>
+            )}
+            {alerts.map((a) => (
+              <AlertTile key={a.id} alert={a} />
+            ))}
+            {alerts.length === 0 && !disruption ? (
+              <p className="text-[13px] text-white/65">No alerts.</p>
+            ) : null}
+          </div>
+        </section>
 
-          <section className="flex min-h-0 flex-col">
-            <ScenarioLabel icon={<MessageCircleQuestion className="h-3.5 w-3.5" />} text="People moment" />
-            <div className="quiet-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
-              {moment ? (
-                <MomentTile moment={moment} />
-              ) : (
-                <p className="text-[13px] text-white/65">No people moment this shift.</p>
-              )}
-            </div>
-          </section>
-        </div>
+        <section className="flex min-h-0 flex-col">
+          <ScenarioLabel icon={<MessageCircleQuestion className="h-3.5 w-3.5" />} text="People moment" />
+          <div className="quiet-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-0.5">
+            {moment ? (
+              <MomentTile moment={moment} />
+            ) : (
+              <p className="text-[13px] text-white/65">No people moment this shift.</p>
+            )}
+          </div>
+        </section>
       </div>
     </Card>
   );
