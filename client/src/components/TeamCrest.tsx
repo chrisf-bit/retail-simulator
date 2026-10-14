@@ -116,11 +116,7 @@ export function TeamCrest({
       role="img"
       aria-label={`${name} store`}
     >
-      <span
-        className="crest-chip pointer-events-none absolute inset-0 rounded-lg"
-        style={{ ["--crest-glow"]: `${color}59` } as React.CSSProperties}
-        aria-hidden
-      />
+      <span className="crest-chip pointer-events-none absolute inset-0 rounded-lg" aria-hidden />
       <StorefrontMark size={size} color={color} strokeWidth={2} className="relative" />
     </span>
   );

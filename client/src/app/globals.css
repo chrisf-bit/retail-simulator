@@ -166,16 +166,15 @@ textarea {
 
 /*
  * Team-crest backing tile. Transparent by default (dark theme) so the vivid
- * storefront mark renders exactly as before; under light it becomes a dark
- * emblem tile so the mark reads on white cards. Driven by the DOM theme
- * attribute (set pre-paint), not a JS hook, so it never flashes or mismatches.
+ * storefront mark renders exactly as before; under light it becomes a Plumfield
+ * plum emblem tile (the brand token) so the mark reads on white cards and the
+ * colour belongs to the theme. Driven by the DOM theme attribute (set pre-paint),
+ * not a JS hook, so it never flashes or mismatches.
  */
 .crest-chip {
   background-color: transparent;
 }
 :root[data-theme="light"] .crest-chip {
-  background:
-    radial-gradient(125% 125% at 28% 18%, var(--crest-glow, transparent), transparent 62%),
-    #211a2c;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background-color: rgb(var(--brand-600));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
