@@ -699,7 +699,7 @@ function IssuesContextPanel({ issues, issueEffort }: { issues: Issue[]; issueEff
         {issues.slice(0, 3).map((i) => {
           const share = issueEffort[i.id] ?? 0;
           return (
-            <div key={i.id} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5 xl:p-2.5">
+            <div key={i.id} className="rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/5 xl:p-2.5">
               <div className="mb-0.5 flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-start gap-2">
                   <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 xl:h-5 xl:w-5">
@@ -740,7 +740,7 @@ function AlertsPanel({ alerts, disruption }: { alerts: Alert[]; disruption?: Dis
           </div>
         ) : null}
         {alerts.slice(0, 2).map((a) => (
-          <div key={a.id} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5 xl:p-2.5">
+          <div key={a.id} className="rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/5 xl:p-2.5">
             <div className="mb-0.5 flex items-start gap-2">
               <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70 xl:h-5 xl:w-5">
                 <ScenarioIcon name={a.icon} className="h-4 w-4 xl:h-3.5 xl:w-3.5" />
@@ -1359,7 +1359,7 @@ function MomentBlock({
 }) {
   return (
     <div>
-      <div className="mb-3 flex items-start gap-3 rounded-xl bg-white/[0.04] p-4 ring-1 ring-white/10">
+      <div className="mb-3 flex items-start gap-3 rounded-xl bg-white/[0.04] lt-tile p-4 ring-1 ring-white/10">
         <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/15">
           <PersonaAvatar name={moment.persona.name} size={48} />
         </div>
@@ -1845,7 +1845,7 @@ function ResultsPanel({
           </div>
           <div className="grid grid-cols-5 gap-2">
             {METRIC_KEYS.map((k) => (
-              <div key={k} className="rounded-xl bg-white/[0.04] p-2.5 ring-1 ring-white/10">
+              <div key={k} className="rounded-xl bg-white/[0.04] lt-tile p-2.5 ring-1 ring-white/10">
                 <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">{METRIC_SHORT[k]}</div>
                 <div className="mt-1 flex items-baseline justify-between gap-1">
                   <span className="num truncate text-sm font-semibold text-white">{metricDisplayShort(k, team.metrics?.[k] ?? 0)}</span>
@@ -1866,7 +1866,7 @@ function ResultsPanel({
             <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-teal-300">Hidden drivers</div>
             <div className="grid grid-cols-4 gap-3">
               {(Object.keys(HIDDEN_LABELS) as Array<keyof typeof HIDDEN_LABELS>).map((h) => (
-                <div key={h} className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+                <div key={h} className="rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/10">
                   <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">
                     {HIDDEN_LABELS[h]}
                   </div>
@@ -1916,7 +1916,7 @@ function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
             <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Final rank</div>
             <div className="num text-5xl font-semibold">#{rank}</div>
           </div>
-          <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10">
+          <div className="rounded-2xl bg-white/[0.04] lt-tile p-5 ring-1 ring-white/10">
             <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Final score</div>
             <div className="num text-5xl font-semibold text-white">{team.score}</div>
           </div>
@@ -2170,7 +2170,7 @@ function MetricDetailCard({ team, metric }: { team: TeamPublic; metric: MetricKe
   const norm = team.metrics?.[metric] ?? 0;
   const series = team.trend?.[metric] ?? [];
   return (
-    <div className="flex w-[168px] grow basis-[168px] flex-col rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/10">
+    <div className="flex w-[168px] grow basis-[168px] flex-col rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/10">
       <div className="text-[13px] font-medium leading-snug text-white/80">{METRIC_LABELS[metric]}</div>
       <div className="mt-1.5 flex items-baseline justify-between gap-1">
         <span className="num text-lg font-semibold text-white">{metricDisplay(metric, norm)}</span>

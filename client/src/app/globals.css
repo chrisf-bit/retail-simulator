@@ -93,7 +93,7 @@
 
   --page-wash-teal: 0.10;
   --page-wash-brand: 0.10;
-  --page-bg: 238 240 245;
+  --page-bg: 232 235 242;
 }
 
 html,
@@ -148,4 +148,18 @@ textarea {
 .num {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.015em;
+}
+
+/*
+ * Light-mode element definition. On light surfaces the white-alpha overlay that
+ * gives dark tiles their elevation is far too faint to separate a tile from the
+ * white card beneath it, so static display tiles opt in to a recessed cool-grey
+ * fill via `.lt-tile`. This is scoped to [data-theme="light"] ONLY: in dark
+ * there is no matching rule, so dark renders exactly as before (byte-identical).
+ * It sets background-color only (ring/shadow box-shadows untouched) and is never
+ * applied to interactive controls or animated surfaces, so behaviour is unchanged.
+ * These rules sit after @tailwind utilities so they win over the bg-white/* utility.
+ */
+:root[data-theme="light"] .lt-tile {
+  background-color: rgb(231 234 241);
 }

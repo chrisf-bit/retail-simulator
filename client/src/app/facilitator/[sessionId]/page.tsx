@@ -345,7 +345,7 @@ function Leaderboard({ state }: { state: SessionStatePublic }) {
                 key={row.teamId}
                 className={cn(
                   "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
-                  isLead ? "bg-brand-500 text-oncolor" : "bg-white/5",
+                  isLead ? "bg-brand-500 text-oncolor" : "bg-white/5 lt-tile",
                 )}
               >
                 <div className={cn("col-span-2 num text-lg font-semibold", isLead ? "text-oncolor" : "text-white/70")}>
@@ -496,7 +496,7 @@ function ShiftScenarioPanel({ round }: { round: RoundState }) {
             {disruption ? (
               <DisruptionTile disruption={disruption} />
             ) : (
-              <p className="rounded-xl bg-white/[0.04] px-3 py-2.5 text-[13px] text-white/65 ring-1 ring-white/5">
+              <p className="rounded-xl bg-white/[0.04] lt-tile px-3 py-2.5 text-[13px] text-white/65 ring-1 ring-white/5">
                 No disruption this shift so far.
               </p>
             )}
@@ -535,7 +535,7 @@ function ScenarioLabel({ icon, text }: { icon: React.ReactNode; text: string }) 
 
 function IssueTile({ issue }: { issue: Issue }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5">
+    <div className="flex min-w-0 flex-col rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/5">
       <div className="mb-1.5 flex items-start justify-between gap-2">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70">
           <ScenarioIcon name={issue.icon} className="h-4 w-4" />
@@ -552,7 +552,7 @@ function IssueTile({ issue }: { issue: Issue }) {
 
 function AlertTile({ alert }: { alert: Alert }) {
   return (
-    <div className="rounded-xl bg-white/[0.04] p-3 ring-1 ring-white/5">
+    <div className="rounded-xl bg-white/[0.04] lt-tile p-3 ring-1 ring-white/5">
       <div className="flex items-start gap-2">
         <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/70">
           <ScenarioIcon name={alert.icon} className="h-4 w-4" />
@@ -583,7 +583,7 @@ function DisruptionTile({ disruption }: { disruption: DisruptionEvent }) {
 
 function MomentTile({ moment }: { moment: TeamMoment }) {
   return (
-    <div className="rounded-xl bg-white/[0.04] p-3.5 ring-1 ring-white/10">
+    <div className="rounded-xl bg-white/[0.04] lt-tile p-3.5 ring-1 ring-white/10">
       <div className="flex items-start gap-3">
         <div className="shrink-0 overflow-hidden rounded-full ring-1 ring-white/15">
           <PersonaAvatar name={moment.persona.name} size={44} />
@@ -671,7 +671,7 @@ function CoachingCard({
 }) {
   const question = insight?.questions?.[0];
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden rounded-2xl bg-white/5 p-3.5 ring-1 ring-white/10">
+    <div className="flex h-full min-h-0 flex-col gap-2.5 overflow-hidden rounded-2xl bg-white/5 lt-tile p-3.5 ring-1 ring-white/10">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <ConnectionDot status={team.connectionStatus} />
@@ -714,7 +714,7 @@ function CoachingCard({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-1.5">
         {GOAL_KEYS.map((g) => {
           const ms = METRICS_OF_GOAL[g];
           const value = Math.round(ms.reduce((a, m) => a + (team.metrics?.[m] ?? 0), 0) / ms.length);
@@ -724,16 +724,16 @@ function CoachingCard({
             Math.round(ms.reduce((a, m) => a + (team.trend?.[m]?.[i] ?? 0), 0) / ms.length),
           );
           return (
-            <div key={g} className="min-w-0">
+            <div key={g} className="flex min-w-0 flex-col rounded-lg bg-white/5 p-1.5 ring-1 ring-white/10">
               <div className="truncate text-[12px] font-medium uppercase tracking-wide text-white/65">
                 {GOAL_SHORT[g]}
               </div>
               <div className="mt-0.5 flex items-baseline justify-between gap-1">
-                <span className={cn("num font-semibold text-white", dense ? "text-lg" : "text-2xl")}>{value}</span>
+                <span className={cn("num font-semibold text-white", dense ? "text-base" : "text-2xl")}>{value}</span>
                 <Delta value={delta} onDark />
               </div>
               <div className="mt-1">
-                <Sparkline values={series} height={dense ? 14 : 18} onDark baselinePoints={BASELINE_WEEKS} />
+                <Sparkline values={series} height={dense ? 12 : 14} minWidth={28} onDark baselinePoints={BASELINE_WEEKS} />
               </div>
             </div>
           );

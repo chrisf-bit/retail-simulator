@@ -52,7 +52,7 @@ export function PersonaAvatar({
       aria-hidden
     >
       <span
-        className="font-semibold leading-none text-white"
+        className="font-semibold leading-none text-oncolor"
         style={{ fontSize: Math.round(size * 0.38), letterSpacing: "-0.02em" }}
       >
         {initials(name)}

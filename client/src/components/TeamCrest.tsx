@@ -11,6 +11,7 @@
 
 "use client";
 
+import { cn } from "@/components/ui";
 import { useIsDark } from "../lib/theme";
 
 // On-palette accents only (no new hues): magenta, cyan, lime, emerald. Bright
@@ -90,14 +91,40 @@ export function TeamCrest({
   className?: string;
 }) {
   const dark = useIsDark();
-  const color = tone === "lead" ? "#f7f8fa" : tintFor(name, dark);
+  const brightTint = TEAM_TINTS[hash(name) % TEAM_TINTS.length];
+
+  // Dark theme and the brand-filled leader row are unchanged: a bare tinted
+  // storefront stroke, no backing.
+  if (dark || tone === "lead") {
+    const color = tone === "lead" ? "#f7f8fa" : brightTint;
+    return (
+      <StorefrontMark
+        size={size}
+        color={color}
+        strokeWidth={2}
+        className={className}
+        aria-label={`${name} store`}
+      />
+    );
+  }
+
+  // Light theme only: the dark tints washed out on white cards. Sit the vivid
+  // mark on a small dark emblem tile (matching PersonaAvatar) so every crest
+  // reads clearly and the two identity markers feel like one system.
+  const glyph = Math.round(size * 0.72);
   return (
-    <StorefrontMark
-      size={size}
-      color={color}
-      strokeWidth={2}
-      className={className}
+    <div
+      className={cn("relative flex shrink-0 items-center justify-center rounded-lg", className)}
+      style={{
+        width: size,
+        height: size,
+        background: "#211a2c",
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.10)",
+      }}
+      role="img"
       aria-label={`${name} store`}
-    />
+    >
+      <StorefrontMark size={glyph} color={brightTint} strokeWidth={2} />
+    </div>
   );
 }
