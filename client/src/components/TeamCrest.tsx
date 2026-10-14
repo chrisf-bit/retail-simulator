@@ -117,7 +117,7 @@ export function TeamCrest({
       aria-label={`${name} store`}
     >
       <span className="crest-chip pointer-events-none absolute inset-0 rounded-lg" aria-hidden />
-      <StorefrontMark size={size} color={color} strokeWidth={2} className="relative" />
+      <StorefrontMark size={size} color={color} strokeWidth={2} className="crest-mark relative" />
     </span>
   );
 }
