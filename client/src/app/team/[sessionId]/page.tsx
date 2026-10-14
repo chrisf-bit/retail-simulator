@@ -351,7 +351,7 @@ export default function TeamPlayerPage() {
       ) : state.phase === "briefing" ? (
         <BriefingWalkthrough step={state.briefingStep} />
       ) : state.phase === "debrief" || state.phase === "finished" ? (
-        <DebriefPanel team={team} rank={state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0} />
+        <DebriefPanel team={team} rank={state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0} showRank={state.showRank ?? true} />
       ) : state.phase === "round_results" ? (
         <ResultsPanel team={team} state={state} totalRounds={ROUND_COUNT} />
       ) : (
@@ -1790,6 +1790,8 @@ function ResultsPanel({
   totalRounds: number;
 }) {
   const rank = state.leaderboard.find((l) => l.teamId === team.id)?.rank ?? 0;
+  // Facilitator can hide rank from teams (anti-gaming); default visible.
+  const showRank = state.showRank ?? true;
   const shiftN = state.round?.number ?? 0;
   const movement = team.lastMovement;
   const MovementArrow = movement > 0 ? ArrowUp : movement < 0 ? ArrowDown : Minus;
@@ -1808,8 +1810,8 @@ function ResultsPanel({
           <ShiftRibbon current={shiftN} total={totalRounds} size="sm" onDark />
         </div>
 
-        {/* Hero: score movement + rank */}
-        <div className="grid grid-cols-[1fr_auto] items-center gap-6 border-b border-white/10 px-6 py-5">
+        {/* Hero: score movement + rank (rank hidden when the facilitator turns it off) */}
+        <div className={cn("grid items-center gap-6 border-b border-white/10 px-6 py-5", showRank ? "grid-cols-[1fr_auto]" : "grid-cols-1")}>
           <div>
             <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Shift score movement</div>
             <div className="mt-1 flex items-baseline gap-3">
@@ -1832,10 +1834,12 @@ function ResultsPanel({
               <span className="text-sm text-white/65">total {team.score}</span>
             </div>
           </div>
-          <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Rank</div>
-            <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
-          </div>
+          {showRank ? (
+            <div className="flex flex-col items-center rounded-2xl bg-brand-500 px-5 py-2 text-center text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
+              <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Rank</div>
+              <div className="num text-3xl font-semibold leading-tight">#{rank}</div>
+            </div>
+          ) : null}
         </div>
 
         {/* KPIs */}
@@ -1905,17 +1909,19 @@ function ResultsPanel({
   );
 }
 
-function DebriefPanel({ team, rank }: { team: TeamPublic; rank: number }) {
+function DebriefPanel({ team, rank, showRank }: { team: TeamPublic; rank: number; showRank: boolean }) {
   return (
     <div className="flex flex-1 items-center justify-center p-6">
       <DataCard className="max-w-xl p-10 text-center">
         <h2 className="text-3xl font-semibold tracking-tighter text-white">Session complete</h2>
         <p className="mt-2 text-sm text-white/65">Thanks, {team.name}. Your facilitator will lead the debrief.</p>
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-brand-500 p-5 text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
-            <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Final rank</div>
-            <div className="num text-5xl font-semibold">#{rank}</div>
-          </div>
+        <div className={cn("mt-6 grid gap-3", showRank ? "grid-cols-2" : "grid-cols-1")}>
+          {showRank ? (
+            <div className="rounded-2xl bg-brand-500 p-5 text-oncolor shadow-[0_0_22px_-6px_rgba(208,51,224,0.9)]">
+              <div className="text-[12px] font-medium uppercase tracking-wider text-oncolor/80">Final rank</div>
+              <div className="num text-5xl font-semibold">#{rank}</div>
+            </div>
+          ) : null}
           <div className="rounded-2xl bg-white/[0.04] lt-tile p-5 ring-1 ring-white/10">
             <div className="text-[12px] font-medium uppercase tracking-wider text-teal-300">Final score</div>
             <div className="num text-5xl font-semibold text-white">{team.score}</div>

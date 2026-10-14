@@ -284,6 +284,11 @@ export interface SessionStatePublic {
   // teams render the animated demo for this step. Only meaningful while
   // phase === "briefing".
   briefingStep: number;
+  // Whether teams may see their rank/position. Facilitator-controlled, session
+  // wide. Off hides rank on the team screens so teams cannot compare positions
+  // and coordinate strategy between laptops; the facilitator view is unaffected.
+  // Defaults to true.
+  showRank: boolean;
   serverNow: number;
 }
 
@@ -296,6 +301,7 @@ export type ClientToServer = {
   "facilitator:start_round": { sessionId: string };
   "facilitator:end_round": { sessionId: string };
   "facilitator:briefing_step": { sessionId: string; step: number };
+  "facilitator:set_show_rank": { sessionId: string; show: boolean };
   "facilitator:pause": { sessionId: string };
   "facilitator:next_phase": { sessionId: string };
   "team:submit_decision": {

@@ -255,6 +255,7 @@ export interface PersistedSession {
   baselineTrend: TrendSeries;
   round?: RoundState;
   disruptionScheduledAt?: number;
+  showRank?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -276,6 +277,10 @@ export class Session {
   // Facilitator-driven walkthrough step during the briefing phase. Ephemeral
   // (not persisted): a mid-briefing restart simply resets the demo to step 0.
   briefingStep = 0;
+  // Whether teams may see their rank. Facilitator-controlled; persisted so the
+  // choice survives a restart. Off hides rank on the team screens (anti-gaming);
+  // the facilitator's own views are unaffected.
+  showRank = true;
   createdAt = Date.now();
   updatedAt = Date.now();
   private lastBroadcastStatuses?: Map<string, ConnectionStatus>;
@@ -323,6 +328,7 @@ export class Session {
     session.baselineTrend = data.baselineTrend;
     session.round = data.round;
     session.disruptionScheduledAt = data.disruptionScheduledAt;
+    session.showRank = data.showRank ?? true;
     session.createdAt = data.createdAt;
     session.updatedAt = data.updatedAt;
     session.rescheduleTimers();
@@ -345,6 +351,7 @@ export class Session {
       baselineTrend: this.baselineTrend,
       round: this.round,
       disruptionScheduledAt: this.disruptionScheduledAt,
+      showRank: this.showRank,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -496,6 +503,13 @@ export class Session {
     const clamped = Math.max(0, Math.min(BRIEFING_STEP_COUNT - 1, Math.floor(step)));
     if (clamped === this.briefingStep) return;
     this.briefingStep = clamped;
+    this.onUpdate();
+  }
+
+  setShowRank(show: boolean) {
+    const next = !!show;
+    if (next === this.showRank) return;
+    this.showRank = next;
     this.onUpdate();
   }
 
@@ -718,6 +732,7 @@ export class Session {
       prompts: this.prompts,
       insights,
       briefingStep: this.briefingStep,
+      showRank: this.showRank,
       serverNow: Date.now(),
     };
   }

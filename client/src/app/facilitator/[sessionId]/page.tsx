@@ -89,18 +89,6 @@ export default function FacilitatorPage() {
   const [notAuthorised, setNotAuthorised] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
 
-  // Facilitator preference: show or hide the rank badge on the team cards.
-  // Some facilitators run the room developmentally and prefer to play down the
-  // competition. Remembered per device.
-  const [showRank, setShowRank] = useState(true);
-  useEffect(() => {
-    const v = typeof window !== "undefined" ? window.localStorage.getItem("facilitator:showRank") : null;
-    if (v !== null) setShowRank(v === "1");
-  }, []);
-  useEffect(() => {
-    if (typeof window !== "undefined") window.localStorage.setItem("facilitator:showRank", showRank ? "1" : "0");
-  }, [showRank]);
-
   const token = useMemo(() => {
     if (typeof window === "undefined") return null;
     const fromUrl = searchParams?.get("t");
@@ -173,6 +161,10 @@ export default function FacilitatorPage() {
   // mirrors exactly what the teams are facing this shift. It flips back to the
   // coaching cards the moment the shift resolves.
   const liveShift = state.round?.phase === "active" || state.round?.phase === "disrupted";
+  // Rank visibility is session state (server-held), so the choice reaches the
+  // team laptops - hiding rank there stops teams comparing positions and gaming
+  // the game. The facilitator's own views always show rank.
+  const showRank = state.showRank ?? true;
   const reissue = (teamId: string) => socket.emit("facilitator:reissue_team_token", { sessionId, teamId });
   const recoveryTeamName = recovery ? state.teams.find((t) => t.id === recovery.teamId)?.name ?? "Team" : "";
 
@@ -185,7 +177,7 @@ export default function FacilitatorPage() {
         state={state}
         timeLeftMs={timeLeft}
         showRank={showRank}
-        onToggleRank={() => setShowRank((v) => !v)}
+        onToggleRank={() => socket.emit("facilitator:set_show_rank", { sessionId, show: !showRank })}
       />
 
       <div className="shrink-0 px-5 pt-5">
@@ -217,7 +209,7 @@ export default function FacilitatorPage() {
       <main className="grid grid-cols-1 gap-5 p-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_340px]">
         {state.phase === "lobby" ? (
           <div className="xl:col-span-2">
-            <Leaderboard state={state} />
+            <Leaderboard state={state} showRank />
           </div>
         ) : (
           <>
@@ -225,11 +217,11 @@ export default function FacilitatorPage() {
               {liveShift && state.round ? (
                 <ShiftScenarioPanel round={state.round} />
               ) : (
-                <CoachingGrid state={state} reveal={revealPhase} showRank={showRank} onReissue={reissue} />
+                <CoachingGrid state={state} reveal={revealPhase} showRank onReissue={reissue} />
               )}
             </div>
             <div className="flex min-h-0 flex-col xl:min-h-0">
-              <Leaderboard state={state} />
+              <Leaderboard state={state} showRank />
             </div>
           </>
         )}
@@ -296,7 +288,7 @@ function FacilitatorHeader({
           type="button"
           onClick={onToggleRank}
           aria-pressed={showRank}
-          title={showRank ? "Hide team rank on the coaching cards" : "Show team rank on the coaching cards"}
+          title={showRank ? "Rank is visible to teams. Click to hide it on the team screens (stops cross-team gaming)." : "Rank is hidden from teams. Click to show it on the team screens."}
           className={cn(
             "press flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium ring-1 transition-colors",
             showRank
@@ -314,58 +306,71 @@ function FacilitatorHeader({
   );
 }
 
-function Leaderboard({ state }: { state: SessionStatePublic }) {
+function Leaderboard({ state, showRank }: { state: SessionStatePublic; showRank: boolean }) {
   if (state.phase === "lobby") {
     return <JoinProgress state={state} />;
   }
 
+  // Rank off: the facilitator is running developmentally and wants to play down
+  // the competition, so this becomes a plain team list - no rank column, no
+  // leader highlight, sorted by name so the order itself does not imply a
+  // ranking. Scores and movement stay (they are progress, not a scoreboard).
+  const teamCols = showRank ? "col-span-5" : "col-span-7";
+  const rows = showRank
+    ? state.leaderboard
+    : [...state.leaderboard].sort((a, b) => a.name.localeCompare(b.name));
+  const topScore = state.leaderboard[0]?.score ?? 0;
+  const secondScore = state.leaderboard[1]?.score ?? 0;
+  const hasClearLeader = showRank && state.leaderboard.length > 1 && topScore > secondScore;
+
   return (
     <Card tone="data" className="flex min-h-0 flex-1 flex-col p-4">
-      <SectionTitle tone="data" icon={<Trophy className="h-4 w-4" />} title="Leaderboard" />
+      <SectionTitle
+        tone="data"
+        icon={showRank ? <Trophy className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+        title={showRank ? "Leaderboard" : "Teams"}
+      />
       <div className="grid grid-cols-12 gap-2 px-2 pb-2 text-[12px] font-medium uppercase tracking-wider text-white/65">
-        <div className="col-span-2">Rank</div>
-        <div className="col-span-5">Team</div>
+        {showRank ? <div className="col-span-2">Rank</div> : null}
+        <div className={teamCols}>Team</div>
         <div className="col-span-2 text-right">Score</div>
         <div className="col-span-3 text-right">Mv</div>
       </div>
       <div className="quiet-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden">
-        {(() => {
+        {rows.map((row, idx) => {
           // Only flag a leader when their score is strictly greater than the
           // next team's. Otherwise everyone at the top is tied and nobody
           // should be highlighted as 'Lead'.
-          const topScore = state.leaderboard[0]?.score ?? 0;
-          const secondScore = state.leaderboard[1]?.score ?? 0;
-          const hasClearLeader = state.leaderboard.length > 1 && topScore > secondScore;
-          return state.leaderboard.map((row, idx) => {
-            const isLead = hasClearLeader && idx === 0;
-            const team = state.teams.find((t) => t.id === row.teamId);
-            const status = team?.connectionStatus ?? "connected";
-            return (
-              <div
-                key={row.teamId}
-                className={cn(
-                  "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
-                  isLead ? "bg-brand-500 text-oncolor" : "bg-white/5 lt-tile",
-                )}
-              >
+          const isLead = hasClearLeader && idx === 0;
+          const team = state.teams.find((t) => t.id === row.teamId);
+          const status = team?.connectionStatus ?? "connected";
+          return (
+            <div
+              key={row.teamId}
+              className={cn(
+                "grid grid-cols-12 items-center gap-2 rounded-xl px-3 py-2.5 transition-colors",
+                isLead ? "bg-brand-500 text-oncolor" : "bg-white/5 lt-tile",
+              )}
+            >
+              {showRank ? (
                 <div className={cn("col-span-2 num text-lg font-semibold", isLead ? "text-oncolor" : "text-white/70")}>
                   #{row.rank}
                 </div>
-                <div className="col-span-5 flex min-w-0 items-center gap-2">
-                  <ConnectionDot status={status} />
-                  <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
-                  <span className={cn("truncate text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
-                </div>
-                <div className={cn("col-span-2 text-right num text-lg font-semibold", isLead ? "text-oncolor" : "text-white")}>
-                  {row.score}
-                </div>
-                <div className="col-span-3 flex justify-end">
-                  <MovementPill value={row.movement} />
-                </div>
+              ) : null}
+              <div className={cn(teamCols, "flex min-w-0 items-center gap-2")}>
+                <ConnectionDot status={status} />
+                <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
+                <span className={cn("truncate text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
               </div>
-            );
-          });
-        })()}
+              <div className={cn("col-span-2 text-right num text-lg font-semibold", isLead ? "text-oncolor" : "text-white")}>
+                {row.score}
+              </div>
+              <div className="col-span-3 flex justify-end">
+                <MovementPill value={row.movement} />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </Card>
   );

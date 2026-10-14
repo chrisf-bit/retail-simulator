@@ -275,6 +275,9 @@ io.on("connection", (socket) => {
   on("facilitator:briefing_step", ({ sessionId, step }) =>
     requireFacilitator(socket, sessionId)?.setBriefingStep(step),
   );
+  on("facilitator:set_show_rank", ({ sessionId, show }) =>
+    requireFacilitator(socket, sessionId)?.setShowRank(!!show),
+  );
   on("facilitator:next_phase", ({ sessionId }) => requireFacilitator(socket, sessionId)?.nextPhase());
 
   // Break-glass: mint a fresh token for a team that has lost its device state,
