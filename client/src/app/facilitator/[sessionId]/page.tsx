@@ -47,6 +47,7 @@ import type {
 } from "@sim/shared";
 import { BASELINE_WEEKS, BRIEFING_STEP_COUNT, GOAL_KEYS, GOAL_SHORT, HIDDEN_INVERTED, HIDDEN_LABELS, METRICS_OF_GOAL, ROUND_COUNT } from "@sim/shared";
 import { Button, Card, cn, ConnectionDot, Delta, PhaseGuide, Pill, SectionTitle, ShiftRibbon, Sparkline, ThemeToggle } from "@/components/ui";
+import qrcode from "qrcode-generator";
 import { ScenarioIcon } from "@/lib/scenarioIcons";
 import { TeamCrest } from "@/components/TeamCrest";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
@@ -221,7 +222,7 @@ export default function FacilitatorPage() {
               )}
             </div>
             <div className="flex min-h-0 flex-col xl:min-h-0">
-              <Leaderboard state={state} showRank />
+              <Leaderboard state={state} showRank onReissue={reissue} />
             </div>
           </>
         )}
@@ -306,7 +307,15 @@ function FacilitatorHeader({
   );
 }
 
-function Leaderboard({ state, showRank }: { state: SessionStatePublic; showRank: boolean }) {
+function Leaderboard({
+  state,
+  showRank,
+  onReissue,
+}: {
+  state: SessionStatePublic;
+  showRank: boolean;
+  onReissue?: (teamId: string) => void;
+}) {
   if (state.phase === "lobby") {
     return <JoinProgress state={state} />;
   }
@@ -361,6 +370,16 @@ function Leaderboard({ state, showRank }: { state: SessionStatePublic; showRank:
                 <ConnectionDot status={status} />
                 <TeamCrest name={row.name} size={22} tone={isLead ? "lead" : "light"} />
                 <span className={cn("truncate text-base font-semibold", isLead ? "text-oncolor" : "text-white")}>{row.name}</span>
+                {onReissue ? (
+                  <button
+                    type="button"
+                    onClick={() => onReissue(row.teamId)}
+                    title="Recover this team - show a rejoin QR (works mid-shift)"
+                    className="press ml-auto shrink-0 opacity-50 transition-opacity hover:opacity-100"
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
               </div>
               <div className={cn("col-span-2 text-right num text-lg font-semibold", isLead ? "text-oncolor" : "text-white")}>
                 {row.score}
@@ -899,6 +918,43 @@ function ControlBar({
 // Break-glass recovery: shows the one-time recovery link the server minted for a
 // team that lost its device state. The facilitator sends the link to the team;
 // opening it restores their place. Read-only, copy to clipboard, no codes typed.
+// Offline, self-contained QR of the recovery link. Rendered as inline SVG from a
+// locally computed matrix - no network request and no external image, so it works
+// with no internet and does not trip the client CSP. White quiet-zone background
+// + black modules for reliable scanning in either theme.
+function QrCode({ value, size = 188 }: { value: string; size?: number }) {
+  const { count, darks } = useMemo(() => {
+    const qr = qrcode(0, "M");
+    qr.addData(value);
+    qr.make();
+    const n = qr.getModuleCount();
+    const d: Array<[number, number]> = [];
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) d.push([r, c]);
+      }
+    }
+    return { count: n, darks: d };
+  }, [value]);
+  const quiet = 4;
+  const total = count + quiet * 2;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${total} ${total}`}
+      shapeRendering="crispEdges"
+      role="img"
+      aria-label="Recovery link QR code"
+    >
+      <rect width={total} height={total} fill="#ffffff" />
+      {darks.map(([r, c], i) => (
+        <rect key={i} x={c + quiet} y={r + quiet} width={1} height={1} fill="#000000" />
+      ))}
+    </svg>
+  );
+}
+
 function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: string; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -952,6 +1008,12 @@ function RecoveryModal({ teamName, url, onClose }: { teamName: string; url: stri
           </button>
         </div>
         <div className="px-6 py-5">
+          <div className="mb-4 flex flex-col items-center gap-2">
+            <div className="rounded-xl bg-white p-3 ring-1 ring-black/5">
+              <QrCode value={url} />
+            </div>
+            <p className="text-[12px] text-white/65">Point the team&apos;s camera at this to rejoin - no typing.</p>
+          </div>
           <div className="flex items-center gap-2 rounded-xl bg-black/30 p-2 ring-1 ring-white/10">
             <input
               readOnly
