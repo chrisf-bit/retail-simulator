@@ -2,10 +2,13 @@ import { nanoid } from "nanoid";
 import type {
   ConfidenceLevel,
   FacilitatorScript,
+  HiddenDriverKey,
   LeadershipStyle,
   MetricKey,
   MomentArchetype,
   Priority,
+  ResourceAllocation,
+  RoundHistoryEntry,
   SessionInsights,
   SessionPattern,
   SessionPhase,
@@ -15,6 +18,7 @@ import type {
 import {
   ARCHETYPE_LABELS,
   CONFIDENCE_LABELS,
+  HIDDEN_LABELS,
   LEADERSHIP_LABELS,
   METRIC_KEYS,
   METRIC_LABELS,
@@ -141,6 +145,435 @@ function significantMoveQuestion(
     teamId,
     roundNumber,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Per-team coaching question: a rotating set of "lenses"
+// ---------------------------------------------------------------------------
+// The single "Ask them" question on each coaching card used to be metric-driven
+// every shift, so by mid-session it read as the same question with a different
+// metric name. Instead we offer several distinct question CONSTRUCTS - metric
+// move, where they focused, how they led, how they staked it, how they handled
+// the person, how they split resource, a hidden-driver trade-off, their arc so
+// far, and a counterfactual - each grounded in what that team actually did.
+//
+// Selection is relevance-weighted (the most notable facet of the shift wins) but
+// guarded so it never repeats the construct the team heard last shift. The net
+// effect: a different SHAPE of question each shift, always specific to the team.
+// Pure questions only - no lead-ins and nothing that reveals the scoring logic.
+
+interface LensCtx {
+  teamId: string;
+  roundNumber: number;
+  // History up to and including the shift being asked about. latest = last entry.
+  history: RoundHistoryEntry[];
+}
+
+interface Lens {
+  id: string;
+  // Material-and-importance score for this shift, or null if the lens has nothing
+  // to say (e.g. no people moment, or no driver tension). Higher wins.
+  relevance: (c: LensCtx) => number | null;
+  question: (c: LensCtx) => string;
+}
+
+function latestOf(c: LensCtx): RoundHistoryEntry {
+  return c.history[c.history.length - 1];
+}
+function priorOf(c: LensCtx): RoundHistoryEntry | undefined {
+  return c.history[c.history.length - 2];
+}
+
+function heaviestAllocation(a: ResourceAllocation): { where: string; starved: string; pct: number } {
+  const entries: Array<[string, number]> = [
+    ["the shop floor", a.shop_floor],
+    ["back office processes", a.backroom],
+    ["customer service", a.customer_service],
+    ["problem resolution", a.problem_resolution],
+  ];
+  entries.sort((x, y) => y[1] - x[1]);
+  return { where: entries[0][0], starved: entries[entries.length - 1][0], pct: entries[0][1] };
+}
+
+const HIDDEN_GOOD_UP: Record<HiddenDriverKey, boolean> = {
+  trust: true,
+  capability: true,
+  leadership_consistency: true,
+  safety_risk: false, // up is bad
+};
+
+// Notable improvement / worsening among the hidden drivers this shift.
+function hiddenTension(hd: Partial<Record<HiddenDriverKey, number>>): { gain?: HiddenDriverKey; cost?: HiddenDriverKey } {
+  let gain: { k: HiddenDriverKey; m: number } | undefined;
+  let cost: { k: HiddenDriverKey; m: number } | undefined;
+  for (const k of Object.keys(HIDDEN_GOOD_UP) as HiddenDriverKey[]) {
+    const d = hd[k] ?? 0;
+    if (Math.abs(d) < 4) continue;
+    const improved = HIDDEN_GOOD_UP[k] ? d > 0 : d < 0;
+    const mag = Math.abs(d);
+    if (improved) {
+      if (!gain || mag > gain.m) gain = { k, m: mag };
+    } else {
+      if (!cost || mag > cost.m) cost = { k, m: mag };
+    }
+  }
+  return { gain: gain?.k, cost: cost?.k };
+}
+
+const LENSES: Lens[] = [
+  {
+    id: "metric",
+    relevance: (c) => {
+      const d = latestOf(c).metricDelta;
+      const mag = Math.max(0, ...METRIC_KEYS.map((k) => Math.abs(d[k] ?? 0)));
+      // Capped so a big swing competes with, but does not always beat, the
+      // decision-based lenses - otherwise we drift back to metrics every shift.
+      return Math.max(1, Math.min(6, mag));
+    },
+    question: (c) => significantMoveQuestion(latestOf(c).metricDelta, c.teamId, c.roundNumber),
+  },
+  {
+    id: "priority",
+    relevance: (c) => {
+      const cur = latestOf(c).decision.priority;
+      const prev = priorOf(c)?.decision.priority;
+      if (prev && prev !== cur) return 7;
+      const all = c.history.map((h) => h.decision.priority);
+      if (c.history.length >= 3 && all.every((p) => p === cur)) return 6;
+      return 3;
+    },
+    question: (c) => {
+      const cur = latestOf(c).decision.priority;
+      const prev = priorOf(c)?.decision.priority;
+      if (prev && prev !== cur) {
+        return pickForRound(
+          [
+            `You moved your priority from ${PRIORITY_LABELS[prev]} to ${PRIORITY_LABELS[cur]} this shift. What changed your read?`,
+            `Last shift it was ${PRIORITY_LABELS[prev]}; this shift ${PRIORITY_LABELS[cur]}. What told you to switch?`,
+            `You let go of ${PRIORITY_LABELS[prev]} to reach for ${PRIORITY_LABELS[cur]}. What made that the right trade this time?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      const all = c.history.map((h) => h.decision.priority);
+      if (c.history.length >= 3 && all.every((p) => p === cur)) {
+        return pickForRound(
+          [
+            `You have reached for ${PRIORITY_LABELS[cur]} every shift so far. What keeps pulling you there first?`,
+            `${PRIORITY_LABELS[cur]} has been your opening move all session. When would it be wrong?`,
+            `Your priority hasn't changed once - always ${PRIORITY_LABELS[cur]}. Is that conviction, or a blind spot?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `You led with ${PRIORITY_LABELS[cur]} this shift. What made it the first thing you reached for?`,
+          `Of everything competing for attention, ${PRIORITY_LABELS[cur]} won this shift. What ruled the others out?`,
+          `You put ${PRIORITY_LABELS[cur]} first. What were you prepared to let slide to do it?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "leadership",
+    relevance: (c) => {
+      const cur = latestOf(c).decision.leadership;
+      const prev = priorOf(c)?.decision.leadership;
+      if (prev && prev !== cur) return 7;
+      const all = c.history.map((h) => h.decision.leadership);
+      if (c.history.length >= 3 && all.every((s) => s === cur)) return 6;
+      return 3;
+    },
+    question: (c) => {
+      const cur = latestOf(c).decision.leadership;
+      const prev = priorOf(c)?.decision.leadership;
+      if (prev && prev !== cur) {
+        return pickForRound(
+          [
+            `You shifted from ${LEADERSHIP_LABELS[prev].toLowerCase()} to ${LEADERSHIP_LABELS[cur].toLowerCase()} leadership this shift. What pulled that out of you?`,
+            `Your style changed this shift - ${LEADERSHIP_LABELS[prev].toLowerCase()} to ${LEADERSHIP_LABELS[cur].toLowerCase()}. What was the team reading from you?`,
+            `You led ${LEADERSHIP_LABELS[cur].toLowerCase()} this shift where you were ${LEADERSHIP_LABELS[prev].toLowerCase()} before. Deliberate, or did the shift force it?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      const all = c.history.map((h) => h.decision.leadership);
+      if (c.history.length >= 3 && all.every((s) => s === cur)) {
+        return pickForRound(
+          [
+            `You have led ${LEADERSHIP_LABELS[cur].toLowerCase()} every shift. What would a different style have risked?`,
+            `${LEADERSHIP_LABELS[cur]} has been your one gear all session. Where might it be costing you?`,
+            `Your leadership style hasn't moved. What would it take for you to lead differently?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `You led ${LEADERSHIP_LABELS[cur].toLowerCase()} this shift. What did you want the team to feel from that?`,
+          `What were you hoping a ${LEADERSHIP_LABELS[cur].toLowerCase()} stance would get from the team this shift?`,
+          `You chose ${LEADERSHIP_LABELS[cur].toLowerCase()} leadership. What would the opposite have looked like here?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "confidence",
+    relevance: (c) => {
+      const cur = latestOf(c).decision.confidence;
+      const changed = priorOf(c) && priorOf(c)!.decision.confidence !== cur;
+      const strong = cur === "confident" || cur === "cautious";
+      if (strong) return changed ? 7 : 5;
+      return changed ? 4 : 2;
+    },
+    question: (c) => {
+      const cur = latestOf(c).decision.confidence;
+      if (cur === "confident") {
+        return pickForRound(
+          [
+            `You pressed confident this shift. What told you it was one to lean into?`,
+            `You backed yourself hard this shift. What were you so sure the shift was asking for?`,
+            `Confident was a big swing to take. What would have had to be true for it to be the wrong call?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      if (cur === "cautious") {
+        return pickForRound(
+          [
+            `You played cautious this shift. What were you protecting?`,
+            `You pulled your stake in this shift. What was telling you to hold back?`,
+            `Cautious keeps the downside small but caps the upside too. What made that the trade you wanted?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `You played it measured this shift. A deliberate read, or the safe default?`,
+          `You stayed in the middle on confidence. What would have pushed you to lean one way?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "people",
+    relevance: (c) => {
+      const l = latestOf(c);
+      if (!l.momentPersonaName) return null;
+      return l.momentArchetype ? 5 : 8; // a skipped moment is the louder signal
+    },
+    question: (c) => {
+      const l = latestOf(c);
+      const who = l.momentPersonaName ?? "your direct report";
+      if (!l.momentArchetype) {
+        return pickForRound(
+          [
+            `You left ${who}'s moment unanswered this shift. What does a silence like that land as for them?`,
+            `${who} came to you and the moment went by without a response. What got in the way?`,
+            `You didn't take up ${who}'s situation. What would picking it up have cost you this shift?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `With ${who}, you took a ${ARCHETYPE_LABELS[l.momentArchetype].toLowerCase()} stance. What might a different approach have opened up?`,
+          `How do you think ${who} walked away feeling after the way you handled it?`,
+          `You answered ${who} ${ARCHETYPE_LABELS[l.momentArchetype].toLowerCase()}ly. What did you read in them that pointed you there?`,
+          `If ${who} brought you the same thing next week, would you handle it the same way?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "allocation",
+    relevance: (c) => {
+      const d = latestOf(c).decision;
+      const { pct } = heaviestAllocation(d.allocation);
+      const top = topEffortShare(d.issueEffort);
+      if (pct >= 55) return 6;
+      if (top === 0) return 5;
+      if (top > 0 && top < 40) return 6;
+      if (pct <= 30) return 4; // evenly spread
+      return 3;
+    },
+    question: (c) => {
+      const d = latestOf(c).decision;
+      const { where, starved, pct } = heaviestAllocation(d.allocation);
+      const top = topEffortShare(d.issueEffort);
+      if (pct >= 55) {
+        return pickForRound(
+          [
+            `You put ${pct}% of your people into ${where}. What did ${starved} quietly lose while you did?`,
+            `${where} got the lion's share this shift (${pct}%). What were you betting that focus would buy you?`,
+            `You loaded ${where} heavily. What would have had to happen for that to leave you exposed?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      if (top === 0) {
+        return pickForRound(
+          [
+            `You put no effort onto the active issues this shift. Where did your attention go instead?`,
+            `The issues went untouched this shift. Was that a choice, or did they slip past you?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      if (top > 0 && top < 40) {
+        return pickForRound(
+          [
+            `You spread your effort thinly across all the issues this shift. Concentrating, or hedging?`,
+            `No single issue got the bulk of your effort. What would picking one to own have changed?`,
+            `You shared effort evenly across the issues. What did that cost the one that mattered most?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `Your resource split was fairly even this shift. A read that nothing needed more, or playing safe?`,
+          `You kept your people balanced across the store. What would have made you commit harder somewhere?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "hidden",
+    relevance: (c) => {
+      const { gain, cost } = hiddenTension(latestOf(c).hiddenDelta);
+      return gain && cost ? 8 : null;
+    },
+    question: (c) => {
+      const { gain, cost } = hiddenTension(latestOf(c).hiddenDelta);
+      const g = gain ? HIDDEN_LABELS[gain] : "one driver";
+      const k = cost ? HIDDEN_LABELS[cost] : "another";
+      return pickForRound(
+        [
+          `${g} improved this shift, but ${k.toLowerCase()} moved the wrong way with it. Which were you willing to trade?`,
+          `You gained on ${g.toLowerCase()} and gave ground on ${k.toLowerCase()} this shift. Was that trade a choice or a surprise?`,
+          `${g} and ${k.toLowerCase()} pulled against each other this shift. Which one do you most need to hold next?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "trajectory",
+    relevance: (c) => {
+      if (c.history.length < 3) return null;
+      const recent = c.history.slice(-3).map((h) => h.roundScore);
+      const rising = recent[2] > 0 && recent[2] >= recent[1];
+      const slipping = recent[2] < 0;
+      return rising || slipping ? 6 : 3;
+    },
+    question: (c) => {
+      const recent = c.history.slice(-3).map((h) => h.roundScore);
+      const rising = recent[2] > 0 && recent[2] >= recent[1];
+      const slipping = recent[2] < 0;
+      if (rising) {
+        return pickForRound(
+          [
+            `Your last few shifts have built on each other. What's the through-line in how you've been leading?`,
+            `You've been climbing. If you had to name the habit that's working, what is it?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      if (slipping) {
+        return pickForRound(
+          [
+            `The last shift went backwards for you. What do you think started the slide?`,
+            `Your momentum turned this shift. What were you doing earlier that you've stopped doing?`,
+          ],
+          c.teamId,
+          c.roundNumber,
+        );
+      }
+      return pickForRound(
+        [
+          `Your results have been fairly flat across the last few shifts. What would it take to break the plateau?`,
+          `You've held roughly level for a few shifts now. Is that stability, or a stall?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      );
+    },
+  },
+  {
+    id: "counterfactual",
+    relevance: () => 2, // always available, low priority - the fallback shape
+    question: (c) =>
+      pickForRound(
+        [
+          `What did you choose not to do this shift, and why?`,
+          `If you could replay only this shift, what's the single call you'd change?`,
+          `What will you be watching for at the start of the next shift because of this one?`,
+          `What's the one thing you nearly did this shift but held back from?`,
+        ],
+        c.teamId,
+        c.roundNumber,
+      ),
+  },
+];
+
+const LENS_BY_ID = new Map(LENSES.map((l) => [l.id, l]));
+
+// Pick the lens for a shift: highest relevance wins, excluding the construct used
+// last shift so the SHAPE of the question always changes. Ties broken by a
+// team+round hash so it stays varied and deterministic.
+function selectLens(c: LensCtx, excludeId?: string): Lens {
+  const scored = LENSES.map((l) => ({ l, r: l.relevance(c) }))
+    .filter((x): x is { l: Lens; r: number } => x.r !== null)
+    .filter((x) => x.l.id !== excludeId);
+  const pool = scored.length > 0 ? scored : LENSES.map((l) => ({ l, r: l.relevance(c) ?? 0 }));
+  const maxR = Math.max(...pool.map((x) => x.r));
+  const top = pool.filter((x) => Math.abs(x.r - maxR) < 0.0001);
+  return pick(top, `${c.teamId}:${c.roundNumber}:lens`).l;
+}
+
+// The per-team coaching question for a multi-round shift. Derives the construct
+// used last shift (from the trimmed history) and excludes it, so no team hears
+// the same shape of question twice running.
+function coachingQuestion(team: TeamFull, roundNumber: number): string {
+  const history = team.history;
+  const ctx: LensCtx = { teamId: team.id, roundNumber, history };
+  let lastId: string | undefined;
+  if (history.length >= 2) {
+    const prevHistory = history.slice(0, -1);
+    const prevCtx: LensCtx = {
+      teamId: team.id,
+      roundNumber: prevHistory[prevHistory.length - 1].round,
+      history: prevHistory,
+    };
+    lastId = selectLens(prevCtx).id;
+  }
+  const lens = selectLens(ctx, lastId);
+  return lens.question(ctx);
 }
 
 function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
@@ -307,7 +740,7 @@ function teamInsight(team: TeamFull, roundNumber: number): TeamInsight {
     teamId: team.id,
     teamName: team.name,
     observations: observations.slice(0, 3),
-    questions: [significantMoveQuestion(latest.metricDelta, team.id, roundNumber)],
+    questions: [coachingQuestion(team, roundNumber)],
     strengthNote: team.strength,
     riskNote: team.risk,
   };
@@ -563,11 +996,19 @@ function roundResultsScript(roundNumber: number, teams: TeamFull[]): Facilitator
     }
   }
 
+  // A long, varied closer pool indexed by shift, so the room-level wrap-up does
+  // not cycle back on itself over a session. Mixed constructs on purpose.
   const closers = [
     "What surprised you most about this shift?",
     "Where did you feel the pressure bite hardest?",
-    "If you could replay this shift, what would you do differently?",
     "Which single decision do you think moved the needle most?",
+    "What did your team argue about before you committed?",
+    "If another team had run your shift, what would they have done differently?",
+    "What did you not have time to do that you wish you had?",
+    "Where did instinct take over from the plan this shift?",
+    "What would you tell yourself at the start of this shift if you could go back?",
+    "Which call are you least sure about, now that you have seen the result?",
+    "What will you carry into the next shift from this one?",
   ];
   questions.push(closers[(roundNumber - 1) % closers.length]);
 
