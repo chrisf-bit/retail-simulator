@@ -1,5 +1,8 @@
 import http from "node:http";
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import express from "express";
 import cors from "cors";
 import { Server as IOServer, type Socket } from "socket.io";
@@ -107,6 +110,32 @@ app.get("/api/sessions/:sessionId/report.html", (req, res) => {
   );
   const html = generateReport(session);
   res.type("text/html").send(html);
+});
+
+// Sales demo: a self-contained standalone HTML preview of the simulation, served
+// from our own domain so the link carries no third-party host or branding.
+// Loaded once at boot; public and read-only. Inline HTML/CSS/JS + a data-URI
+// image only - no scripts or assets fetched from anywhere, so the CSP below
+// renders it while still blocking all external access.
+let demoHtml: string | null = null;
+try {
+  const here = dirname(fileURLToPath(import.meta.url)); // server/src
+  demoHtml = readFileSync(join(here, "../../demo/ncp-preview.html"), "utf8");
+  console.log("[demo] serving sales preview at GET /demo");
+} catch {
+  demoHtml = null;
+  console.warn("[demo] demo/ncp-preview.html not found - /demo disabled");
+}
+app.get("/demo", (_req, res) => {
+  if (!demoHtml) {
+    res.status(404).type("text/plain").send("Not found.");
+    return;
+  }
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'",
+  );
+  res.type("text/html").send(demoHtml);
 });
 
 const server = http.createServer(app);
