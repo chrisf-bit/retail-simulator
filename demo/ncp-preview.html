@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plumfield Leadership Simulation - NCP preview</title>
+<style>
+  :root{
+    --bg:#0b0a12; --data:#16121f; --console:#0d0a15; --decide:#1e1428; --surface2:#1b1526; --inset:#140d1b;
+    --line:rgba(255,255,255,.1); --line2:rgba(255,255,255,.06);
+    --ink:#f5f6f8; --muted:rgba(255,255,255,.65); --faint:rgba(255,255,255,.44);
+    --brand:#d033e0; --brand6:#b31cc4; --brandL:#e879f9; --brandL2:#f0abfc;
+    --cyan:#22d3ee; --cyanL:#67e8f9; --lime:#c8e83a; --limeL:#e2f56b;
+    --emerald:#34d399; --emeraldL:#6ee7b7; --rose:#f43f6b; --roseL:#fda4af; --oncolor:#fff;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(90% 55% at 100% 0%, rgba(34,211,238,.07), transparent 60%),
+      radial-gradient(90% 65% at 0% 0%, rgba(208,51,224,.09), transparent 55%), var(--bg);
+    color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased; line-height:1.45;
+  }
+  .num{font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+  .app{max-width:1480px; margin:0 auto; padding:18px 28px 46px; display:flex; flex-direction:column; gap:14px}
+  .eyebrow{font-size:11px; text-transform:uppercase; letter-spacing:.15em; font-weight:600}
+  .eyeC{color:var(--cyanL)} .eyeB{color:var(--brandL)}
+  .btn{appearance:none; border:0; font:inherit; cursor:pointer; border-radius:999px; font-weight:600; transition:background .16s,transform .1s}
+  .btn:active{transform:translateY(.5px)}
+  .btn-primary{background:var(--brand); color:#fff; box-shadow:0 0 20px -8px rgba(208,51,224,.9)}
+  .btn-primary:hover{background:var(--brand6)}
+  .btn-primary:disabled{opacity:.4; cursor:not-allowed; box-shadow:none}
+
+  /* header */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:11px}
+  .brandmark{width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#7a1683,#4c1452);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .brandtext .ey{font-size:11px;text-transform:uppercase;letter-spacing:.17em;color:var(--cyanL)}
+  .brandtext .nm{font-size:16px;font-weight:600;margin-top:2px}
+  .viewtoggle{display:inline-flex;background:var(--data);border:1px solid var(--line);border-radius:999px;padding:3px}
+  .viewtoggle button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:7px 16px;border-radius:999px;cursor:pointer;transition:background .18s,color .18s}
+  .viewtoggle button[aria-pressed="true"]{background:var(--brand);color:#fff;box-shadow:0 0 18px -6px rgba(208,51,224,.9)}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;gap:15px;background:var(--data);border:1px solid var(--line);border-radius:16px;padding:12px 15px}
+  .stepbtn{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer;display:grid;place-items:center;transition:background .15s}
+  .stepbtn:hover:not(:disabled){background:rgba(255,255,255,.09)} .stepbtn:disabled{opacity:.3;cursor:not-allowed}
+  .stepmid{flex:1;min-width:0}
+  .stepmid .lab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .stepmid .sh{font-size:16px;font-weight:600}
+  .dots{display:flex;gap:5px}
+  .dot{width:7px;height:7px;border-radius:999px;background:rgba(255,255,255,.16)}
+  .dot.on{background:var(--cyanL)} .dot.past{background:rgba(255,255,255,.4)}
+  .disrupt{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#fff;background:var(--rose);padding:3px 9px;border-radius:999px}
+  .note{margin-top:4px;font-size:12.5px;color:var(--muted);max-width:74ch}
+  .playas{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .playas .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
+  .teamtab{appearance:none;border:1px solid var(--line);background:var(--data);color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .teamtab[aria-pressed="true"]{color:var(--ink);border-color:transparent;background:var(--surface2)}
+  .teamtab .cr{width:16px;height:16px;border-radius:5px;background:#211a2c;display:grid;place-items:center}
+
+  /* HUD console */
+  .hud{position:relative;overflow:hidden;border-radius:16px;background:var(--console);padding:10px;box-shadow:inset 0 0 70px -34px rgba(34,211,238,.5);border:1px solid rgba(34,211,238,.2)}
+  .hudwrap{position:relative;display:grid;grid-template-columns:168px 1fr;gap:10px;align-items:stretch}
+  .hudside{display:flex;flex-direction:column;justify-content:center;gap:7px;padding:4px 2px 4px 8px}
+  .hudtitle{display:flex;align-items:center;gap:8px}
+  .pulse{position:relative;width:10px;height:10px;display:grid;place-items:center}
+  .pulse i{position:absolute;width:10px;height:10px;border-radius:999px;background:rgba(45,212,191,.6);animation:pp 2s ease-out infinite}
+  .pulse b{width:6px;height:6px;border-radius:999px;background:var(--cyan)}
+  @keyframes pp{0%{transform:scale(.6);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+  .hudtitle span{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--cyanL)}
+  .hudlive{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .hudrow{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.1);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .ro{background:var(--console);padding:10px 11px;display:flex;flex-direction:column;gap:7px}
+  .ro .rh{display:flex;align-items:center;gap:7px}
+  .ro .ic{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700}
+  .ro .nm{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+  .ro .sd{width:9px;height:9px;border-radius:999px;flex:0 0 auto}
+  .ro .val{display:flex;align-items:baseline;gap:7px}
+  .ro .valn{font-size:28px;font-weight:700;line-height:1}
+  .ro .vald{font-size:13px;font-weight:700}
+  .hbar{height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+  .hbar>i{display:block;height:100%;width:0;border-radius:999px;transition:width .75s cubic-bezier(.2,.7,.2,1)}
+
+  /* layout columns */
+  .cols{display:grid;grid-template-columns:minmax(360px,1fr) 1.4fr;gap:16px;align-items:start}
+  .zonehead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .card{background:var(--data);border:1px solid rgba(34,211,238,.16);border-radius:16px;padding:14px}
+  .dhead{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line2);padding-bottom:10px;margin-bottom:11px}
+  .dhead .ti{width:24px;height:24px;border-radius:7px;background:rgba(34,211,238,.14);border:1px solid rgba(34,211,238,.25);display:grid;place-items:center;color:var(--cyanL);font-size:12px}
+  .dhead h3{margin:0;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--cyanL)}
+  .issue{background:rgba(255,255,255,.04);border:1px solid var(--line2);border-radius:10px;padding:10px 11px;margin-bottom:8px}
+  .issue .it{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .issue .itt{font-size:13px;font-weight:600}
+  .sev{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px}
+  .sev.high{background:rgba(244,63,107,.18);color:#ff8aa3}.sev.medium{background:rgba(208,51,224,.16);color:var(--brandL)}.sev.low{background:rgba(255,255,255,.08);color:var(--muted)}
+  .issue .id{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .disbox{background:rgba(244,63,107,.1);border-color:rgba(244,63,107,.4)!important}
+  .disbox .itt{color:#ff8aa3}
+
+  /* Decide panel */
+  .decide{position:relative;overflow:hidden;background:var(--decide);border:1px solid rgba(208,51,224,.3);border-radius:18px;box-shadow:0 0 50px -24px rgba(208,51,224,.6)}
+  .decide .wash{position:absolute;inset:0 0 auto 0;height:120px;background:radial-gradient(120% 100% at 50% 0%, rgba(208,51,224,.14), transparent 70%);pointer-events:none}
+  .dtop{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
+  .dtop .ey{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--brandL);font-weight:600}
+  .dtop .st{font-size:17px;font-weight:600;margin-top:2px}
+  .donepill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;background:rgba(52,211,153,.18);color:var(--emeraldL);padding:4px 10px;border-radius:999px}
+  .tabs{position:relative;display:flex;gap:4px;margin:11px 16px 0;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:12px;padding:4px}
+  .tab{flex:1;appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;padding:9px 6px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .15s,color .15s}
+  .tab[aria-pressed="true"]{background:var(--brand);color:#fff;box-shadow:0 0 18px -6px rgba(208,51,224,.9)}
+  .tab .n{width:19px;height:19px;border-radius:999px;display:grid;place-items:center;font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:var(--muted)}
+  .tab[aria-pressed="true"] .n{background:rgba(255,255,255,.22);color:#fff}
+  .tab .n.done{background:var(--emerald);color:#fff}
+  .dbody{position:relative;padding:15px 16px}
+  .sh2{font-size:17px;font-weight:600;margin:0}
+  .shn{font-size:12.5px;color:var(--muted);margin:3px 0 1px}
+  .shi{font-size:12px;color:rgba(255,255,255,.82);font-weight:500;margin:0 0 11px}
+  .optgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .opt{appearance:none;text-align:left;font:inherit;cursor:pointer;border-radius:11px;padding:11px 12px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);transition:background .14s,border-color .14s,box-shadow .14s}
+  .opt:hover{background:rgba(255,255,255,.08)}
+  .opt[aria-pressed="true"]{background:var(--brand);border-color:transparent;color:#fff;box-shadow:0 0 20px -7px rgba(208,51,224,.9)}
+  .opt .mk{width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,.08);display:grid;place-items:center;flex:0 0 auto;font-size:12px}
+  .opt[aria-pressed="true"] .mk{background:rgba(255,255,255,.2)}
+  .divider{border-top:1px solid var(--line);margin:15px 0 0;padding-top:14px}
+  .insetblk{background:var(--inset);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:11px}
+  .albar{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .albar .track{flex:1;height:6px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+  .albar .track>i{display:block;height:100%;border-radius:999px;transition:width .3s,background .3s}
+  .altot{font-size:13px;font-weight:700}
+  .arow{display:flex;align-items:center;gap:11px;margin-bottom:9px}
+  .arow .an{width:148px;flex:0 0 auto;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.85)}
+  .arow input[type=range]{flex:1;accent-color:var(--brand)}
+  .arow .av{width:44px;text-align:right;font-size:13px;font-weight:600}
+  .confgrid{display:flex;flex-direction:column;gap:9px}
+  .conf{appearance:none;text-align:left;font:inherit;cursor:pointer;border-radius:11px;padding:12px 13px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink);transition:background .14s,border-color .14s,box-shadow .14s}
+  .conf[aria-pressed="true"]{background:var(--brand);border-color:transparent;box-shadow:0 0 20px -7px rgba(208,51,224,.9)}
+  .conf .ct{display:flex;align-items:center;gap:9px}
+  .conf .cm{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.1)}
+  .conf[aria-pressed="true"] .cm{background:rgba(255,255,255,.22)}
+  .conf .cl{font-size:14px;font-weight:600}
+  .conf .cd{font-size:12px;color:var(--muted);margin-top:4px}
+  .conf[aria-pressed="true"] .cd{color:rgba(255,255,255,.85)}
+  .persona{display:flex;gap:11px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:11px}
+  .pav{width:42px;height:42px;border-radius:999px;background:#211a2c;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .pn{font-size:13.5px;font-weight:600}.pr{font-size:11.5px;color:var(--muted)}
+  .ps{font-size:12.5px;color:rgba(255,255,255,.82);margin-top:7px;line-height:1.45}
+  .pq{font-size:12.5px;font-style:italic;color:var(--brandL);margin-top:8px}
+  .peoplist{display:flex;flex-direction:column;gap:8px}
+  .dfoot{position:relative;border-top:1px solid var(--line);padding:14px 16px}
+  .bigbtn{width:100%;padding:13px;font-size:14px;border-radius:12px}
+
+  /* results strip */
+  .results{background:var(--data);border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+  .rbanner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .rbanner .mv{display:flex;align-items:baseline;gap:9px}
+  .rbanner .mvn{font-size:30px;font-weight:700}
+  .rankbadge{display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--brand);color:#fff;padding:7px 16px;border-radius:12px;box-shadow:0 0 22px -8px rgba(208,51,224,.9)}
+  .rankbadge .k{font-size:10px;text-transform:uppercase;letter-spacing:.1em;opacity:.85}.rankbadge .v{font-size:20px;font-weight:700;line-height:1}
+  .drivers{display:grid;grid-template-columns:repeat(2,1fr);gap:7px 14px}
+  .dr{display:flex;align-items:center;gap:8px}.dr .drn{font-size:12px;color:var(--muted);flex:1}.dr .drv{font-size:13px;font-weight:700}
+  .delta-up{color:var(--emeraldL)}.delta-dn{color:var(--roseL)}.delta-fl{color:var(--faint)}
+
+  /* facilitator */
+  .lb{display:flex;flex-direction:column;gap:7px}
+  .lbhead{display:grid;grid-template-columns:34px 1fr 96px 92px;gap:10px;padding:0 12px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
+  .lbrows{display:flex;flex-direction:column;gap:7px}
+  .row{display:grid;grid-template-columns:34px 1fr 96px 92px;gap:10px;align-items:center;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line2);will-change:transform}
+  .row.lead{background:linear-gradient(100deg,rgba(208,51,224,.92),rgba(179,28,196,.82));border-color:transparent;box-shadow:0 0 26px -10px rgba(208,51,224,.9)}
+  .rk{font-size:17px;font-weight:700;color:var(--faint)}.row.lead .rk{color:rgba(255,255,255,.85)}
+  .teamcell{display:flex;align-items:center;gap:10px;min-width:0}
+  .crest{width:30px;height:30px;border-radius:9px;background:#211a2c;display:grid;place-items:center;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+  .row.lead .crest{background:rgba(255,255,255,.14)}
+  .tn{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ts{font-size:11.5px;color:var(--muted)}.row.lead .ts{color:rgba(255,255,255,.75)}
+  .sc{text-align:right;font-size:18px;font-weight:700}
+  .mvcell{text-align:right}.mvcell .pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;background:rgba(52,211,153,.18);color:var(--emeraldL);font-size:13px;font-weight:700}
+  .row.lead .mvcell .pill{background:rgba(255,255,255,.2);color:#fff}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .ccard{background:var(--surface2);border:1px solid var(--line);border-radius:13px;padding:13px;display:flex;flex-direction:column;gap:11px}
+  .cctop{display:flex;align-items:center;gap:8px}.cctop .tn{font-size:13.5px}.ccrank{margin-left:auto;font-size:12px;font-weight:700;color:var(--faint)}
+  .decrow{display:flex;flex-wrap:wrap;gap:5px}
+  .dchip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line2);color:rgba(255,255,255,.82)}
+  .dchip.pri{background:rgba(208,51,224,.16);color:var(--brandL);border-color:transparent}
+  .goals5{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .g .gl{font-size:10px;text-transform:uppercase;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .g .gv{display:flex;align-items:baseline;justify-content:space-between;gap:3px;margin-top:2px}.g .gvn{font-size:15px;font-weight:700}.g .gd{font-size:10.5px;font-weight:700}
+  .bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden}.bar>i{display:block;height:100%;width:0;border-radius:999px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
+  .ask{background:rgba(208,51,224,.14);border:1px solid rgba(232,121,249,.22);border-radius:9px;padding:9px 11px}
+  .ask .l{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--brandL);margin-bottom:5px}
+  .ask p{margin:0;font-size:12.5px;font-style:italic;color:rgba(255,255,255,.9);line-height:1.4}
+  .cdrivers{display:grid;grid-template-columns:repeat(2,1fr);gap:5px 11px}
+  .cdr{display:flex;align-items:center;gap:6px}.cdr .n{font-size:11px;color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cdr .v{font-size:12px;font-weight:700}
+
+  .footn{font-size:11.5px;color:var(--faint);text-align:center;padding-top:2px}.footn b{color:var(--muted);font-weight:600}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(2,1fr)}.hudwrap{grid-template-columns:1fr}.hudrow{grid-template-columns:repeat(5,1fr)}}
+  @media (max-width:560px){.hudrow{grid-template-columns:repeat(2,1fr)}.optgrid{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><div class="brandmark" id="brandmark"></div>
+      <div class="brandtext"><div class="ey">Plumfield Stores &middot; NCP preview</div><div class="nm">Leadership Simulation</div></div></div>
+    <div class="viewtoggle" role="group" aria-label="View">
+      <button id="vTeam" aria-pressed="true">Team view</button>
+      <button id="vFac" aria-pressed="false">Facilitator view</button>
+    </div>
+  </div>
+
+  <div class="stepper">
+    <button class="stepbtn" id="prev" aria-label="Previous shift">&#8592;</button>
+    <div class="stepmid">
+      <div class="lab"><span class="sh" id="shLabel">Shift 3</span><span class="dots" id="dots"></span><span id="disruptFlag"></span></div>
+      <div class="note" id="note"></div>
+    </div>
+    <button class="stepbtn" id="next" aria-label="Next shift">&#8594;</button>
+  </div>
+
+  <div class="playas" id="playasWrap">
+    <span class="lbl">Playing as</span><span id="teamTabs" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span>
+  </div>
+
+  <div id="main"></div>
+
+  <div class="footn">Fully scripted demo on authentic engine figures. Make the calls on the right; the shift resolves to the story. <b>Watch shift 5: Paradise overtakes - then flip to Facilitator and read Arndale's hidden drivers.</b></div>
+</div>
+
+<script>
+const DATA = {"teams":[{"name":"Arndale","site":"Manchester Arndale"},{"name":"Paradise","site":"Liverpool Paradise St"},{"name":"Heathrow","site":"Heathrow T5"},{"name":"Deansgate","site":"Manchester Deansgate"}],"goals":[{"key":"sales","short":"Sales"},{"key":"colleagues","short":"Colleagues"},{"key":"service","short":"Service"},{"key":"costs","short":"Costs"},{"key":"risk","short":"Risk"}],"hiddenKeys":[{"key":"safety_risk","label":"Safety risk"},{"key":"trust","label":"Team trust"},{"key":"capability","label":"Capability"},{"key":"leadership_consistency","label":"Leadership consistency"}],"shifts":[{"number":1,"note":"A steady opening shift. Teams set their stall out.","context":{"issues":[{"title":"Short-dated stock build-up","description":"Chilled aisle has 180 units within 24h expiry.","severity":"medium"},{"title":"Till queue exceeding 8 minutes","description":"Front-end service levels breaching threshold.","severity":"medium"},{"title":"Two team members absent","description":"Duty manager short-handed in backroom.","severity":"medium"}],"moment":{"persona":{"name":"Sam Taylor","role":"Duty Manager","tenure":"12 years in store"},"situation":"Sam corners you in the backroom, arms crossed. \"Your allocation plan won't work. We'll be drowning on shop floor by three. I've run this store through worse and I'm telling you now.\"","prompt":"Sam has more store experience than you. You have the decision rights. How do you respond?","options":[{"label":"Hold the line. Explain your rationale and move on.","archetype":"directive"},{"label":"Ask them what specifically they're seeing that you might be missing.","archetype":"coaching"},{"label":"Tell them you trust their judgement. Adjust the plan to theirs.","archetype":"delegate"},{"label":"Invite them to refine the plan with you in the next five minutes.","archetype":"collaborative"}]},"disruption":null},"talkTrack":["Priorities split across the room this shift. What were you seeing that pulled you one way rather than another?","Leadership styles diverged this shift. What signal do you think your team was reading from you?","What surprised you most about this shift?"],"teams":[{"name":"Arndale","rank":4,"score":290,"movement":290,"goals":[{"key":"sales","value":58,"delta":39},{"key":"colleagues","value":16,"delta":-7},{"key":"service","value":67,"delta":0},{"key":"costs","value":52,"delta":1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":60,"delta":0},{"key":"capability","value":51,"delta":-4},{"key":"leadership_consistency","value":62,"delta":12}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"You pushed Sales vs budget up 22. Deliberate target, or a side effect of something else you were chasing?"},{"name":"Paradise","rank":2,"score":309,"movement":309,"goals":[{"key":"sales","value":44,"delta":-2},{"key":"colleagues","value":37,"delta":14},{"key":"service","value":75,"delta":8},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":73,"delta":13},{"key":"capability","value":64,"delta":9},{"key":"leadership_consistency","value":48,"delta":-2}],"decision":{"priority":"People / Team","action":"Adapt locally","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"Colleague engagement (ESAT) gained 14. How much of that is your call, and how much the shift you happened to be dealt?"},{"name":"Heathrow","rank":3,"score":291,"movement":291,"goals":[{"key":"sales","value":48,"delta":9},{"key":"colleagues","value":20,"delta":-3},{"key":"service","value":67,"delta":0},{"key":"costs","value":54,"delta":10},{"key":"risk","value":69,"delta":2}],"hidden":[{"key":"safety_risk","value":24,"delta":-6},{"key":"trust","value":61,"delta":1},{"key":"capability","value":52,"delta":-3},{"key":"leadership_consistency","value":57,"delta":7}],"decision":{"priority":"Safety / Loss","action":"Apply standard process","leadership":"Directive","confidence":"Measured","moment":"Directive","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"Availability moved up the most this shift (+9). What do you think lifted it?"},{"name":"Deansgate","rank":1,"score":327,"movement":327,"goals":[{"key":"sales","value":45,"delta":0},{"key":"colleagues","value":38,"delta":15},{"key":"service","value":89,"delta":22},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":75,"delta":15},{"key":"capability","value":75,"delta":20},{"key":"leadership_consistency","value":46,"delta":-4}],"decision":{"priority":"Customer","action":"Adapt locally","leadership":"Coaching","confidence":"Confident","moment":"Coaching","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"Customer satisfaction (CSAT) climbed harder than anything else this shift. Which decision do you think drove that?"}]},{"number":2,"note":"Trade picks up. Early habits start to show.","context":{"issues":[{"title":"Repeat shoplifting pattern flagged","description":"Security footage shows three incidents this week in spirits aisle.","severity":"medium"},{"title":"Delivery running 90 minutes late","description":"Backroom team blocked, shop floor gaps forming.","severity":"medium"},{"title":"Customer complaint escalated","description":"Refund refused at self-scan, customer demanding manager.","severity":"medium"}],"moment":{"persona":{"name":"Alex Rivera","role":"Assistant Manager","tenure":"6 months in role"},"situation":"Alex pulls you aside looking uncomfortable. \"Two of the team leaders had a flare-up this morning over the rota. I don't know whether to step in or let them sort it. What would you do?\"","prompt":"Alex is asking for your view. They're new to leading leaders. How do you respond?","options":[{"label":"Give them your answer so they can act on it.","archetype":"directive"},{"label":"Ask them what they think the risks of each choice are.","archetype":"coaching"},{"label":"Tell them the decision is theirs and you'll back whichever way they go.","archetype":"delegate"},{"label":"Offer to think it through with them for ten minutes now.","archetype":"collaborative"}]},"disruption":null},"talkTrack":["Priorities split across the room this shift. What were you seeing that pulled you one way rather than another?","Leadership styles diverged this shift. What signal do you think your team was reading from you?","The gap between Deansgate and Arndale is widening. What approach difference do you think is behind it?","Where did you feel the pressure bite hardest?"],"teams":[{"name":"Arndale","rank":4,"score":587,"movement":297,"goals":[{"key":"sales","value":69,"delta":33},{"key":"colleagues","value":13,"delta":-3},{"key":"service","value":66,"delta":-1},{"key":"costs","value":51,"delta":-2},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":33,"delta":3},{"key":"trust","value":61,"delta":1},{"key":"capability","value":47,"delta":-4},{"key":"leadership_consistency","value":74,"delta":12}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"Sales vs budget rose while the rest held roughly still. What did that cost you elsewhere, if anything?"},{"name":"Paradise","rank":2,"score":641,"movement":332,"goals":[{"key":"sales","value":42,"delta":-7},{"key":"colleagues","value":51,"delta":14},{"key":"service","value":82,"delta":7},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":80,"delta":7},{"key":"capability","value":79,"delta":15},{"key":"leadership_consistency","value":43,"delta":-5}],"decision":{"priority":"People / Team","action":"Adapt locally","leadership":"Coaching","confidence":"Measured","moment":"Coaching","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"Capability and leadership consistency pulled against each other this shift. Which one do you most need to hold next?"},{"name":"Heathrow","rank":3,"score":607,"movement":316,"goals":[{"key":"sales","value":48,"delta":-1},{"key":"colleagues","value":29,"delta":9},{"key":"service","value":72,"delta":5},{"key":"costs","value":56,"delta":9},{"key":"risk","value":71,"delta":2}],"hidden":[{"key":"safety_risk","value":18,"delta":-6},{"key":"trust","value":72,"delta":11},{"key":"capability","value":58,"delta":6},{"key":"leadership_consistency","value":55,"delta":-2}],"decision":{"priority":"Safety / Loss","action":"Adapt locally","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"You led collaborative this shift where you were directive before. Deliberate, or did the shift force it?"},{"name":"Deansgate","rank":1,"score":683,"movement":356,"goals":[{"key":"sales","value":45,"delta":0},{"key":"colleagues","value":49,"delta":11},{"key":"service","value":100,"delta":20},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":87,"delta":12},{"key":"capability","value":94,"delta":19},{"key":"leadership_consistency","value":41,"delta":-5}],"decision":{"priority":"Customer","action":"Adapt locally","leadership":"Coaching","confidence":"Confident","moment":"Coaching","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"Of everything on the board, Customer satisfaction (CSAT) responded best (+20). What were you doing that it rewarded?"}]},{"number":3,"note":"Mid-session. The gap between approaches begins to open.","context":{"issues":[{"title":"Interpersonal conflict on nights team","description":"Supervisor flagged a dispute affecting morale and output.","severity":"medium"},{"title":"Planogram compliance at 62%","description":"Head Office flagged compliance shortfall in beers & wines.","severity":"low"},{"title":"Waste tracking 14% above target","description":"Bakery and produce departments over index this week.","severity":"medium"}],"moment":{"persona":{"name":"Jo Chen","role":"Shift Supervisor","tenure":"4 months in role"},"situation":"Jo has now missed two shift briefings this week. The team leaders have started asking around whether the briefings even matter. Jo is capable but you're picking up a pattern.","prompt":"You need to land this conversation well. How do you open it?","options":[{"label":"Be clear: briefings are non-negotiable, and you need to see them there.","archetype":"directive"},{"label":"Ask them what's getting in the way and what support they need.","archetype":"coaching"},{"label":"Let them own it - ask them what they want to commit to.","archetype":"delegate"},{"label":"Revisit the briefing together - is the time or format working?","archetype":"collaborative"}]},"disruption":null},"talkTrack":["Leadership styles diverged this shift. What signal do you think your team was reading from you?","Some teams pressed confident, others played cautious. What shifted your read on what this shift was asking for?","The gap between Deansgate and Arndale is widening. What approach difference do you think is behind it?","Which single decision do you think moved the needle most?"],"teams":[{"name":"Arndale","rank":4,"score":883,"movement":296,"goals":[{"key":"sales","value":78,"delta":28},{"key":"colleagues","value":4,"delta":-9},{"key":"service","value":65,"delta":-1},{"key":"costs","value":51,"delta":0},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":34,"delta":1},{"key":"trust","value":57,"delta":-4},{"key":"capability","value":42,"delta":-5},{"key":"leadership_consistency","value":82,"delta":8}],"decision":{"priority":"Commercial","action":"Escalate","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"Your priority hasn't changed once - always Commercial. Is that conviction, or a blind spot?"},{"name":"Paradise","rank":2,"score":1001,"movement":360,"goals":[{"key":"sales","value":41,"delta":-4},{"key":"colleagues","value":63,"delta":12},{"key":"service","value":95,"delta":13},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":88,"delta":8},{"key":"capability","value":93,"delta":14},{"key":"leadership_consistency","value":39,"delta":-4}],"decision":{"priority":"Customer","action":"Adapt locally","leadership":"Coaching","confidence":"Measured","moment":"Coaching","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"You moved your priority from People / Team to Customer this shift. What changed your read?"},{"name":"Heathrow","rank":3,"score":936,"movement":329,"goals":[{"key":"sales","value":51,"delta":10},{"key":"colleagues","value":34,"delta":5},{"key":"service","value":72,"delta":0},{"key":"costs","value":57,"delta":3},{"key":"risk","value":71,"delta":0}],"hidden":[{"key":"safety_risk","value":17,"delta":-1},{"key":"trust","value":80,"delta":8},{"key":"capability","value":60,"delta":2},{"key":"leadership_consistency","value":59,"delta":4}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Collaborative","confidence":"Cautious","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"You moved your priority from Safety / Loss to Commercial this shift. What changed your read?"},{"name":"Deansgate","rank":1,"score":1049,"movement":366,"goals":[{"key":"sales","value":44,"delta":-3},{"key":"colleagues","value":57,"delta":8},{"key":"service","value":100,"delta":12},{"key":"costs","value":51,"delta":-1},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":0},{"key":"trust","value":96,"delta":9},{"key":"capability","value":100,"delta":6},{"key":"leadership_consistency","value":38,"delta":-3}],"decision":{"priority":"Customer","action":"Adapt locally","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"You shifted from coaching to collaborative leadership this shift. What pulled that out of you?"}]},{"number":4,"note":"A safety/compliance disruption strikes every team at once. Escalating to the right owner is the calm call.","context":{"issues":[{"title":"Unreported spillage in aisle 7","description":"Wet floor sign missing. A customer flagged it, colleague had walked past twice.","severity":"high"},{"title":"Possible safeguarding concern","description":"Colleague raised worry about an unaccompanied child who has been in store for 40 minutes.","severity":"high"},{"title":"New starter visibly struggling","description":"Two weeks in, hasn't eaten lunch all week. Peers sensing it but saying nothing.","severity":"medium"}],"moment":{"persona":{"name":"Priya Patel","role":"Team Leader","tenure":"3 years, top performer"},"situation":"Priya catches you near the lockers at end of shift. \"I've been offered another role at a competitor. I'm seriously considering it. I feel like I'm treading water here and nothing's changing.\"","prompt":"Priya is one of your strongest. You have a few minutes before her next shift. How do you respond?","options":[{"label":"Lay out what you can realistically offer and where the constraints sit.","archetype":"directive"},{"label":"Ask her what 'treading water' looks like to her, specifically.","archetype":"coaching"},{"label":"Tell her you trust her to weigh it up, and that you'll respect whichever way she goes.","archetype":"delegate"},{"label":"Offer to co-design what the next 90 days could look like.","archetype":"collaborative"}]},"disruption":{"title":"Fire alarm activation","message":"Full evacuation triggered by a faulty smoke detector in backroom."}},"talkTrack":["The gap between Deansgate and Arndale is widening. What approach difference do you think is behind it?","What did your team argue about before you committed?"],"teams":[{"name":"Arndale","rank":4,"score":1168,"movement":285,"goals":[{"key":"sales","value":86,"delta":22},{"key":"colleagues","value":0,"delta":-7},{"key":"service","value":56,"delta":-9},{"key":"costs","value":51,"delta":-2},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":41,"delta":7},{"key":"trust","value":50,"delta":-7},{"key":"capability","value":35,"delta":-7},{"key":"leadership_consistency","value":91,"delta":9}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"You have led directive every shift. What would a different style have risked?"},{"name":"Paradise","rank":2,"score":1384,"movement":383,"goals":[{"key":"sales","value":41,"delta":0},{"key":"colleagues","value":68,"delta":5},{"key":"service","value":100,"delta":5},{"key":"costs","value":53,"delta":11},{"key":"risk","value":69,"delta":2}],"hidden":[{"key":"safety_risk","value":21,"delta":-9},{"key":"trust","value":96,"delta":8},{"key":"capability","value":96,"delta":3},{"key":"leadership_consistency","value":41,"delta":2}],"decision":{"priority":"Safety / Loss","action":"Escalate","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"Last shift it was Customer; this shift Safety / Loss. What told you to switch?"},{"name":"Heathrow","rank":3,"score":1286,"movement":350,"goals":[{"key":"sales","value":52,"delta":2},{"key":"colleagues","value":39,"delta":5},{"key":"service","value":74,"delta":2},{"key":"costs","value":60,"delta":13},{"key":"risk","value":73,"delta":2}],"hidden":[{"key":"safety_risk","value":8,"delta":-9},{"key":"trust","value":88,"delta":8},{"key":"capability","value":62,"delta":2},{"key":"leadership_consistency","value":61,"delta":2}],"decision":{"priority":"Safety / Loss","action":"Escalate","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"You've been climbing. If you had to name the habit that's working, what is it?"},{"name":"Deansgate","rank":1,"score":1406,"movement":357,"goals":[{"key":"sales","value":47,"delta":10},{"key":"colleagues","value":50,"delta":-7},{"key":"service","value":97,"delta":-3},{"key":"costs","value":51,"delta":0},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":34,"delta":4},{"key":"trust","value":89,"delta":-7},{"key":"capability","value":96,"delta":-4},{"key":"leadership_consistency","value":47,"delta":9}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"You gained on leadership consistency and gave ground on team trust this shift. Was that trade a choice or a surprise?"}]},{"number":5,"note":"An operational disruption hits. Adapt on the floor, or hold the standard process and wear it.","context":{"issues":[{"title":"Till float variance on two desks","description":"Same colleague signed both off. Pattern rather than a one-off.","severity":"medium"},{"title":"Fresh bread range 40% out","description":"In-store bake behind schedule, peak trade in an hour.","severity":"medium"},{"title":"Car park trolleys stacked up","description":"Colleague rota for retrieval slipped. Complaints starting at customer service.","severity":"medium"}],"moment":{"persona":{"name":"Dan Morgan","role":"Assistant Manager","tenure":"5 years, recently passed over for promotion"},"situation":"Dan delivered a flat \"whatever you think\" to a junior colleague's suggestion this morning. It landed badly - you saw the colleague visibly deflate. Dan is technically strong but has felt distant since the promotion round.","prompt":"This is a pattern you've been letting slide. How do you handle it?","options":[{"label":"Pull Dan aside and name the behaviour - tell them the bar.","archetype":"directive"},{"label":"Ask Dan how they think their responses are landing with the team.","archetype":"coaching"},{"label":"Have the junior colleague feed back directly to Dan.","archetype":"delegate"},{"label":"Sit with Dan and talk honestly about what the last few months have been like.","archetype":"collaborative"}]},"disruption":{"title":"Viral customer complaint","message":"Social media post about till queues gaining traction."}},"talkTrack":["Priorities split across the room this shift. What were you seeing that pulled you one way rather than another?","Leadership styles diverged this shift. What signal do you think your team was reading from you?","The gap between Paradise and Arndale is widening. What approach difference do you think is behind it?","If another team had run your shift, what would they have done differently?"],"teams":[{"name":"Arndale","rank":4,"score":1450,"movement":282,"goals":[{"key":"sales","value":90,"delta":28},{"key":"colleagues","value":0,"delta":-7},{"key":"service","value":52,"delta":-4},{"key":"costs","value":50,"delta":-2},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":45,"delta":4},{"key":"trust","value":47,"delta":-3},{"key":"capability","value":30,"delta":-5},{"key":"leadership_consistency","value":100,"delta":11}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"the shop floor got the lion's share this shift (55%). What were you betting that focus would buy you?"},{"name":"Paradise","rank":1,"score":1779,"movement":395,"goals":[{"key":"sales","value":38,"delta":-7},{"key":"colleagues","value":82,"delta":14},{"key":"service","value":100,"delta":8},{"key":"costs","value":53,"delta":-1},{"key":"risk","value":69,"delta":0}],"hidden":[{"key":"safety_risk","value":22,"delta":1},{"key":"trust","value":100,"delta":6},{"key":"capability","value":100,"delta":16},{"key":"leadership_consistency","value":36,"delta":-5}],"decision":{"priority":"People / Team","action":"Adapt locally","leadership":"Coaching","confidence":"Measured","moment":"Coaching","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"Capability and leadership consistency pulled against each other this shift. Which one do you most need to hold next?"},{"name":"Heathrow","rank":3,"score":1662,"movement":376,"goals":[{"key":"sales","value":52,"delta":0},{"key":"colleagues","value":50,"delta":11},{"key":"service","value":77,"delta":3},{"key":"costs","value":62,"delta":9},{"key":"risk","value":75,"delta":2}],"hidden":[{"key":"safety_risk","value":3,"delta":-5},{"key":"trust","value":100,"delta":13},{"key":"capability","value":67,"delta":5},{"key":"leadership_consistency","value":62,"delta":1}],"decision":{"priority":"Safety / Loss","action":"Reallocate resource","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"Colleague engagement (ESAT) is up 11. If you handed that result to another team to repeat, what would you tell them to do?"},{"name":"Deansgate","rank":2,"score":1765,"movement":359,"goals":[{"key":"sales","value":53,"delta":17},{"key":"colleagues","value":43,"delta":-7},{"key":"service","value":100,"delta":3},{"key":"costs","value":51,"delta":0},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":35,"delta":1},{"key":"trust","value":86,"delta":-3},{"key":"capability","value":93,"delta":-3},{"key":"leadership_consistency","value":58,"delta":11}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"Sales vs budget rose while the rest held roughly still. What did that cost you elsewhere, if anything?"}]},{"number":6,"note":"Final shift. Where the hidden drivers quietly decide it.","context":{"issues":[{"title":"Fridge running 2C above spec","description":"Engineer called last week, same unit flagged again. Stock still on sale.","severity":"high"},{"title":"Self-scan error rate spiking","description":"One bank throwing item-not-recognised errors. Supervisor overrides tracking at 40 per hour.","severity":"medium"},{"title":"Customer verbally aggressive to colleague","description":"Incident logged but colleague back on shop floor. Wellbeing unclear.","severity":"high"}],"moment":{"persona":{"name":"Mia Kowalski","role":"Team Leader","tenure":"18 months in role"},"situation":"Mia asks for flexibility on shifts for a personal situation, but the change would strain the rota others just accepted. She says she hasn't told anyone else on the team why.","prompt":"The fair-process question is live. How do you handle the request?","options":[{"label":"Decline - protecting equity across the team matters more than any one case.","archetype":"directive"},{"label":"Ask Mia what she thinks a fair outcome looks like.","archetype":"coaching"},{"label":"Approve it and trust her to manage any fallout with the team.","archetype":"delegate"},{"label":"Work out a solution together that could extend to others later.","archetype":"collaborative"}]},"disruption":null},"talkTrack":["Priorities split across the room this shift. What were you seeing that pulled you one way rather than another?","Leadership styles diverged this shift. What signal do you think your team was reading from you?","The gap between Paradise and Arndale is widening. What approach difference do you think is behind it?","What did you not have time to do that you wish you had?"],"teams":[{"name":"Arndale","rank":4,"score":1740,"movement":290,"goals":[{"key":"sales","value":96,"delta":41},{"key":"colleagues","value":0,"delta":-7},{"key":"service","value":52,"delta":0},{"key":"costs","value":51,"delta":4},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":42,"delta":-3},{"key":"trust","value":47,"delta":0},{"key":"capability","value":26,"delta":-4},{"key":"leadership_consistency","value":100,"delta":12}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":55,"backroom":20,"customer_service":15,"problem_resolution":10}},"question":"You loaded the shop floor heavily. What would have had to happen for that to leave you exposed?"},{"name":"Paradise","rank":1,"score":2195,"movement":416,"goals":[{"key":"sales","value":38,"delta":0},{"key":"colleagues","value":100,"delta":19},{"key":"service","value":100,"delta":14},{"key":"costs","value":54,"delta":4},{"key":"risk","value":69,"delta":0}],"hidden":[{"key":"safety_risk","value":17,"delta":-5},{"key":"trust","value":100,"delta":14},{"key":"capability","value":100,"delta":22},{"key":"leadership_consistency","value":31,"delta":-5}],"decision":{"priority":"People / Team","action":"Adapt locally","leadership":"Coaching","confidence":"Confident","moment":"Coaching","alloc":{"shop_floor":25,"backroom":20,"customer_service":35,"problem_resolution":20}},"question":"You pressed confident this shift. What told you it was one to lean into?"},{"name":"Heathrow","rank":3,"score":2069,"movement":407,"goals":[{"key":"sales","value":54,"delta":6},{"key":"colleagues","value":62,"delta":12},{"key":"service","value":86,"delta":9},{"key":"costs","value":65,"delta":12},{"key":"risk","value":77,"delta":2}],"hidden":[{"key":"safety_risk","value":0,"delta":-9},{"key":"trust","value":100,"delta":14},{"key":"capability","value":75,"delta":8},{"key":"leadership_consistency","value":62,"delta":0}],"decision":{"priority":"Safety / Loss","action":"Adapt locally","leadership":"Collaborative","confidence":"Measured","moment":"Collaborative","alloc":{"shop_floor":20,"backroom":30,"customer_service":20,"problem_resolution":30}},"question":"You've been climbing. If you had to name the habit that's working, what is it?"},{"name":"Deansgate","rank":2,"score":2133,"movement":368,"goals":[{"key":"sales","value":63,"delta":29},{"key":"colleagues","value":36,"delta":-7},{"key":"service","value":100,"delta":7},{"key":"costs","value":52,"delta":5},{"key":"risk","value":67,"delta":0}],"hidden":[{"key":"safety_risk","value":30,"delta":-5},{"key":"trust","value":86,"delta":0},{"key":"capability","value":92,"delta":-1},{"key":"leadership_consistency","value":70,"delta":12}],"decision":{"priority":"Commercial","action":"Apply standard process","leadership":"Directive","confidence":"Confident","moment":"Directive","alloc":{"shop_floor":20,"backroom":20,"customer_service":40,"problem_resolution":20}},"question":"You've been climbing. If you had to name the habit that's working, what is it?"}]}]};
+const TEAM_ACCENT={Arndale:"#e879f9",Paradise:"#67e8f9",Heathrow:"#34d399",Deansgate:"#e2f56b"};
+const reduce=window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+const GOAL_ICON={sales:"£",colleagues:"◉",service:"★",costs:"▣",risk:"⚠"};
+const PRIORITIES=["Safety / Loss","People / Team","Customer","Commercial"];
+const ACTIONS=["Apply standard process","Adapt locally","Escalate","Reallocate resource"];
+const LEADERSHIP=["Directive","Collaborative","Coaching","Delegate"];
+const CONF=[["Cautious","x0.75","Play it safe. Smaller swings, smaller upside."],["Measured","x1.00","Standard stance. The plan stands on its merits."],["Confident","x1.35","Press forward. Bigger wins, bigger losses if wrong."]];
+const ALLOC=[["shop_floor","Shop floor"],["backroom","Backroom"],["customer_service","Customer service"],["problem_resolution","Problem resolution"]];
+const ARCH_LABEL={directive:"Directive",coaching:"Coaching",delegate:"Delegate",collaborative:"Collaborative"};
+// Alerts are pure context (not scored); authentic copy from the content bank,
+// keyed by shift number. Head office + operational, up to two per shift.
+const ALERTS_BY_SHIFT={
+  3:[{k:"head_office",t:"Head Office: weekly compliance review",m:"Regional visit next Tuesday, availability audit expected."},
+     {k:"operational",t:"Chiller alarm temporarily silenced",m:"Engineering callout logged, response in 45 minutes."}],
+  4:[{k:"head_office",t:"Head Office: price file update live",m:"118 SKUs changed overnight, verify edge labels."},
+     {k:"operational",t:"Self-scan unit 4 offline",m:"Awaiting engineer, divert customers to manned tills."}],
+  5:[{k:"head_office",t:"Mandatory refresher training due",m:"Age-restricted sales module closes Friday, 14 colleagues still outstanding."},
+     {k:"operational",t:"Colleague handset battery bank empty",m:"Backroom team losing scan time waiting for replacements."}],
+  6:[{k:"head_office",t:"Head Office: new range launch Thursday",m:"Free-from range expanding 40 SKUs. POS and ranging brief in the morning pack."},
+     {k:"operational",t:"Sprinkler inspection outstanding",m:"Annual check was due last month. Contractor has rebooked twice. Next slot is Friday."}],
+};
+const BELL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+
+function storefront(c,s){return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="'+c+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8 V21 M19.5 8 V21"/><path d="M3 21 H21"/><path d="M3 4 H21 V8 H3 Z"/><path d="M7.5 4 V8 M12 4 V8 M16.5 4 V8"/><path d="M9.75 21 V14.5 a2.25 2.25 0 0 1 4.5 0 V21"/></svg>';}
+document.getElementById("brandmark").innerHTML=storefront("#e2f56b",22);
+function bandFor(v){if(v>=67)return{f:"#8fae1f",t:"#c8e83a",d:"#c8e83a"};if(v>=40)return{f:"#9d1caf",t:"#e879f9",d:"#e879f9"};return{f:"#b3254a",t:"#f43f6b",d:"#f43f6b"};}
+function deltaHTML(d,inv){if(d===0)return '<span class="delta-fl">&ndash;0</span>';const good=inv?d<0:d>0;return '<span class="'+(good?"delta-up":"delta-dn")+'">'+(d>0?"&#9650; +":"&#9660; ")+d+'</span>';}
+function initials(n){const p=n.trim().split(/\s+/);return (p.length>1?p[0][0]+p[p.length-1][0]:n.slice(0,2)).toUpperCase();}
+function siteOf(n){const t=DATA.teams.find(t=>t.name===n);return t?t.site:"";}
+function goalLabel(k){return{sales:"Sales",colleagues:"Colleagues",service:"Service",costs:"Costs",risk:"Risk"}[k]||k;}
+function goalShort(k){return{sales:"Sales",colleagues:"Colleag",service:"Service",costs:"Costs",risk:"Risk"}[k]||k;}
+function driverLabel(k){return{safety_risk:"Safety risk",trust:"Team trust",capability:"Capability",leadership_consistency:"Leadership"}[k]||k;}
+function teamAt(idx,name){return DATA.shifts[idx].teams.find(x=>x.name===name);}
+
+let shiftIdx=2, view="team", playIdx=3, phase="decide", activeTab=1;
+let picks=null;
+const MIN=2,MAX=5;
+
+function scriptedDecision(){ return teamAt(shiftIdx,DATA.teams[playIdx].name).decision; }
+function initPicks(){
+  const d=scriptedDecision();
+  picks={priority:d.priority,action:d.action,leadership:d.leadership,confidence:d.confidence.split(" ")[0],
+    alloc:{...d.alloc}, moment:findMomentLabelForArch(), effort:[34,33,33], done:{1:true,2:true,3:true,4:true,5:true}};
+}
+function findMomentLabelForArch(){
+  // scripted decision.moment is an archetype label; pick the matching option label
+  const d=scriptedDecision(); const mo=DATA.shifts[shiftIdx].context.moment;
+  const arch=d.moment.toLowerCase();
+  const opt=mo.options.find(o=>o.archetype===arch)||mo.options[0];
+  return opt?opt.label:"";
+}
+
+function renderStepper(){
+  const sh=DATA.shifts[shiftIdx];
+  document.getElementById("shLabel").textContent="Shift "+sh.number;
+  document.getElementById("note").textContent=sh.note;
+  document.getElementById("prev").disabled=shiftIdx<=MIN;
+  document.getElementById("next").disabled=shiftIdx>=MAX;
+  document.getElementById("dots").innerHTML=DATA.shifts.map((s,i)=>'<span class="dot '+(i===shiftIdx?"on":(i<shiftIdx?"past":""))+'"></span>').join("");
+  document.getElementById("disruptFlag").innerHTML=sh.context.disruption?'<span class="disrupt">&#9888; Disruption</span>':'';
+  document.getElementById("playasWrap").style.display=view==="team"?"flex":"none";
+  if(view==="team"){
+    document.getElementById("teamTabs").innerHTML=DATA.teams.map((t,i)=>{
+      const rk=teamAt(shiftIdx,t.name).rank;
+      return '<button class="teamtab" data-i="'+i+'" aria-pressed="'+(i===playIdx)+'"><span class="cr">'+storefront(TEAM_ACCENT[t.name],11)+'</span>'+t.name+' <span class="num" style="color:var(--faint)">#'+rk+'</span></button>';
+    }).join("");
+    document.querySelectorAll(".teamtab").forEach(b=>b.addEventListener("click",()=>{playIdx=+b.dataset.i;phase="decide";activeTab=1;initPicks();render();}));
+  }
+}
+
+/* ---------- HUD ---------- */
+function hudHTML(goalsForDisplay,showDelta){
+  const cells=goalsForDisplay.map(g=>{
+    const b=bandFor(g.value);
+    const d=showDelta?('<span class="vald">'+deltaHTML(g.delta,false)+'</span>'):'';
+    return '<div class="ro"><div class="rh"><span class="ic" style="color:'+b.t+'">'+GOAL_ICON[g.key]+'</span><span class="nm">'+goalLabel(g.key)+'</span><span class="sd" style="background:'+b.d+'"></span></div>'
+      +'<div class="val"><span class="valn num">'+g.value+'</span>'+d+'</div>'
+      +'<div class="hbar"><i data-w="'+g.value+'" style="background:linear-gradient(90deg,'+b.f+','+b.t+')"></i></div></div>';
+  }).join("");
+  return '<div class="hud"><div class="hudwrap"><div class="hudside">'
+    +'<div class="hudtitle"><span class="pulse"><i></i><b></b></span><span>Store HUD</span></div>'
+    +'<div class="hudlive">&#9679; Live performance</div>'
+    +'<div style="font-size:11px;color:var(--faint);margin-top:2px">'+(showDelta?"Shift resolved":"Pre-shift readout")+'</div>'
+    +'</div><div class="hudrow">'+cells+'</div></div></div>';
+}
+
+/* ---------- Decide panel ---------- */
+function optTile(label,selected,group,extraMark){
+  return '<button class="opt" data-group="'+group+'" data-val="'+encodeURIComponent(label)+'" aria-pressed="'+selected+'"><span class="mk">'+(extraMark||"&#9679;")+'</span>'+label+'</button>';
+}
+function decideHTML(){
+  const tabs=[[1,"Focus"],[2,"Team"],[3,"Issue"],[4,"People"],[5,"Confidence"]];
+  const tabbar=tabs.map(([n,l])=>'<button class="tab" data-tab="'+n+'" aria-pressed="'+(activeTab===n)+'"><span class="n done">&#10003;</span>'+l+'</button>').join("");
+  let body="";
+  if(activeTab===1){
+    body='<h2 class="sh2">Priority focus</h2><p class="shn">Under pressure, where does your attention go first?</p><p class="shi">Choose one of the options below.</p>'
+      +'<div class="optgrid">'+PRIORITIES.map(p=>optTile(p,picks.priority===p,"priority")).join("")+'</div>'
+      +'<div class="divider"><h2 class="sh2">Action approach</h2><p class="shn">How will you turn that priority into action?</p><p class="shi">Choose one of the options below.</p>'
+      +'<div class="optgrid">'+ACTIONS.map(a=>optTile(a,picks.action===a,"action")).join("")+'</div></div>';
+  } else if(activeTab===2){
+    const total=ALLOC.reduce((s,[k])=>s+picks.alloc[k],0);
+    body='<h2 class="sh2">Leadership style</h2><p class="shn">How will you predominantly lead your team through this shift?</p><p class="shi">Choose one of the options below.</p>'
+      +'<div class="optgrid">'+LEADERSHIP.map(l=>optTile(l,picks.leadership===l,"leadership")).join("")+'</div>'
+      +'<div class="divider"><h2 class="sh2">Resource allocation</h2><p class="shn">Where does your team\'s time go across the store?</p><p class="shi">Distribute 100% across the four areas.</p>'
+      +'<div class="insetblk"><div class="albar"><div class="track"><i style="width:'+Math.min(100,total)+'%;background:'+(total===100?"linear-gradient(90deg,#0f9d58,#6ee7b7)":"linear-gradient(90deg,#b31cc4,#e879f9)")+'"></i></div><span class="altot" style="color:'+(total===100?"var(--emeraldL)":"var(--brandL)")+'">'+total+'%</span></div>'
+      +ALLOC.map(([k,l])=>'<div class="arow"><span class="an">'+l+'</span><input type="range" min="0" max="100" step="5" value="'+picks.alloc[k]+'" data-alloc="'+k+'"><span class="av num">'+picks.alloc[k]+'%</span></div>').join("")
+      +'</div></div>';
+  } else if(activeTab===3){
+    const iss=DATA.shifts[shiftIdx].context.issues;
+    const total=picks.effort.reduce((a,b)=>a+b,0);
+    body='<h2 class="sh2">Issue effort</h2><p class="shn">Spread your attention across the active issues.</p><p class="shi">Distribute 100% across the three issues.</p>'
+      +'<div class="insetblk"><div class="albar"><div class="track"><i style="width:'+Math.min(100,total)+'%;background:'+(total===100?"linear-gradient(90deg,#0f9d58,#6ee7b7)":"linear-gradient(90deg,#b31cc4,#e879f9)")+'"></i></div><span class="altot" style="color:'+(total===100?"var(--emeraldL)":"var(--brandL)")+'">'+total+'%</span></div>'
+      +iss.map((i,ix)=>'<div class="arow"><span class="an" style="width:190px">'+i.title+'</span><input type="range" min="0" max="100" step="5" value="'+picks.effort[ix]+'" data-effort="'+ix+'"><span class="av num">'+picks.effort[ix]+'%</span></div>').join("")
+      +'</div>';
+  } else if(activeTab===4){
+    const mo=DATA.shifts[shiftIdx].context.moment;
+    body='<h2 class="sh2">People moment</h2><p class="shn">'+mo.persona.name+' ('+mo.persona.role+') needs you.</p><p class="shi">Read the situation, then pick your response.</p>'
+      +'<div class="persona"><div class="pav">'+initials(mo.persona.name)+'</div><div><div class="pn">'+mo.persona.name+'</div><div class="pr">'+mo.persona.role+' &middot; '+mo.persona.tenure+'</div><div class="ps">'+mo.situation+'</div><div class="pq">&ldquo;'+mo.prompt+'&rdquo;</div></div></div>'
+      +'<div class="peoplist">'+mo.options.map(o=>'<button class="opt" data-group="moment" data-val="'+encodeURIComponent(o.label)+'" aria-pressed="'+(picks.moment===o.label)+'" style="width:100%"><span class="mk">&#9679;</span>'+o.label+'</button>').join("")+'</div>';
+  } else {
+    body='<h2 class="sh2">Confidence</h2><p class="shn">How hard do you back this plan? It multiplies every outcome, good and bad.</p><p class="shi">Choose one of the options below.</p>'
+      +'<div class="confgrid">'+CONF.map(([l,m,d])=>'<button class="conf" data-group="confidence" data-val="'+l+'" aria-pressed="'+(picks.confidence===l)+'"><div class="ct"><span class="cm">'+m+'</span><span class="cl">'+l+'</span></div><div class="cd">'+d+'</div></button>').join("")+'</div>';
+  }
+  const btn=phase==="results"
+    ? '<button class="btn btn-primary bigbtn" id="nextShift">'+(shiftIdx>=MAX?"Replay from shift 3":"Next shift &#8594;")+'</button>'
+    : '<button class="btn btn-primary bigbtn" id="endShift">Submit decision &amp; end shift</button>';
+  return '<div class="decide"><div class="wash"></div>'
+    +'<div class="dtop"><div><div class="ey">Decide</div><div class="st">'+(phase==="results"?"Locked in":"Your decisions")+'</div></div>'
+    +(phase==="results"?'<span class="donepill">&#10003; Submitted</span>':'')+'</div>'
+    +'<div class="tabs">'+tabbar+'</div><div class="dbody">'+body+'</div>'
+    +'<div class="dfoot">'+btn+'</div></div>';
+}
+
+/* ---------- Context ---------- */
+function contextHTML(){
+  const sh=DATA.shifts[shiftIdx], c=sh.context;
+  const iss=c.issues.map(i=>'<div class="issue"><div class="it"><span class="itt">'+i.title+'</span><span class="sev '+i.severity+'">'+i.severity+'</span></div><div class="id">'+i.description+'</div></div>').join("");
+  const issuesPanel='<div class="card"><div class="dhead"><span class="ti">&#9888;</span><h3>Active issues</h3></div>'+iss+'</div>';
+  const dis=c.disruption?'<div class="issue disbox"><div class="it"><span class="itt">&#9888; '+c.disruption.title+'</span><span class="sev high">Disruption</span></div><div class="id">'+c.disruption.message+'</div></div>':'';
+  const alerts=(ALERTS_BY_SHIFT[sh.number]||[]).map(a=>'<div class="issue"><div class="it"><span class="itt">'+a.t+'</span><span class="sev low">'+(a.k==="head_office"?"Head office":"Operational")+'</span></div><div class="id">'+a.m+'</div></div>').join("");
+  const alertsPanel='<div class="card" style="margin-top:14px"><div class="dhead"><span class="ti">'+BELL+'</span><h3>Alerts</h3></div>'+dis+alerts+'</div>';
+  return issuesPanel+alertsPanel;
+}
+
+/* ---------- Results strip (team view, after end shift) ---------- */
+function resultsHTML(){
+  const t=teamAt(shiftIdx,DATA.teams[playIdx].name);
+  const drivers=t.hidden.map(h=>{const inv=h.key==="safety_risk";return '<div class="dr"><span class="drn">'+driverLabel(h.key)+'</span><span class="drv num">'+h.value+'</span><span style="font-size:11px">'+deltaHTML(h.delta,inv)+'</span></div>';}).join("");
+  return '<div class="results"><div class="rbanner">'
+    +'<div><div class="eyebrow eyeC">Shift '+DATA.shifts[shiftIdx].number+' resolved</div><div class="mv"><span class="mvn num">+'+t.movement+'</span><span style="color:var(--muted);font-size:13px">score this shift &middot; total '+t.score+'</span></div></div>'
+    +'<div class="rankbadge"><span class="k">Rank</span><span class="v num">#'+t.rank+'</span></div></div>'
+    +'<div><div class="eyebrow eyeC" style="font-size:10px;margin-bottom:7px">Hidden drivers &middot; revealed after the shift</div><div class="drivers">'+drivers+'</div></div></div>';
+}
+
+/* ---------- Facilitator view ---------- */
+let lbRows=null;
+function renderFacilitator(){
+  const main=document.getElementById("main");
+  main.innerHTML='<div class="card" style="border-color:var(--line)"><div class="zonehead"><span class="eyebrow eyeC">Head to head</span></div>'
+    +'<div class="lbhead"><div>Rank</div><div>Team</div><div style="text-align:right">Score</div><div style="text-align:right">Shift</div></div><div class="lbrows" id="lbrows"></div></div>'
+    +'<div class="grid4" id="ccards" style="margin-top:14px"></div>';
+  const rowsWrap=main.querySelector("#lbrows"); lbRows={};
+  DATA.teams.forEach(t=>{const r=document.createElement("div");r.className="row";rowsWrap.appendChild(r);lbRows[t.name]=r;});
+  updateLeaderboard();
+  const order=["Arndale","Paradise","Heathrow","Deansgate"];
+  document.getElementById("ccards").innerHTML=order.map(name=>{
+    const t=teamAt(shiftIdx,name);
+    const goals=t.goals.map(g=>{const b=bandFor(g.value);return '<div class="g"><div class="gl">'+goalShort(g.key)+'</div><div class="gv"><span class="gvn num">'+g.value+'</span><span class="gd">'+deltaHTML(g.delta,false)+'</span></div><div class="bar"><i data-w="'+g.value+'" style="background:linear-gradient(90deg,'+b.f+','+b.t+')"></i></div></div>';}).join("");
+    const drivers=t.hidden.map(h=>{const inv=h.key==="safety_risk";return '<div class="cdr"><span class="n">'+driverLabel(h.key)+'</span><span class="v num">'+h.value+'</span><span style="font-size:10px">'+deltaHTML(h.delta,inv)+'</span></div>';}).join("");
+    const d=t.decision;
+    const chips='<div class="decrow"><span class="dchip pri">'+d.priority+'</span><span class="dchip">'+d.leadership+'</span><span class="dchip">'+d.confidence+'</span><span class="dchip">'+d.action+'</span></div>';
+    return '<div class="ccard"><div class="cctop"><div class="crest" style="width:24px;height:24px;border-radius:7px">'+storefront(TEAM_ACCENT[name],15)+'</div><div class="tn">'+name+'</div><div class="ccrank num">#'+t.rank+'</div></div>'
+      +'<div><div class="eyebrow" style="color:var(--faint);font-size:10px;margin-bottom:5px">Decisions this shift</div>'+chips+'</div>'
+      +'<div class="goals5">'+goals+'</div>'
+      +'<div class="ask"><div class="l">&#9733; Ask them</div><p>&ldquo;'+t.question+'&rdquo;</p></div>'
+      +'<div><div class="eyebrow eyeC" style="font-size:10px;margin-bottom:5px">Hidden drivers</div><div class="cdrivers">'+drivers+'</div></div></div>';
+  }).join("");
+  animateBars(document.getElementById("ccards"));
+}
+function updateLeaderboard(){
+  const rowsWrap=document.getElementById("lbrows");
+  const teams=[...DATA.shifts[shiftIdx].teams].sort((a,b)=>a.rank-b.rank);
+  const first={}; for(const n in lbRows)first[n]=lbRows[n].getBoundingClientRect().top;
+  for(const t of teams){const r=lbRows[t.name];rowsWrap.appendChild(r);const lead=t.rank===1;r.className="row"+(lead?" lead":"");
+    r.innerHTML='<div class="rk num">#'+t.rank+'</div><div class="teamcell"><div class="crest">'+storefront(lead?"#fff":TEAM_ACCENT[t.name],20)+'</div><div style="min-width:0"><div class="tn">'+t.name+'</div><div class="ts">'+siteOf(t.name)+'</div></div></div><div class="sc num">'+t.score+'</div><div class="mvcell"><span class="pill num">&#9650; +'+t.movement+'</span></div>';}
+  if(reduce)return;
+  requestAnimationFrame(()=>{for(const n in lbRows){const r=lbRows[n];const dy=first[n]-r.getBoundingClientRect().top;if(Math.abs(dy)<1)continue;r.style.transition="none";r.style.transform="translateY("+dy+"px)";requestAnimationFrame(()=>{r.style.transition="transform .55s cubic-bezier(.2,.7,.2,1)";r.style.transform="";});}});
+}
+
+/* ---------- Team view ---------- */
+function renderTeam(){
+  const name=DATA.teams[playIdx].name;
+  let hud;
+  if(phase==="results"){ hud=hudHTML(teamAt(shiftIdx,name).goals,true); }
+  else { const prev=DATA.shifts[shiftIdx-1].teams.find(x=>x.name===name); hud=hudHTML(prev.goals.map(g=>({key:g.key,value:g.value})),false); }
+  const right = phase==="results" ? (resultsHTML()+'<div style="height:14px"></div>'+decideHTML()) : decideHTML();
+  document.getElementById("main").innerHTML = hud+'<div style="height:14px"></div><div class="cols"><div>'+contextHTML()+'</div><div>'+right+'</div></div>';
+  wireDecide();
+  animateBars(document.getElementById("main"));
+}
+
+function wireDecide(){
+  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{activeTab=+b.dataset.tab;renderTeam();}));
+  document.querySelectorAll(".opt,.conf").forEach(b=>b.addEventListener("click",()=>{
+    if(phase==="results")return;
+    const g=b.dataset.group, v=decodeURIComponent(b.dataset.val);
+    if(g==="priority")picks.priority=v; else if(g==="action")picks.action=v; else if(g==="leadership")picks.leadership=v;
+    else if(g==="moment")picks.moment=v; else if(g==="confidence")picks.confidence=v;
+    renderTeam();
+  }));
+  document.querySelectorAll("input[data-alloc]").forEach(s=>s.addEventListener("input",()=>{picks.alloc[s.dataset.alloc]=+s.value;renderTeam();}));
+  document.querySelectorAll("input[data-effort]").forEach(s=>s.addEventListener("input",()=>{picks.effort[+s.dataset.effort]=+s.value;renderTeam();}));
+  const end=document.getElementById("endShift"); if(end)end.addEventListener("click",()=>{phase="results";renderTeam();});
+  const nx=document.getElementById("nextShift"); if(nx)nx.addEventListener("click",()=>{
+    if(shiftIdx>=MAX){shiftIdx=MIN;} else {shiftIdx++;}
+    phase="decide";activeTab=1;initPicks();render();
+  });
+}
+
+function animateBars(root){const bars=root.querySelectorAll("i[data-w]");if(reduce){bars.forEach(b=>b.style.width=b.dataset.w+"%");return;}requestAnimationFrame(()=>requestAnimationFrame(()=>bars.forEach(b=>b.style.width=b.dataset.w+"%")));}
+
+function render(){
+  renderStepper();
+  document.getElementById("vTeam").setAttribute("aria-pressed",view==="team");
+  document.getElementById("vFac").setAttribute("aria-pressed",view==="fac");
+  if(view==="team"){ if(!picks)initPicks(); renderTeam(); } else renderFacilitator();
+}
+
+document.getElementById("prev").addEventListener("click",()=>{if(shiftIdx>MIN){shiftIdx--;phase="decide";activeTab=1;picks=null;render();}});
+document.getElementById("next").addEventListener("click",()=>{if(shiftIdx<MAX){shiftIdx++;phase="decide";activeTab=1;picks=null;render();}});
+document.getElementById("vTeam").addEventListener("click",()=>{view="team";render();});
+document.getElementById("vFac").addEventListener("click",()=>{view="fac";render();});
+
+initPicks(); render();
+</script>
+</body>
+</html>
