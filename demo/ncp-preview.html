@@ -449,28 +449,47 @@ function updateLeaderboard(){
 }
 
 /* ---------- Team view ---------- */
+// The HUD + context depend only on shift / team / phase, so they are rendered
+// once per such change and never re-animated on decision input. Picking options
+// or switching tabs rebuilds ONLY the Decide panel; dragging a slider updates
+// values in place (no rebuild), so nothing flickers and nothing re-animates.
+function decideSlotHTML(){ return (phase==="results" ? resultsHTML()+'<div style="height:14px"></div>' : '') + decideHTML(); }
 function renderTeam(){
   const name=DATA.teams[playIdx].name;
   let hud;
   if(phase==="results"){ hud=hudHTML(teamAt(shiftIdx,name).goals,true); }
   else { const prev=DATA.shifts[shiftIdx-1].teams.find(x=>x.name===name); hud=hudHTML(prev.goals.map(g=>({key:g.key,value:g.value})),false); }
-  const right = phase==="results" ? (resultsHTML()+'<div style="height:14px"></div>'+decideHTML()) : decideHTML();
-  document.getElementById("main").innerHTML = hud+'<div style="height:14px"></div><div class="cols"><div>'+contextHTML()+'</div><div>'+right+'</div></div>';
+  document.getElementById("main").innerHTML = hud+'<div style="height:14px"></div><div class="cols"><div>'+contextHTML()+'</div><div id="decideSlot">'+decideSlotHTML()+'</div></div>';
   wireDecide();
   animateBars(document.getElementById("main"));
 }
+function renderDecideOnly(){
+  const slot=document.getElementById("decideSlot");
+  if(!slot){ renderTeam(); return; }
+  slot.innerHTML=decideSlotHTML();
+  wireDecide();
+}
+function updateSliderUI(){
+  const slot=document.getElementById("decideSlot"); if(!slot)return;
+  const rows = activeTab===2 ? ALLOC.map(([k])=>picks.alloc[k]) : picks.effort;
+  const total = rows.reduce((a,b)=>a+b,0);
+  const track=slot.querySelector(".albar .track > i");
+  if(track){ track.style.width=Math.min(100,total)+"%"; track.style.background = total===100 ? "linear-gradient(90deg,#0f9d58,#6ee7b7)" : "linear-gradient(90deg,#b31cc4,#e879f9)"; }
+  const tot=slot.querySelector(".altot"); if(tot){ tot.textContent=total+"%"; tot.style.color = total===100 ? "var(--emeraldL)" : "var(--brandL)"; }
+  slot.querySelectorAll(".arow").forEach((row,i)=>{ const av=row.querySelector(".av"); if(av)av.textContent=rows[i]+"%"; });
+}
 
 function wireDecide(){
-  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{activeTab=+b.dataset.tab;renderTeam();}));
+  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{activeTab=+b.dataset.tab;renderDecideOnly();}));
   document.querySelectorAll(".opt,.conf").forEach(b=>b.addEventListener("click",()=>{
     if(phase==="results")return;
     const g=b.dataset.group, v=decodeURIComponent(b.dataset.val);
     if(g==="priority")picks.priority=v; else if(g==="action")picks.action=v; else if(g==="leadership")picks.leadership=v;
     else if(g==="moment")picks.moment=v; else if(g==="confidence")picks.confidence=v;
-    renderTeam();
+    renderDecideOnly();
   }));
-  document.querySelectorAll("input[data-alloc]").forEach(s=>s.addEventListener("input",()=>{picks.alloc[s.dataset.alloc]=+s.value;renderTeam();}));
-  document.querySelectorAll("input[data-effort]").forEach(s=>s.addEventListener("input",()=>{picks.effort[+s.dataset.effort]=+s.value;renderTeam();}));
+  document.querySelectorAll("input[data-alloc]").forEach(s=>s.addEventListener("input",()=>{picks.alloc[s.dataset.alloc]=+s.value;updateSliderUI();}));
+  document.querySelectorAll("input[data-effort]").forEach(s=>s.addEventListener("input",()=>{picks.effort[+s.dataset.effort]=+s.value;updateSliderUI();}));
   const end=document.getElementById("endShift"); if(end)end.addEventListener("click",()=>{phase="results";renderTeam();});
   const nx=document.getElementById("nextShift"); if(nx)nx.addEventListener("click",()=>{
     if(shiftIdx>=MAX){shiftIdx=MIN;} else {shiftIdx++;}
