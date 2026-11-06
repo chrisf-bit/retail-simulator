@@ -9,7 +9,9 @@ import { Server as IOServer, type Socket } from "socket.io";
 import { CONNECTION_TICK_MS } from "@sim/shared";
 import { SessionStore, type Session } from "./engine/session.js";
 import { PERSISTENCE_DIR, writeSessionFileSync } from "./engine/persistence.js";
-import { generateReport } from "./engine/report.js";
+import { generateReport, teamReportFilename } from "./engine/report.js";
+import { buildSampleSession } from "./engine/sample.js";
+import { zipStore } from "./engine/zip.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
@@ -108,8 +110,48 @@ app.get("/api/sessions/:sessionId/report.html", (req, res) => {
     "Content-Security-Policy",
     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'",
   );
-  const html = generateReport(session);
+  // Optional ?team=<teamId> renders a single team's report; otherwise the
+  // combined facilitator report.
+  const teamId = typeof req.query.team === "string" ? req.query.team : undefined;
+  const html = generateReport(session, teamId ? { teamId } : undefined);
   res.type("text/html").send(html);
+});
+
+// One click for the facilitator: a ZIP of a separate report per team (plus the
+// combined report), for handing out over lunch. Facilitator-token gated.
+app.get("/api/sessions/:sessionId/reports.zip", (req, res) => {
+  const { sessionId } = req.params;
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const session = store.get(sessionId);
+  if (!session) {
+    res.status(404).type("text/plain").send("Session not found.");
+    return;
+  }
+  if (!token || token !== session.facilitatorToken) {
+    res.status(401).type("text/plain").send("Not authorised.");
+    return;
+  }
+  const now = Date.now();
+  const files = Array.from(session.teams.values()).map((t, i) => ({
+    name: teamReportFilename(session, t, i + 1, now),
+    data: generateReport(session, { teamId: t.id }),
+  }));
+  files.push({ name: `all-teams-${session.code}.html`, data: generateReport(session) });
+  const zip = zipStore(files);
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="plumfield-reports-${session.code}.zip"`);
+  res.send(zip);
+});
+
+// Hidden report-testing easter egg: a real report rendered from dummy data, so
+// the report can be checked without playing a full game. Public (no real
+// session data is exposed - everything here is fabricated).
+app.get("/api/report-sample.html", (_req, res) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'",
+  );
+  res.type("text/html").send(generateReport(buildSampleSession()));
 });
 
 // Sales demo: a self-contained standalone HTML preview of the simulation, served

@@ -644,6 +644,10 @@ export class Session {
         metricsAfter: result.nextMetrics,
         hiddenAfter: result.nextHidden,
         roundScore: result.roundScore,
+        weekContext: {
+          issues: this.round.issues.map((i) => i.title),
+          disruption: this.round.disruption?.title,
+        },
       });
     }
 

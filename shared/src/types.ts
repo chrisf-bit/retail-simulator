@@ -188,6 +188,11 @@ export interface RoundHistoryEntry {
   metricsAfter: Metrics;
   hiddenAfter: HiddenDrivers;
   roundScore: number;
+  // Brief, human-readable context of what this week threw at the team, captured
+  // when the round resolved so the end-of-session report can remind the reader of
+  // the situation without reopening the sim. Optional: sessions persisted before
+  // this field existed simply won't have it.
+  weekContext?: { issues: string[]; disruption?: string };
 }
 
 export interface RoundState {

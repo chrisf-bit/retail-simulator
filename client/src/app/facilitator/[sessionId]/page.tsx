@@ -815,11 +815,24 @@ function ControlBar({
     socket.emit("facilitator:briefing_step", { sessionId, step: clamped });
   }
 
-  function openReport() {
+  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
+  function openReport(teamId?: string) {
     if (!token) return;
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001";
-    const url = `${serverUrl}/api/sessions/${sessionId}/report.html?token=${encodeURIComponent(token)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    const team = teamId ? `&team=${encodeURIComponent(teamId)}` : "";
+    window.open(
+      `${serverUrl}/api/sessions/${sessionId}/report.html?token=${encodeURIComponent(token)}${team}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+  function downloadAllReports() {
+    if (!token) return;
+    // A ZIP of one report per team plus the combined report (a file download).
+    window.open(
+      `${serverUrl}/api/sessions/${sessionId}/reports.zip?token=${encodeURIComponent(token)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   return (
@@ -857,14 +870,35 @@ function ControlBar({
           </div>
         </div>
       ) : reportReady ? (
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-white/70">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex items-center gap-2 text-sm text-white/70">
             <Download className="h-4 w-4 shrink-0 text-teal-300" />
-            <span className="truncate">Session complete. Download a printable summary for the room.</span>
+            <span>Session complete. Download each team&apos;s report, or grab them all.</span>
           </div>
-          <Button variant="primary" size="sm" onClick={openReport} disabled={!token} className="shrink-0">
-            <Download className="h-4 w-4" /> Download report
-          </Button>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button variant="primary" size="sm" onClick={downloadAllReports} disabled={!token} className="shrink-0">
+              <Download className="h-4 w-4" /> Download all (ZIP)
+            </Button>
+            <Button variant="quiet" size="sm" onClick={() => openReport()} disabled={!token} className="shrink-0">
+              Combined
+            </Button>
+          </div>
+          {state.teams.length > 0 ? (
+            <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-white/10 pt-2">
+              <span className="text-[12px] font-medium uppercase tracking-wider text-white/50">Per team</span>
+              {state.teams.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => openReport(t.id)}
+                  disabled={!token}
+                  className="press rounded-full bg-white/5 px-3 py-1 text-[12px] font-medium text-white/80 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="flex min-w-0 flex-1 items-center gap-3">

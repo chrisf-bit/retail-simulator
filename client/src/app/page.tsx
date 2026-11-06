@@ -134,6 +134,22 @@ export default function LandingPage() {
 
   return (
     <div className="flex h-full w-full items-center justify-center p-6">
+      {/* Hidden report-testing easter egg: an invisible hotspot in the very
+          bottom-left corner opens a full report rendered from dummy data, so the
+          report can be checked without playing a game. Invisible to clients. */}
+      <button
+        type="button"
+        aria-label="Open sample report"
+        tabIndex={-1}
+        onClick={() =>
+          window.open(
+            `${process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3001"}/api/report-sample.html`,
+            "_blank",
+            "noopener,noreferrer",
+          )
+        }
+        className="fixed bottom-0 left-0 z-50 h-7 w-7 cursor-default opacity-0"
+      />
       <div className="w-full max-w-4xl">
         <div className="mb-8 flex items-center justify-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-white">
