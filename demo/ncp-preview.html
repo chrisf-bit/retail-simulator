@@ -337,8 +337,28 @@ const MIN=2,MAX=5;
 function scriptedDecision(){ return teamAt(shiftIdx,DATA.teams[playIdx].name).decision; }
 function initPicks(){
   const d=scriptedDecision();
-  picks={priority:d.priority,action:d.action,leadership:d.leadership,confidence:d.confidence.split(" ")[0],
-    alloc:{...d.alloc}, moment:findMomentLabelForArch(), effort:[34,33,33], done:{1:true,2:true,3:true,4:true,5:true}};
+  // Pre-fill Focus / Team / Issue so the demoer only has to make two calls - the
+  // People moment and Confidence - to light up the submit button (as in the game).
+  picks={priority:d.priority,action:d.action,leadership:d.leadership,confidence:null,
+    alloc:{...d.alloc}, moment:null, effort:[34,33,33]};
+}
+function tabDone(n){
+  if(n===1) return !!picks.priority && !!picks.action;
+  if(n===2) return !!picks.leadership && ALLOC.reduce((s,[k])=>s+picks.alloc[k],0)===100;
+  if(n===3) return picks.effort.reduce((a,b)=>a+b,0)===100;
+  if(n===4) return !!picks.moment;
+  if(n===5) return !!picks.confidence;
+  return false;
+}
+function completedCount(){ return [1,2,3,4,5].filter(tabDone).length; }
+function isComplete(){ return completedCount()===5; }
+// Update the submit button, the "X of 5 complete" label and the tab ticks in
+// place (used after a slider change, which does not rebuild the panel).
+function refreshDecideChrome(){
+  const slot=document.getElementById("decideSlot"); if(!slot||phase==="results")return;
+  const st=slot.querySelector(".dtop .st"); if(st) st.textContent=completedCount()+" of 5 complete";
+  const end=slot.querySelector("#endShift"); if(end){ end.disabled=!isComplete(); end.innerHTML=isComplete()?"Submit decision &amp; end shift":"Complete all 5 to submit"; }
+  slot.querySelectorAll(".tab").forEach(b=>{const n=+b.dataset.tab;const nn=b.querySelector(".n");if(nn){nn.className="n"+(tabDone(n)?" done":"");nn.innerHTML=tabDone(n)?"&#10003;":String(n);}});
 }
 function findMomentLabelForArch(){
   // scripted decision.moment is an archetype label; pick the matching option label
@@ -389,7 +409,7 @@ function optTile(label,selected,group,extraMark){
 }
 function decideHTML(){
   const tabs=[[1,"Focus"],[2,"Team"],[3,"Issue"],[4,"People"],[5,"Confidence"]];
-  const tabbar=tabs.map(([n,l])=>'<button class="tab" data-tab="'+n+'" aria-pressed="'+(activeTab===n)+'"><span class="n done">&#10003;</span>'+l+'</button>').join("");
+  const tabbar=tabs.map(([n,l])=>'<button class="tab" data-tab="'+n+'" aria-pressed="'+(activeTab===n)+'"><span class="n'+(tabDone(n)?' done':'')+'">'+(tabDone(n)?'&#10003;':n)+'</span>'+l+'</button>').join("");
   let body="";
   if(activeTab===1){
     body='<h2 class="sh2">Priority focus</h2><p class="shn">Under pressure, where does your attention go first?</p><p class="shi">Choose one of the options below.</p>'
@@ -422,9 +442,9 @@ function decideHTML(){
   }
   const btn=phase==="results"
     ? '<button class="btn btn-primary bigbtn" id="nextShift">'+(shiftIdx>=MAX?"Replay from shift 3":"Next shift &#8594;")+'</button>'
-    : '<button class="btn btn-primary bigbtn" id="endShift">Submit decision &amp; end shift</button>';
+    : '<button class="btn btn-primary bigbtn" id="endShift"'+(isComplete()?'':' disabled')+'>'+(isComplete()?'Submit decision &amp; end shift':'Complete all 5 to submit')+'</button>';
   return '<div class="decide"><div class="wash"></div>'
-    +'<div class="dtop"><div><div class="ey">Decide</div><div class="st">'+(phase==="results"?"Locked in":"Your decisions")+'</div></div>'
+    +'<div class="dtop"><div><div class="ey">Decide</div><div class="st">'+(phase==="results"?"Locked in":completedCount()+" of 5 complete")+'</div></div>'
     +(phase==="results"?'<span class="donepill">&#10003; Submitted</span>':'')+'</div>'
     +'<div class="tabs">'+tabbar+'</div><div class="dbody">'+body+'</div>'
     +'<div class="dfoot">'+btn+'</div></div>';
@@ -517,6 +537,7 @@ function updateSliderUI(){
   if(track){ track.style.width=Math.min(100,total)+"%"; track.style.background = total===100 ? "linear-gradient(90deg,#0f9d58,#6ee7b7)" : "linear-gradient(90deg,#b31cc4,#e879f9)"; }
   const tot=slot.querySelector(".altot"); if(tot){ tot.textContent=total+"%"; tot.style.color = total===100 ? "var(--emeraldL)" : "var(--brandL)"; }
   slot.querySelectorAll(".arow").forEach((row,i)=>{ const av=row.querySelector(".av"); if(av)av.textContent=rows[i]+"%"; });
+  refreshDecideChrome();
 }
 
 function wireDecide(){
@@ -530,7 +551,7 @@ function wireDecide(){
   }));
   document.querySelectorAll("input[data-alloc]").forEach(s=>s.addEventListener("input",()=>{picks.alloc[s.dataset.alloc]=+s.value;updateSliderUI();}));
   document.querySelectorAll("input[data-effort]").forEach(s=>s.addEventListener("input",()=>{picks.effort[+s.dataset.effort]=+s.value;updateSliderUI();}));
-  const end=document.getElementById("endShift"); if(end)end.addEventListener("click",()=>{phase="results";renderTeam();});
+  const end=document.getElementById("endShift"); if(end)end.addEventListener("click",()=>{ if(!isComplete())return; phase="results";renderTeam();});
   const nx=document.getElementById("nextShift"); if(nx)nx.addEventListener("click",()=>{
     if(shiftIdx>=MAX){shiftIdx=MIN;} else {shiftIdx++;}
     phase="decide";activeTab=1;initPicks();render();
