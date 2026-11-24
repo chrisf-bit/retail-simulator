@@ -118,7 +118,7 @@ export default function LandingPage() {
             The Store Is Yours
           </h1>
           <p className="mb-2 max-w-xl text-lg text-white/80 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
-            Four weeks to lead the people, priorities and performance.
+            Eight weeks to lead the people, priorities and performance.
           </p>
           <p className="mb-8 max-w-xl text-sm text-white/60 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
             A live, multi-team, head-to-head retail simulation.
